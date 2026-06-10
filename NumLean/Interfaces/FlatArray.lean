@@ -1,1 +1,1 @@
-import NumLean.Interfaces.FlatArray.Basic
+import NumLean.Interfaces.HasFlatArray.Basic

@@ -38,7 +38,7 @@ class DefaultFlatRepr (X : Type u) (K : outParam (Type v)) (n : outParam Nat)
 
 namespace FlatRepr
 
-variable {X : Type u} {K : Type v} {nX : Nat} [FlatRepr X K n]
+variable {X : Type u} {K : Type v} {nX : Nat} [FlatRepr X K nX]
 
 @[simp]
 theorem fromVector_toVector (x : X) :
@@ -46,18 +46,25 @@ theorem fromVector_toVector (x : X) :
   FlatRepr.left_inv x
 
 @[simp]
-theorem toVector_fromVector (x : _root_.Vector K n) :
-    toVector (K:=K) (fromVector (X:=X) x) = x :=
+theorem toVector_fromVector (x : Vector K nX) :
+    toVector K (fromVector X x) = x :=
   FlatRepr.right_inv x
 
+variable (K) in
+theorem ext (x y : X) : (∀ (i : Nat), (h : i < nX) → getComp K x i h = getComp K y i h) → x = y := by
+  intro h
+  apply (FlatRepr.left_inv (X:=X) (K:=K)).injective
+  simp only [FlatRepr.getComp_spec] at h
+  ext i hi; apply h
+
 @[simp]
-theorem getComp_setComp_eq (x : X) (i : Nat) (xi : K) (h : i < n) :
+theorem getComp_setComp_eq (x : X) (i : Nat) (xi : K) (h : i < nX) :
   getComp (K:=K) (setComp x i xi h) i h = xi := by
   rw [FlatRepr.getComp_spec, FlatRepr.setComp_spec, FlatRepr.toVector_fromVector]
   exact Vector.getElem_set_self h
 
 @[simp]
-theorem getComp_setComp_neq (x : X) (i j : Nat) (xi : K) (hi : i < n) (hj : j < n) (h : i ≠ j) :
+theorem getComp_setComp_neq (x : X) (i j : Nat) (xi : K) (hi : i < nX) (hj : j < nX) (h : i ≠ j) :
   getComp (K:=K) (setComp x i xi hi) j hj = getComp (K:=K) x j hj := by
   rw [FlatRepr.getComp_spec, FlatRepr.setComp_spec, FlatRepr.toVector_fromVector,
     FlatRepr.getComp_spec]
