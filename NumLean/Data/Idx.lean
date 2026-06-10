@@ -242,63 +242,6 @@ def Idx.merge {nI nJ : Nat} (a : Idx nI) (b : Idx nJ) : Idx (nI * nJ) :=
         _ ≤ nJ * nI                 := by gcongr; omega
         _ = nI * nJ                 := Nat.mul_comm _ _
     · exact lt_of_lt_of_le (UInt64.toNat_lt _) hge⟩
-    {
-      "runId": "2026-06-07T201505Z",
-      "createdAt": "2026-06-07T20:15:05Z",
-      "file": "2026-06-07T201505Z-all.json",
-      "benchmarks": [
-        "float-array-add",
-        "float-array-sum"
-      ],
-      "schemaVersion": 1
-    },
-    {
-      "runId": "2026-06-07T194105Z",
-      "createdAt": "2026-06-07T19:41:05Z",
-      "file": "2026-06-07T194105Z-all.json",
-      "benchmarks": [
-        "float-array-add",
-        "float-array-sum"
-      ],
-      "schemaVersion": 1
-    },
-    {
-      "runId": "2026-06-07T193428Z",
-      "createdAt": "2026-06-07T19:34:28Z",
-      "file": "2026-06-07T193428Z-float-array-sum.json",
-      "benchmarks": [
-        "float-array-sum"
-      ],
-      "schemaVersion": 1
-    },
-    {
-      "runId": "2026-06-07T193356Z",
-      "createdAt": "2026-06-07T19:33:56Z",
-      "file": "2026-06-07T193356Z-float-array-add.json",
-      "benchmarks": [
-        "float-array-add"
-      ],
-      "schemaVersion": 1
-    },
-    {
-      "runId": "2026-06-07T193307Z",
-      "createdAt": "2026-06-07T19:33:07Z",
-      "file": "2026-06-07T193307Z-float-array-sum.json",
-      "benchmarks": [
-        "float-array-sum"
-      ],
-      "schemaVersion": 1
-    },
-    {
-      "runId": "2026-06-07T193307Z",
-      "createdAt": "2026-06-07T19:33:07Z",
-      "file": "2026-06-07T193307Z-float-array-add.json",
-      "benchmarks": [
-        "float-array-add"
-      ],
-      "schemaVersion": 1
-    },
-
 
 /-- First (row) component of a combined index, clamped into range. -/
 @[inline]

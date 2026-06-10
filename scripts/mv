@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<EOF
+Usage: $0 [--dry-run] <source .lean file or directory> <destination .lean file or directory>
+
+Move Lean files/directories and rewrite matching import prefixes in project .lean files.
+
+Options:
+  --dry-run   Print files that would move and files whose imports would change.
+  --help      Show this help message.
+EOF
+}
+
+die() {
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+dry_run=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --dry-run)
+      dry_run=1
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    --*)
+      die "unknown option: $1"
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [[ $# -ne 2 ]]; then
+  usage >&2
+  exit 2
+fi
+
+src=${1%/}
+dst=${2%/}
+
+[[ -e "$src" ]] || die "source does not exist: $src"
+[[ ! -e "$dst" ]] || die "destination already exists: $dst"
+
+module_name() {
+  local path=${1#./}
+  path=${path%/}
+  path=${path%.lean}
+  path=${path//\//.}
+  printf '%s' "$path"
+}
+
+lean_files() {
+  find . \
+    \( -path './.git' -o -path './.lake' \) -prune -o \
+    -type f -name '*.lean' -print0
+}
+
+old_module=$(module_name "$src")
+new_module=$(module_name "$dst")
+
+case "$src" in
+  *.lean)
+    [[ "$dst" == *.lean ]] || die "moving a .lean file requires a .lean destination"
+    ;;
+  *)
+    [[ -d "$src" ]] || die "source must be a .lean file or directory: $src"
+    ;;
+esac
+
+dst_parent=$(dirname "$dst")
+[[ -d "$dst_parent" ]] || die "destination parent does not exist: $dst_parent"
+
+if [[ "$dry_run" -eq 1 ]]; then
+  printf 'Dry run: no files will be moved or edited.\n'
+  printf '\nFiles to move:\n'
+  if [[ -f "$src" ]]; then
+    printf '  %s -> %s\n' "$src" "$dst"
+  else
+    while IFS= read -r -d '' file; do
+      rel=${file#"$src"/}
+      printf '  %s -> %s/%s\n' "$file" "$dst" "$rel"
+    done < <(find "$src" -type f -print0)
+  fi
+
+  printf '\nFiles needing import fixes:\n'
+  found=0
+  while IFS= read -r -d '' file; do
+    if OLD_MODULE="$old_module" perl -ne '
+      my $old = $ENV{OLD_MODULE};
+      $found = 1 if /^\s*import\s+/ && /(?<![A-Za-z0-9_.])\Q$old\E(?=\.|\s|$)/;
+      END { exit($found ? 0 : 1) }
+    ' "$file"; then
+      printf '  %s\n' "$file"
+      found=1
+    fi
+  done < <(lean_files)
+  if [[ "$found" -eq 0 ]]; then
+    printf '  none\n'
+  fi
+
+  printf '\nImport rewrite: %s -> %s\n' "$old_module" "$new_module"
+  exit 0
+fi
+
+mv -- "$src" "$dst"
+
+# Rewrite Lean module prefixes only on import lines. This covers both exact imports
+# (`import Foo.Bar`) and imports below a moved directory (`import Foo.Bar.Baz`).
+while IFS= read -r -d '' file; do
+  OLD_MODULE="$old_module" NEW_MODULE="$new_module" perl -0pi -e '
+    my $old = $ENV{OLD_MODULE};
+    my $new = $ENV{NEW_MODULE};
+    s{^(\s*import\s+.*)$}{
+      my $line = $1;
+      $line =~ s{(?<![A-Za-z0-9_.])\Q$old\E(?=\.|\s|$)}{$new}g;
+      $line;
+    }gme;
+  ' "$file"
+done < <(lean_files)
+
+printf 'Moved %s -> %s\n' "$src" "$dst"
+printf 'Rewrote imports: %s -> %s\n' "$old_module" "$new_module"
