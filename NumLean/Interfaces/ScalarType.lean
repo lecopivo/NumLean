@@ -12,7 +12,7 @@ class VectorType (X : Type u) (nX : outParam Nat) (Ks : outParam (Type v)) {K : 
   toVector : X → _root_.Vector K nX
   fromVector : _root_.Vector K nX → X
   left_inv : LeftInverse fromVector toVector
-  right_inv : LeftInverse fromVector toVector
+  right_inv : RightInverse fromVector toVector
 
   getComp (x : X) (i : Nat) (h : i < nX) : K
   getComp_spec (x : X) (i : Nat) (h : i < nX) : getComp x i h = (toVector x)[i]
@@ -46,12 +46,37 @@ class VectorType (X : Type u) (nX : outParam Nat) (Ks : outParam (Type v)) {K : 
   --     Fin.foldl (n:=nX) (init := Vector.mk (ArrayType.toArray ks) rfl)
   --       (fun ks i => ks.uset (off + i.1.toUSize) (toVector x)[i] sorry))
 
-
 namespace VectorType
 
-variable (R : Type _)
-    (X : Type u) {nX : outParam Nat} {Ks : outParam (Type v)} {K : outParam (Type w)}
+variable {R : Type _}
+    {X : Type u} {nX : outParam Nat} {Ks : outParam (Type v)} {K : outParam (Type w)}
     [ScalarArray Ks K] [VectorType X nX Ks]
+
+@[simp]
+theorem toVector_fromVector (x : Vector K nX) :
+  toVector (fromVector (X:=X) x) = x := VectorType.right_inv x
+
+@[simp]
+theorem fromVector_toVector (x : X) :
+  fromVector (toVector (X:=X) x) = x := VectorType.left_inv x
+
+variable (X) in
+theorem size_set {ks : Ks} {off : Nat} {x : X} (h : off + nX ≤ ArrayType.size ks) :
+    ArrayType.size (set ks off x h) = ArrayType.size ks := sorry
+
+theorem get_set_eq (ks : Ks) (off : Nat) (x : X)
+  (h : off + nX ≤ ArrayType.size ks) (h' : off ≤ i ∧ i < off + nX) :
+    ArrayType.get (set ks off x h) i (by rw [size_set _ h]; grind)
+    =
+    getComp x (i - off) (by grind) := sorry
+
+theorem get_set_ne (ks : Ks) (off : Nat) (x : X)
+  (h : off + nX ≤ ArrayType.size ks) (h' : i < off ∨ off + nX ≤ i) (h'' : i < ArrayType.size ks) :
+    ArrayType.get (set ks off x h) i (by rw [size_set _ h]; grind)
+    =
+    ArrayType.get ks i h'' := sorry
+
+variable (R X)
 
 class LawfulZero [Zero X] [Zero K] : Prop where
   getComp_zero (j : Nat) (h : j < nX) : getComp (0 : X) j h = 0
@@ -79,7 +104,7 @@ noncomputable instance : VectorType Real 1 (Array Real) where
   toVector x := #v[x]
   fromVector x := x[0]
   left_inv := by intro _; simp
-  right_inv := by intro _; simp
+  right_inv := by intro _; simp; grind
 
   getComp x _ _ := x
   getComp_spec := by intros; simp
@@ -121,7 +146,7 @@ noncomputable instance : VectorType Float 1 FloatArray where
   toVector x := #v[x]
   fromVector x := x[0]
   left_inv := by intro _; simp
-  right_inv := by intro _; simp
+  right_inv := by intro _; simp; grind
 
   getComp x _ _ := x
   getComp_spec := by intros; simp

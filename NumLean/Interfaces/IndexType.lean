@@ -32,6 +32,9 @@ class IndexType (I : Type*) (n : outParam Nat) extends Fintype I, Size I n where
   left_inv' : LeftInverse fromFin toFin
   right_inv' : RightInverse fromFin toFin
 
+  -- toIdx_eq_toFin : n < 2 ^ 64 → ∀ i, (toIdx i).1.toNat = (toFin i).1
+
+
 
 export IndexType (toIdx fromIdx toFin fromFin)
 
