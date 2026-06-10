@@ -61,7 +61,7 @@ theorem get_set_eq (ks : Ks) (off : Nat) (x : X) (hoff : off + nX ≤ ArrayType.
   rw[getComp_get_eq_array_get, array_get_set_eq]
   all_goals grind
 
-theorem get_set_en (ks : Ks) (off off' : Nat) (x : X) (hoff : off + nX ≤ ArrayType.size ks)
+theorem get_set_ne (ks : Ks) (off off' : Nat) (x : X) (hoff : off + nX ≤ ArrayType.size ks)
     (hoff' : off' + nX ≤ off ∨ off + nX ≤ off') (hoff'' : off' + nX ≤ ArrayType.size ks) :
     get (X:=X) (set ks off x hoff) off' (by simp; grind)
     =
