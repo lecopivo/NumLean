@@ -11,6 +11,8 @@ class TensorIndexTypeOfRank (I : Type u) (n : outParam Nat)
   extends IndexType I n
   where
 
+  -- add condition that the `∏ i, dims[i] = nI` -- i.e. the number of element `nI` matches `dims`
+
   -- nI_numelem : nI = TensorIndex.
   toTensorIndex : I → TensorIndex dims
   fromTensorIndex : TensorIndex dims → I
@@ -39,6 +41,7 @@ structure TensorSliceMap (J I : Type u) {nJ nI} [IndexType J nJ] [IndexType I nI
   its computation might be too slow. -/
   map : J → I
 
+  -- todo: just assume that J is `TensorIndexType` and get all the data from it
   jrank : Nat
   jdims : Vector Nat jrank
   -- these should be dense strides!
