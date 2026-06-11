@@ -1,8 +1,10 @@
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Add
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
 import Mathlib.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import NumLean.Mathlib.FiberedAddTorsor
 
 namespace NumLean
@@ -213,15 +215,14 @@ end Basic
 
 section Rules
 
-variable {𝕜 E F X Y Z : Type*}
+variable {𝕜 E F G X Y Z : Type*}
 variable [NontriviallyNormedField 𝕜]
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-variable [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+variable [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 variable [TopologicalSpace X] [TopologicalSpace Y]
-variable [FiberedAddTorsor E X] [FiberedAddTorsor F Y]
+variable [TopologicalFiberedAddTorsor E X] [TopologicalFiberedAddTorsor F Y]
 
-omit [TopologicalSpace Y] in
 theorem hasTDerivAt_const (y : Y) (x : X) :
     HasTDerivAt (fun _ : X => y) (0 : E →L[𝕜] F) x := by
   constructor
@@ -235,22 +236,22 @@ theorem hasTDerivAt_const (y : Y) (x : X) :
 
 theorem tDifferentiableAt_const (y : Y) (x : X) :
     TDifferentiableAt (E := E) (F := F) 𝕜 (fun _ : X => y) x :=
-  (hasTDerivAt_const (𝕜 := 𝕜) (E := E) (F := F) y x).tDifferentiableAt
+  (hasTDerivAt_const y x).tDifferentiableAt
 
-theorem hasTDerivAt_id (x : X) (hdom : ∀ᶠ y in 𝓝 x, fiber y x) :
+theorem hasTDerivAt_id (x : X) :
     HasTDerivAt (fun x : X => x)
       (ContinuousLinearMap.id 𝕜 E) x := by
   constructor
-  · simpa [nhdsWithin_univ] using hdom
+  · simpa [nhdsWithin_univ] using eventually_fiber_nhds (G := E) x
   · have hfun : (fun v : E => (v +ᵥ x) -ᵥ x) = fun v : E => v := by
       funext v
       exact vadd_vsub v x
     rw [hfun]
     exact hasFDerivWithinAt_univ.2 (hasFDerivAt_id 0)
 
-theorem tDifferentiableAt_id (x : X) (hdom : ∀ᶠ y in 𝓝 x, fiber y x) :
+theorem tdifferentiableAt_id (x : X) :
     TDifferentiableAt (E := E) (F := E) 𝕜 (fun x : X => x) x :=
-  (hasTDerivAt_id (𝕜 := 𝕜) x hdom).tDifferentiableAt
+  (hasTDerivAt_id (𝕜 := 𝕜) x).tDifferentiableAt
 
 theorem hasTDerivAt_iff_comp_vadd {c : X → F} {c' : E →L[𝕜] F} {x : X} :
     HasTDerivAt (𝕜 := 𝕜) (E := E) (F := F) c c' x ↔
@@ -315,10 +316,69 @@ theorem TDifferentiableAt.neg {c : X → F} {x : X}
   rcases hc with ⟨c', hc'⟩
   exact ⟨-c', hc'.neg⟩
 
+theorem HasTDerivAt.const_smul {f : X → F} {f' : E →L[𝕜] F} {x : X}
+    (hf : HasTDerivAt f f' x) (c : 𝕜) :
+    HasTDerivAt (fun x => c • f x) (c • f') x := by
+  rw [hasTDerivAt_iff_comp_vadd] at hf ⊢
+  exact hf.const_smul c
+
+theorem TDifferentiableAt.const_smul {f : X → F} {x : X}
+    (hf : TDifferentiableAt 𝕜 f x) (c : 𝕜) :
+    TDifferentiableAt 𝕜 (fun x => c • f x) x := by
+  rcases hf with ⟨f', hf'⟩
+  exact ⟨c • f', hf'.const_smul c⟩
+
+theorem HasTDerivAt.smul_const {c : X → 𝕜} {c' : E →L[𝕜] 𝕜} {x : X}
+    (hc : HasTDerivAt c c' x) (f : F) :
+    HasTDerivAt (fun x => c x • f) (c'.smulRight f) x := by
+  rw [hasTDerivAt_iff_comp_vadd] at hc ⊢
+  exact hc.smul_const f
+
+theorem TDifferentiableAt.smul_const {c : X → 𝕜} {x : X}
+    (hc : TDifferentiableAt 𝕜 c x) (f : F) :
+    TDifferentiableAt 𝕜 (fun x => c x • f) x := by
+  rcases hc with ⟨c', hc'⟩
+  exact ⟨c'.smulRight f, hc'.smul_const f⟩
+
+theorem HasTDerivAt.smul {c : X → 𝕜} {f : X → F} {c' : E →L[𝕜] 𝕜} {f' : E →L[𝕜] F}
+    {x : X} (hc : HasTDerivAt c c' x) (hf : HasTDerivAt f f' x) :
+    HasTDerivAt (fun x => c x • f x) (c x • f' + c'.smulRight (f x)) x := by
+  rw [hasTDerivAt_iff_comp_vadd] at hc hf ⊢
+  simpa [zero_vadd] using hc.smul hf
+
+theorem TDifferentiableAt.smul {c : X → 𝕜} {f : X → F} {x : X}
+    (hc : TDifferentiableAt 𝕜 c x) (hf : TDifferentiableAt 𝕜 f x) :
+    TDifferentiableAt 𝕜 (fun x => c x • f x) x := by
+  rcases hc with ⟨c', hc'⟩
+  rcases hf with ⟨f', hf'⟩
+  exact ⟨c x • f' + c'.smulRight (f x), hc'.smul hf'⟩
+
+theorem HasTDerivAt.sum {ι : Type*} {u : Finset ι} {A : ι → X → F}
+    {A' : ι → E →L[𝕜] F} {x : X}
+    (h : ∀ i ∈ u, HasTDerivAt (A i) (A' i) x) :
+    HasTDerivAt (∑ i ∈ u, A i) (∑ i ∈ u, A' i) x := by
+  rw [hasTDerivAt_iff_comp_vadd]
+  simpa [zero_vadd] using
+    (HasFDerivAt.fun_sum fun i hi => hasTDerivAt_iff_comp_vadd.1 (h i hi))
+
+theorem HasTDerivAt.mul {A : Type*} [NormedCommRing A] [NormedAlgebra 𝕜 A]
+    {c d : X → A} {c' d' : E →L[𝕜] A} {x : X}
+    (hc : HasTDerivAt c c' x) (hd : HasTDerivAt d d' x) :
+    HasTDerivAt (fun x => c x * d x) (c x • d' + d x • c') x := by
+  rw [hasTDerivAt_iff_comp_vadd (F := A)] at hc hd ⊢
+  simpa [zero_vadd] using hc.mul hd
+
+theorem TDifferentiableAt.mul {A : Type*} [NormedCommRing A] [NormedAlgebra 𝕜 A]
+    {c d : X → A} {x : X}
+    (hc : TDifferentiableAt 𝕜 c x) (hd : TDifferentiableAt 𝕜 d x) :
+    TDifferentiableAt 𝕜 (fun x => c x * d x) x := by
+  rcases hc with ⟨c', hc'⟩
+  rcases hd with ⟨d', hd'⟩
+  exact ⟨c x • d' + d x • c', hc'.mul hd'⟩
+
 theorem HasTDerivAt.comp_of_continuousAt
-    {Gm W : Type*} [NormedAddCommGroup Gm] [NormedSpace 𝕜 Gm]
-    [TopologicalSpace W] [FiberedAddTorsor Gm W]
-    {f : X → Y} {g : Y → W} {f' : E →L[𝕜] F} {g' : F →L[𝕜] Gm} {x : X}
+    {W : Type*} [TopologicalSpace W] [FiberedAddTorsor G W]
+    {f : X → Y} {g : Y → W} {f' : E →L[𝕜] F} {g' : F →L[𝕜] G} {x : X}
     (hg : HasTDerivAt (𝕜 := 𝕜) g g' (f x))
     (hf : HasTDerivAt (𝕜 := 𝕜) f f' x)
     (hf_cont : ContinuousAt f x)
@@ -327,7 +387,7 @@ theorem HasTDerivAt.comp_of_continuousAt
   constructor
   · simpa [nhdsWithin_univ] using hf_cont.eventually hg.eventually_fiber
   · let Fdisp : E → F := fun v => f (v +ᵥ x) -ᵥ f x
-    let Gdisp : F → Gm := fun w => g (w +ᵥ f x) -ᵥ g (f x)
+    let Gdisp : F → G := fun w => g (w +ᵥ f x) -ᵥ g (f x)
     have hFdisp_zero : Fdisp 0 = 0 := by
       dsimp [Fdisp]
       simpa using (vadd_vsub (0 : F) (f x))
@@ -347,14 +407,12 @@ theorem HasTDerivAt.comp_of_continuousAt
       rw [vsub_vadd_of_fiber hv]
     exact hasFDerivWithinAt_univ.2 (hcomp.congr_of_eventuallyEq heq)
 
-omit [TopologicalSpace Y] in
 theorem HasTDerivAt.prodMk
-    {Gm W : Type*} [NormedAddCommGroup Gm] [NormedSpace 𝕜 Gm]
-    [TopologicalSpace W] [FiberedAddTorsor Gm W]
-    {f : X → Y} {g : X → W} {f' : E →L[𝕜] F} {g' : E →L[𝕜] Gm} {x : X}
+    {W : Type*} [TopologicalSpace W] [TopologicalFiberedAddTorsor G W]
+    {f : X → Y} {g : X → W} {f' : E →L[𝕜] F} {g' : E →L[𝕜] G} {x : X}
     (hf : HasTDerivAt (𝕜 := 𝕜) f f' x)
     (hg : HasTDerivAt (𝕜 := 𝕜) g g' x) :
-    HasTDerivAt (𝕜 := 𝕜) (F := F × Gm) (fun x => (f x, g x)) (f'.prod g') x := by
+    HasTDerivAt (fun x => (f x, g x)) (f'.prod g') x := by
   constructor
   · have h : ∀ᶠ y in 𝓝 x, fiber (f y, g y) (f x, g x) := by
       filter_upwards [hf.eventually_fiber, hg.eventually_fiber] with y hy hz
@@ -369,13 +427,11 @@ theorem HasTDerivAt.prodMk
     exact hasFDerivWithinAt_univ.2 (hf.hasFDerivAt_displacement.prodMk hg.hasFDerivAt_displacement)
 
 theorem hasTDerivAt_fst
-    {P Q : Type*} [TopologicalSpace P] [TopologicalSpace Q]
-    [FiberedAddTorsor E P] [FiberedAddTorsor F Q]
-    (x : P × Q) (hfiber : ∀ᶠ y in 𝓝 x, fiber y.1 x.1) :
-    HasTDerivAt (𝕜 := 𝕜) (E := E × F) (F := E)
-      (Prod.fst : P × Q → P) (ContinuousLinearMap.fst 𝕜 E F) x := by
+    (x : X × Y) :
+    HasTDerivAt (Prod.fst : X × Y → X) (ContinuousLinearMap.fst 𝕜 E F) x := by
   constructor
-  · simpa [nhdsWithin_univ] using hfiber
+  · simpa [nhdsWithin_univ] using
+      (continuousAt_fst.eventually (eventually_fiber_nhds (G := E) x.1))
   · have hfun : (fun v : E × F => ((v +ᵥ x).1 -ᵥ x.1)) = fun v : E × F => v.1 := by
       funext v
       exact vadd_vsub v.1 x.1
@@ -383,13 +439,11 @@ theorem hasTDerivAt_fst
     exact hasFDerivWithinAt_univ.2 hasFDerivAt_fst
 
 theorem hasTDerivAt_snd
-    {P Q : Type*} [TopologicalSpace P] [TopologicalSpace Q]
-    [FiberedAddTorsor E P] [FiberedAddTorsor F Q]
-    (x : P × Q) (hfiber : ∀ᶠ y in 𝓝 x, fiber y.2 x.2) :
-    HasTDerivAt (𝕜 := 𝕜) (E := E × F) (F := F)
-      (Prod.snd : P × Q → Q) (ContinuousLinearMap.snd 𝕜 E F) x := by
+    (x : X × Y) :
+    HasTDerivAt (Prod.snd : X × Y → Y) (ContinuousLinearMap.snd 𝕜 E F) x := by
   constructor
-  · simpa [nhdsWithin_univ] using hfiber
+  · simpa [nhdsWithin_univ] using
+      (continuousAt_snd.eventually (eventually_fiber_nhds (G := F) x.2))
   · have hfun : (fun v : E × F => ((v +ᵥ x).2 -ᵥ x.2)) = fun v : E × F => v.2 := by
       funext v
       exact vadd_vsub v.2 x.2
@@ -400,11 +454,12 @@ end Rules
 
 section TopologicalRules
 
-variable {𝕜 E F X Y : Type*}
+variable {𝕜 E F G X Y Z : Type*}
 variable [NontriviallyNormedField 𝕜]
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-variable [TopologicalSpace X] [TopologicalSpace Y]
+variable [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+variable [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
 variable [TopologicalFiberedAddTorsor E X] [TopologicalFiberedAddTorsor F Y]
 variable {f : X → Y} {f' : E →L[𝕜] F} {x : X}
 
@@ -417,15 +472,52 @@ theorem HasTDerivAt.continuousAt (hf : HasTDerivAt f f' x) :
     (continuousAt_vadd_const (G := F) (f x))
 
 theorem HasTDerivAt.comp
-    {Gm W : Type*} [NormedAddCommGroup Gm] [NormedSpace 𝕜 Gm]
-    [TopologicalSpace W] [TopologicalFiberedAddTorsor Gm W]
-    {g : Y → W} {g' : F →L[𝕜] Gm}
+    [TopologicalFiberedAddTorsor G Z]
+    {g : Y → Z} {g' : F →L[𝕜] G}
     (hg : HasTDerivAt (𝕜 := 𝕜) g g' (f x))
     (hf : HasTDerivAt (𝕜 := 𝕜) f f' x) :
     HasTDerivAt (𝕜 := 𝕜) (fun x => g (f x)) (g'.comp f') x :=
   hg.comp_of_continuousAt hf hf.continuousAt (continuousAt_vadd_const (G := E) x)
 
 end TopologicalRules
+
+section RealRules
+
+variable {E F X : Type*}
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable [NormedAddCommGroup F] [NormedSpace ℝ F]
+variable [TopologicalSpace X] [TopologicalFiberedAddTorsor E X]
+variable {f : X → F} {f' : E →L[ℝ] F} {x : X}
+
+theorem HasTDerivAt.norm {g' : F →L[ℝ] ℝ}
+    (hf : HasTDerivAt f f' x) (hnorm : HasFDerivAt (fun y : F => ‖y‖) g' (f x)) :
+    HasTDerivAt (fun x => ‖f x‖) (g'.comp f') x := by
+  have hnorm' : HasTDerivAt (fun y : F => ‖y‖) g' (f x) :=
+    (hasTDerivAt_iff_hasFDerivAt (E := F) (F := ℝ)).2 hnorm
+  simpa using hnorm'.comp hf
+
+end RealRules
+
+section RealInnerProductRules
+
+variable {E F X : Type*}
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+variable [TopologicalSpace X] [TopologicalFiberedAddTorsor E X]
+variable {f g : X → F} {f' g' : E →L[ℝ] F} {x : X}
+
+theorem HasTDerivAt.inner (hf : HasTDerivAt f f' x) (hg : HasTDerivAt g g' x) :
+    HasTDerivAt (fun x => inner (𝕜 := ℝ) (f x) (g x))
+      ((fderivInnerCLM ℝ (f x, g x)).comp <| f'.prod g') x := by
+  rw [hasTDerivAt_iff_comp_vadd] at hf hg ⊢
+  simpa [zero_vadd] using hf.inner ℝ hg
+
+theorem HasTDerivAt.norm_sq (hf : HasTDerivAt f f' x) :
+    HasTDerivAt (fun x => ‖f x‖ ^ 2) (2 • (innerSL ℝ (f x)).comp f') x := by
+  rw [hasTDerivAt_iff_comp_vadd] at hf ⊢
+  simpa [zero_vadd] using hf.norm_sq
+
+end RealInnerProductRules
 
 end FiberedAddTorsor
 

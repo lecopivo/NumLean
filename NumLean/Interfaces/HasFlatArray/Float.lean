@@ -24,4 +24,18 @@ instance : HasDefaultFlatArray Float FloatArray 1 where
     simp [ArrayType.get, FloatArray.get, FloatArray.set]
     grind
 
+  push xs x := xs.push x
+  size_push := by
+    intro ⟨ks⟩ _
+    simp [ArrayType.size, FloatArray.size, FloatArray.push, Array.size_push]
+  array_get_push_lt := by
+    intro ⟨ks⟩ x i hi
+    simpa [ArrayType.get, FloatArray.get, FloatArray.push] using Array.getElem_push_lt (xs := ks) (x := x) hi
+  array_get_push_eq := by
+    intro ⟨ks⟩ x i hi
+    have h : i = 0 := by grind
+    subst h
+    change (ks.push x)[ks.size] = x
+    exact Array.getElem_push_eq (xs := ks) (x := x)
+
 end NumLean

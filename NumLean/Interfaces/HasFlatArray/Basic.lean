@@ -42,6 +42,15 @@ class HasFlatArray (X : Type u) (Ks : Type v) (nX : outParam Nat)
   -- /-- Write `x` into `ks` starting at `USize` scalar offset `off`. -/
   -- uset (ks : Ks) (off : USize) (x : X) (h : off.toNat + nX ≤ ArrayType.size ks) : Ks
 
+  /-- Append `x` to the end of `ks` as one contiguous `X` block. -/
+  push (ks : Ks) (x : X) : Ks
+  size_push (ks : Ks) (x : X) : ArrayType.size (push ks x) = ArrayType.size ks + nX
+  array_get_push_lt (ks : Ks) (x : X) (i : Nat) (hi : i < ArrayType.size ks) :
+    ArrayType.get (push ks x) i (by rw [size_push]; grind) = ArrayType.get ks i hi
+  array_get_push_eq (ks : Ks) (x : X) (i : Nat) (hi : i < nX) :
+    ArrayType.get (push ks x) (ArrayType.size ks + i) (by rw [size_push]; grind) =
+      getComp x i hi
+
 /-- The default flat array type for `X`. -/
 class HasDefaultFlatArray (X : Type u) (Ks : outParam (Type v)) (nX : outParam Nat)
     {K : outParam (Type w)} [ArrayType Ks K]
@@ -70,6 +79,25 @@ theorem get_set_ne (ks : Ks) (off off' : Nat) (x : X) (hoff : off + nX ≤ Array
   simp only [getComp_get_eq_array_get]
   rw[array_get_set_ne]
   all_goals grind
+
+theorem get_push_eq (ks : Ks) (x : X) :
+    get (X := X) (push ks x) (ArrayType.size ks) (by rw [size_push]; grind) = x := by
+  apply FlatRepr.ext K
+  intro i hi
+  rw [getComp_get_eq_array_get, array_get_push_eq]
+
+theorem get_push_lt (ks : Ks) (off : Nat) (x : X)
+    (hoff : off + nX ≤ ArrayType.size ks) :
+    get (X := X) (push ks x) off (by
+      rw [size_push]
+      exact Nat.le_trans hoff (Nat.le_add_right _ _)) = get (X := X) ks off hoff := by
+  apply FlatRepr.ext K
+  intro i hi
+  rw [getComp_get_eq_array_get, getComp_get_eq_array_get]
+  have hlt : off + i < ArrayType.size ks := by
+    have := hoff
+    grind
+  rw [array_get_push_lt (ks := ks) (x := x) (i := off + i) hlt]
 
 end HasFlatArray
 
