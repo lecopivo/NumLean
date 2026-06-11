@@ -1,6 +1,7 @@
 import NumLean.Interfaces.HasFlatArray.Basic
 import NumLean.Interfaces.SetElem
 import Mathlib.Tactic.GCongr
+import Mathlib.Logic.Function.Iterate
 
 namespace NumLean
 
@@ -184,9 +185,11 @@ theorem ext {xs ys : FlatArray X}
 /-! ### Empty arrays -/
 
 @[inline]
-def emptyWithCapacity (c : Nat) : FlatArray X := sorry
+def emptyWithCapacity (c : Nat) : FlatArray X :=
+  { data := ArrayType.emptyWithCapacity (c * nX)
+    h_size := by rw[ArrayType.size_spec, ArrayType.emptyWithCapacity_spec]; simp }
 
-def empty : FlatArray X := sorry
+def empty : FlatArray X := emptyWithCapacity 0
 
 instance : EmptyCollection (FlatArray X) where
   emptyCollection := empty
@@ -205,29 +208,39 @@ theorem size_empty : (∅ : FlatArray X).size = 0 := by
 
 /-! ### Basic queries -/
 
-def isEmpty (xs : FlatArray X) : Bool := sorry
+def isEmpty (xs : FlatArray X) : Bool := xs.size = 0
 
-@[inline]
-def get? (xs : FlatArray X) (i : Nat) : Option X := sorry
+instance : GetElem? (FlatArray X) Nat X (fun xs i => i < xs.size) where
+  getElem? xs i :=
+    if h : i < xs.size then
+      some xs[i]
+    else
+      none
 
-@[inline]
-def getD [Inhabited X] (xs : FlatArray X) (i : Nat) : X := sorry
+instance : LawfulGetElem (FlatArray X) Nat X (fun xs i => i < xs.size) where
 
-@[inline]
-def get! [Inhabited X] (xs : FlatArray X) (i : Nat) : X := sorry
+def back? (xs : FlatArray X) : Option X :=
+  if h : xs.size - 1 < xs.size then
+    some xs[xs.size - 1]
+  else
+    none
 
-def back? (xs : FlatArray X) : Option X := sorry
+def back (xs : FlatArray X) (h : 0 < xs.size) : X :=
+  xs[xs.size - 1]
 
-def back (xs : FlatArray X) (h : 0 < xs.size) : X := sorry
-
-def back! [Inhabited X] (xs : FlatArray X) : X := sorry
+def back! [Inhabited X] (xs : FlatArray X) : X :=
+  xs[xs.size - 1]!
 
 /-! ### Push and pop -/
 
 @[inline]
-def push (xs : FlatArray X) (x : X) : FlatArray X := sorry
+def push (xs : FlatArray X) (x : X) : FlatArray X :=
+  { data := HasFlatArray.push xs.data x
+    h_size := by simp [HasFlatArray.size_push, xs.h_size] }
 
-def pop (xs : FlatArray X) : FlatArray X := sorry
+def pop (xs : FlatArray X) : FlatArray X :=
+  { data := Nat.iterate ArrayType.pop nX xs.data
+    h_size := by sorry }
 
 theorem size_push_of_pos (xs : FlatArray X) (x : X) (hnX : 0 < nX) :
     (xs.push x).size = xs.size + 1 := by
@@ -239,7 +252,8 @@ theorem size_pop (xs : FlatArray X) : xs.pop.size = xs.size - 1 := by
 
 @[simp]
 theorem getElem_push_eq (xs : FlatArray X) (x : X) (hnX : 0 < nX) :
-    (xs.push x)[xs.size]'(by rw [size_push_of_pos xs x hnX]; exact Nat.lt_succ_self xs.size) = x := by
+    (xs.push x)[xs.size]'(by rw [size_push_of_pos xs x hnX];
+                             exact Nat.lt_succ_self xs.size) = x := by
   sorry
 
 @[simp]
@@ -250,7 +264,9 @@ theorem getElem_push_lt (xs : FlatArray X) (x : X) (i : Nat) (hi : i < xs.size)
 
 /-! ### Replication -/
 
-def replicate (n : Nat) (x : X) : FlatArray X := sorry
+def replicate (n : Nat) (x : X) : FlatArray X :=
+  let xs : FlatArray X := .emptyWithCapacity n
+  Nat.iterate (push · x) n xs
 
 @[simp]
 theorem size_replicate (n : Nat) (x : X) :
@@ -259,10 +275,17 @@ theorem size_replicate (n : Nat) (x : X) :
 
 /-! ### Swapping -/
 
+-- todo: these should be part of ArrayType
+def ArrayType.swapSlice (n : Nat) (xs : Ks) (xoff xinc : Nat) (yx : Ks) (yoff yinc : Nat) : Ks × Ks := sorry
+-- todo: this is probably valid only if the ranges are non-overlapping
+def ArrayType.swapSelf (n : Nat) (xs : Ks) (xoff xinc : Nat) (yoff yinc : Nat) : Ks := sorry
+
 @[inline]
 def swap (xs : FlatArray X) (i j : Nat)
     (hi : i < xs.size := by get_elem_tactic) (hj : j < xs.size := by get_elem_tactic) :
-    FlatArray X := sorry
+    FlatArray X :=
+  { data := ArrayType.swapSelf nX xs.data (i*nX) 1 (j*nX) 1
+    h_size := sorry }
 
 def swapIfInBounds (xs : FlatArray X) (i j : Nat) : FlatArray X := sorry
 
@@ -290,8 +313,11 @@ theorem getElem_swap_of_ne (xs : FlatArray X) (i j k : Nat)
 
 /-! ### Append -/
 
+
 @[inline]
-def append (xs ys : FlatArray X) : FlatArray X := sorry
+def append (xs ys : FlatArray X) : FlatArray X :=
+  { data := ArrayType.append xs.data ys.data
+    h_size := sorry }
 
 instance : Append (FlatArray X) where
   append := append
@@ -312,7 +338,9 @@ theorem getElem_append_right {xs ys : FlatArray X} {i : Nat} (hle : xs.size ≤ 
 
 /-! ### Extraction and slicing -/
 
-def extract (xs : FlatArray X) (start : Nat := 0) (stop : Nat := xs.size) : FlatArray X := sorry
+def extract (xs : FlatArray X) (start : Nat := 0) (stop : Nat := xs.size) : FlatArray X :=
+  { data := ArrayType.extractSlice ((stop - start) * nX) xs.data (start * nX) 1
+    h_size := sorry }
 
 def extractSlice (n : Nat) (xs : FlatArray X) (srcOff srcInc : Nat) : FlatArray X := sorry
 
@@ -343,3 +371,37 @@ theorem size_setIfInBounds (xs : FlatArray X) (i : Nat) (x : X) :
 end FlatArray
 
 end NumLean
+
+
+
+def ArrayType.copySlice (dims count : Vector Nat r)
+    (src : Array α) (srcoff srcinc : Vector Nat r)
+    (dst : Array α) (dstoff srcinc : Vector Nat r) := Id.run do
+  let mut srcoff := srcoff
+  let mut dstoff := dstoff
+  for i0 in 0...count[0] do
+      ...
+            for ir in 0...count[r-1] do
+              dst[dstoff] = src[srcoff]
+              srcoff += srcinc[r-1]
+              dstoff += dstinc[r-1]
+            srcoff += srcinc[r-1]*count[r-1]
+            dstoff += srcinc[r-1]*count[r-1]
+      ...
+    srcoff += srcinc[1] * count[1]
+    dstoff += srcinc[1] * count[1]
+
+
+def ArrayType.copySlice' [Inhabited α]
+    (dims count : Vector Nat 2)
+    (src : Array α) (srcoff srcinc : Vector Nat 2)
+    (dst : Array α) (dstoff dstinc : Vector Nat 2) := Id.run do
+
+  let mut dst := dst
+  for i in 0...count[0] do
+    for j in 0...count[1] do
+      let srcidx := (srcoff[0] + i * srcinc[0]) * dims[1] + (srcoff[1] + j * srcinc[1])
+      let dstidx := (dstoff[0] + i * dstinc[0]) * dims[1] + (dstoff[1] + j * dstinc[1])
+      dst := dst.set! dstidx src[srcidx]!
+
+  return dst
