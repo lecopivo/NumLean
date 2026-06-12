@@ -1,97 +1,91 @@
-import NumLean.Data.TensorIndex.Basic
+import NumLean.Data.TensorIndex.TensorSliceMap
+import NumLean.Data.Array.TensorOps
+import NumLean.Data.FloatArray.TensorOps
 import NumLean.Interfaces.ArrayType.Array
 
 namespace NumLean
 
-namespace Array
-
-mutual
-
-  /-- Recursive flat-memory tensor slice copy reference implementation.
-
-  `count` describes the copied box. `srcOffset`/`dstOffset` are flat base offsets, and
-  `srcStride`/`dstStride` are flat strides for each copied axis. -/
-  def copyTensorSliceList {α : Type u} (rank : Nat) (count : List Nat)
-      (src : Array α) (srcOffset : Nat) (srcStride : List Nat)
-      (dst : Array α) (dstOffset : Nat) (dstStride : List Nat)
-      (hrank : count.length = rank ∧ srcStride.length = rank ∧ dstStride.length = rank) :
-      Array α :=
-    match rank, count, srcStride, dstStride with
-    | 0, [], [], [] =>
-        if h : srcOffset < src.size ∧ dstOffset < dst.size then
-          dst.set dstOffset src[srcOffset]
-        else
-          dst
-    | rank + 1, n :: count, srcS :: srcStride, dstS :: dstStride =>
-        copyTensorSliceListLoop rank n 0 count src srcOffset srcS srcStride
-          dst dstOffset dstS dstStride (by grind)
-    | _, _, _, _ => dst
-  termination_by (rank + 1, 0)
-
-  /-- Tail-recursive loop over the current tensor axis. -/
-  def copyTensorSliceListLoop {α : Type u} (rank fuel i : Nat) (count : List Nat)
-      (src : Array α) (srcOffset srcS : Nat) (srcStride : List Nat)
-      (dst : Array α) (dstOffset dstS : Nat) (dstStride : List Nat)
-      (hrank : count.length = rank ∧ srcStride.length = rank ∧ dstStride.length = rank) :
-      Array α :=
-    match fuel with
-    | 0 => dst
-    | fuel + 1 =>
-        copyTensorSliceListLoop rank fuel (i + 1) count src srcOffset srcS srcStride
-          (copyTensorSliceList rank count src (srcOffset + i * srcS) srcStride
-            dst (dstOffset + i * dstS) dstStride hrank)
-          dstOffset dstS dstStride hrank
-  termination_by (rank + 1, fuel + 1)
-  decreasing_by
-    all_goals simp_wf
-    all_goals omega
-
-end
-
-
-
-/-- Flat-memory tensor slice copy reference implementation. -/
-def copyTensorSlice {α : Type u} {r : Nat} (count : Vector Nat r)
-    (src : Array α) (srcOffset : Nat) (srcStride : Vector Nat r)
-    (dst : Array α) (dstOffset : Nat) (dstStride : Vector Nat r) : Array α :=
-  copyTensorSliceList r count.toList src srcOffset srcStride.toList dst dstOffset dstStride.toList
-    (by simp)
-
-end Array
-
 /-- Tensor-style operations on an array storage type.
 
-The core operation copies a rank-polymorphic flat-memory strided slice from `src` to `dst`.
-Its specification is agreement with the reference implementation on plain `Array`s. -/
+Operations iterate over the logical tensor box `counts`, not over source or destination storage
+sizes. Bounds and no-alias/injectivity assumptions belong to the lawful/spec layer. -/
 class TensorArrayOps (Ks : Type u) (K : outParam (Type v)) [ArrayType Ks K] where
-  copyTensorSlice {r : Nat} (count : Vector Nat r)
-    (src : Ks) (srcOffset : Nat) (srcStride : Vector Nat r)
-    (dst : Ks) (dstOffset : Nat) (dstStride : Vector Nat r) : Ks
+  fillTensorSlice {rank : Nat} (counts : Vector Nat rank)
+    (dst : Ks) (dstOff : Nat) (dstStrides : Vector Nat rank) (x : K) : Ks
 
-  copyTensorSlice_spec {r : Nat} (count : Vector Nat r)
-    (src : Ks) (srcOffset : Nat) (srcStride : Vector Nat r)
-    (dst : Ks) (dstOffset : Nat) (dstStride : Vector Nat r) :
-    ArrayType.toArray (copyTensorSlice count src srcOffset srcStride dst dstOffset dstStride)
-    =
-    Array.copyTensorSlice count (ArrayType.toArray src) srcOffset srcStride
-      (ArrayType.toArray dst) dstOffset dstStride
+  copyTensorSlice {rank : Nat} (counts : Vector Nat rank)
+    (src : Ks) (srcOff : Nat) (srcStrides : Vector Nat rank)
+    (dst : Ks) (dstOff : Nat) (dstStrides : Vector Nat rank) : Ks
+
+  extractTensorSlice [Inhabited K] {rank : Nat} (counts : Vector Nat rank)
+    (src : Ks) (srcOff : Nat) (srcStrides : Vector Nat rank) : Ks
 
 namespace TensorArrayOps
 
 variable {Ks : Type u} {K : Type v} [ArrayType Ks K] [TensorArrayOps Ks K]
 
-theorem toArray_copyTensorSlice {r : Nat} (count : Vector Nat r)
-    (src : Ks) (srcOffset : Nat) (srcStride : Vector Nat r)
-    (dst : Ks) (dstOffset : Nat) (dstStride : Vector Nat r) :
-    ArrayType.toArray (copyTensorSlice count src srcOffset srcStride dst dstOffset dstStride) =
-      Array.copyTensorSlice count (ArrayType.toArray src) srcOffset srcStride
-        (ArrayType.toArray dst) dstOffset dstStride :=
-  TensorArrayOps.copyTensorSlice_spec count src srcOffset srcStride dst dstOffset dstStride
+/-- Lawfulness of tensor array operations against the reference `Array` implementation.
+
+The specs are stated under the assumptions that the logical tensor slice has injective strides and
+that all produced offsets are in bounds for the corresponding storage. -/
+class LawfulTensorArrayOps (Ks : Type u) {K : outParam (Type v)}
+    [ArrayType Ks K] [TensorArrayOps Ks K] where
+  fillTensorSlice_spec {rank : Nat} (counts : Vector Nat rank)
+    (dst : Ks) (dstOff : Nat) (dstStrides : Vector Nat rank) (x : K)
+    (hdstValid : TensorIndex.ValidStrides counts dstStrides)
+    (hdstBounds : TensorSliceInBounds counts dstOff dstStrides (ArrayType.size dst)) :
+    ArrayType.toArray (fillTensorSlice counts dst dstOff dstStrides x) =
+      Array.fillTensorSlice counts (ArrayType.toArray dst) dstOff dstStrides x
+
+  copyTensorSlice_spec {rank : Nat} (counts : Vector Nat rank)
+    (src : Ks) (srcOff : Nat) (srcStrides : Vector Nat rank)
+    (dst : Ks) (dstOff : Nat) (dstStrides : Vector Nat rank)
+    (hsrcValid : TensorIndex.ValidStrides counts srcStrides)
+    (hdstValid : TensorIndex.ValidStrides counts dstStrides)
+    (hsrcBounds : TensorSliceInBounds counts srcOff srcStrides (ArrayType.size src))
+    (hdstBounds : TensorSliceInBounds counts dstOff dstStrides (ArrayType.size dst)) :
+    ArrayType.toArray (copyTensorSlice counts src srcOff srcStrides dst dstOff dstStrides) =
+      Array.copyTensorSlice counts (ArrayType.toArray src) srcOff srcStrides
+        (ArrayType.toArray dst) dstOff dstStrides
+
+  extractTensorSlice_spec [Inhabited K] {rank : Nat} (counts : Vector Nat rank)
+    (src : Ks) (srcOff : Nat) (srcStrides : Vector Nat rank)
+    (hsrcValid : TensorIndex.ValidStrides counts srcStrides)
+    (hsrcBounds : TensorSliceInBounds counts srcOff srcStrides (ArrayType.size src)) :
+    ArrayType.toArray (extractTensorSlice counts src srcOff srcStrides) =
+      Array.extractTensorSlice counts (ArrayType.toArray src) srcOff srcStrides
 
 instance {K : Type u} : TensorArrayOps (Array K) K where
-  copyTensorSlice count src srcOffset srcStride dst dstOffset dstStride :=
-    Array.copyTensorSlice count src srcOffset srcStride dst dstOffset dstStride
-  copyTensorSlice_spec _ _ _ _ _ _ _ := rfl
+  fillTensorSlice counts dst dstOff dstStrides x :=
+    Array.fillTensorSlice counts dst dstOff dstStrides x
+  copyTensorSlice counts src srcOff srcStrides dst dstOff dstStrides :=
+    Array.copyTensorSlice counts src srcOff srcStrides dst dstOff dstStrides
+  extractTensorSlice counts src srcOff srcStrides :=
+    Array.extractTensorSlice counts src srcOff srcStrides
+
+instance {K : Type u} : LawfulTensorArrayOps (Array K) where
+  fillTensorSlice_spec := by intros; rfl
+  copyTensorSlice_spec := by intros; rfl
+  extractTensorSlice_spec := by intros; rfl
+
+instance : TensorArrayOps FloatArray Float where
+  fillTensorSlice counts dst dstOff dstStrides x :=
+    FloatArray.fillTensorSliceRef counts dst dstOff dstStrides x
+  copyTensorSlice counts src srcOff srcStrides dst dstOff dstStrides :=
+    FloatArray.copyTensorSliceRef counts src srcOff srcStrides dst dstOff dstStrides
+  extractTensorSlice counts src srcOff srcStrides :=
+    FloatArray.extractTensorSliceRef counts src srcOff srcStrides
+
+instance : LawfulTensorArrayOps FloatArray where
+  fillTensorSlice_spec := by
+    intros
+    simp [TensorArrayOps.fillTensorSlice, FloatArray.fillTensorSliceRef, ArrayType.toArray]
+  copyTensorSlice_spec := by
+    intros
+    simp [TensorArrayOps.copyTensorSlice, FloatArray.copyTensorSliceRef, ArrayType.toArray]
+  extractTensorSlice_spec := by
+    intros
+    simp [TensorArrayOps.extractTensorSlice, FloatArray.extractTensorSliceRef, ArrayType.toArray]
 
 end TensorArrayOps
 

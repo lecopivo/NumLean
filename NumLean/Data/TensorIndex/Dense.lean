@@ -169,6 +169,20 @@ theorem validStrides_denseStridesForOrder {rank : Nat}
   subst hval
   rfl
 
+/-- Dense offsets are always within the tensor's flat element count. -/
+theorem offset_denseStridesForOrder_lt_numel {rank : Nat}
+    {dims : Vector Nat rank} (order : AxisOrder rank) (idx : TensorIndex dims) :
+    idx.offset (denseStridesForOrder dims order) < numel dims := by
+  have hbound : InBounds (Vector.ofFn fun i : Fin rank => idx.val[order i])
+      (Vector.ofFn fun i : Fin rank => dims[order i]) := by
+    intro i
+    simpa using idx.valid (order i)
+  have hnumel : numel (Vector.ofFn fun i : Fin rank => dims[order i]) = numel dims := by
+    unfold numel
+    simpa using (Equiv.prod_comp order (fun i : Fin rank => dims[i]))
+  simpa [offset, offsetOf_denseStridesForOrder_eq_denseOffset dims idx.val order] using
+    (hnumel ▸ denseOffset_lt_numel hbound)
+
 theorem validStrides_colMajorStrides {rank : Nat} (dims : Vector Nat rank) :
     ValidStrides dims (colMajorStrides dims) := by
   simpa [colMajorStrides] using

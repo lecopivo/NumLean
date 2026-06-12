@@ -1,5 +1,6 @@
 import Mathlib.Data.Vector.Basic
 import Mathlib.Tactic
+import Init.Data.Iterators
 
 open scoped BigOperators
 
@@ -83,6 +84,97 @@ theorem offsetOf_eq_sum {r : Nat} (stride idx : Vector Nat r) :
     offsetOf stride idx =
       ∑ i : Fin r, idx[i] * stride[i] :=
   rfl
+
+theorem numel_decomp_succ {n : Nat} (dims : Vector Nat (n + 1)) :
+    numel dims = dims[0] * numel (Vector.ofFn fun j : Fin n => dims[j.succ]) := by
+  unfold numel
+  rw [Fin.prod_univ_succ]
+  simp
+
+/-- Add one leading coordinate to a tensor index. -/
+def cons {rank : Nat} {dims : Vector Nat (rank + 1)}
+    (i : Fin dims[0])
+    (tail : TensorIndex (Vector.ofFn fun j : Fin rank => dims[j.succ])) :
+    TensorIndex dims where
+  val := Vector.ofFn fun axis : Fin (rank + 1) =>
+    match axis with
+    | ⟨0, _⟩ => i.1
+    | ⟨k + 1, hk⟩ => tail.val.get ⟨k, by omega⟩
+  valid := by
+    intro axis
+    cases axis with
+    | mk axis haxis =>
+      cases axis with
+      | zero => simp [i.2]
+      | succ k =>
+          simpa using tail.valid ⟨k, by omega⟩
+
+/-- Decode a dense row-major flat index into a tensor index. -/
+def unflattenRowMajor : {rank : Nat} → (dims : Vector Nat rank) →
+    Fin (numel dims) → TensorIndex dims
+  | 0, dims, _ =>
+      { val := Vector.ofFn fun i : Fin 0 => i.elim0
+        valid := by intro i; exact i.elim0 }
+  | rank + 1, dims, flat =>
+      let tailDims := Vector.ofFn fun j : Fin rank => dims[j.succ]
+      let tailNumel := numel tailDims
+      have hflat : flat.1 < dims[0] * tailNumel := by
+        change flat.1 < dims[0] * numel tailDims
+        simpa [tailDims, numel_decomp_succ] using flat.2
+      have htailPos : 0 < tailNumel := by
+        exact Nat.pos_of_ne_zero fun hzero => by
+          rw [hzero, Nat.mul_zero] at hflat
+          exact Nat.not_lt_zero _ hflat
+      let head : Fin dims[0] :=
+        ⟨flat.1 / tailNumel, by
+          rw [Nat.div_lt_iff_lt_mul htailPos]
+          simpa only [Nat.mul_comm dims[0] tailNumel] using hflat⟩
+      let tail : TensorIndex tailDims :=
+        unflattenRowMajor tailDims ⟨flat.1 % tailNumel, Nat.mod_lt _ htailPos⟩
+      cons head tail
+
+/-- Decode a dense flat index into a tensor index using an explicit axis order.
+
+Currently this shares the row-major decoder; `rangeForOrder` carries the order in its iterator state
+so the public API is ready for an order-specialized decoder. -/
+def unflattenForOrder {rank : Nat} (dims : Vector Nat rank)
+    (_axis : AxisOrder rank) : Fin (numel dims) → TensorIndex dims :=
+  unflattenRowMajor dims
+
+namespace Iterator
+
+open Std.Iterators
+
+/-- Internal state for iterating over tensor indices. -/
+structure State {rank : Nat} (dims : Vector Nat rank) (axis : AxisOrder rank) where
+  pos : Nat
+
+@[always_inline, inline]
+instance {rank : Nat} {dims : Vector Nat rank} {axis : AxisOrder rank} [Pure m] :
+    Iterator (State dims axis) m (TensorIndex dims) where
+  IsPlausibleStep _ _ := True
+  step it := pure <| Std.Shrink.deflate <|
+    if h : it.internalState.pos < numel dims then
+      let idx := unflattenForOrder dims axis ⟨it.internalState.pos, h⟩
+      ⟨.yield (toIterM { pos := it.internalState.pos + 1 } m
+        (TensorIndex dims)) idx, trivial⟩
+    else
+      ⟨.done, trivial⟩
+
+@[always_inline, inline]
+instance {rank : Nat} {dims : Vector Nat rank} {axis : AxisOrder rank} [Monad m]
+    {n : Type x → Type x'} [Monad n] :
+    IteratorLoop (State dims axis) m n :=
+  .defaultImplementation
+
+end Iterator
+
+/-- Iterate over all tensor indices for a shape using Lean's `Std.Iter` API. -/
+@[always_inline, inline]
+def range {rank : Nat} (dims : Vector Nat rank)
+    (axis : AxisOrder rank := rowMajorAxisOrder rank) :
+    Std.Iterators.Iter (α := Iterator.State dims axis) (TensorIndex dims) :=
+  (⟨{ pos := 0 }⟩ : Std.Iterators.Iter (α := Iterator.State dims axis) (TensorIndex dims))
 
 end TensorIndex
 
