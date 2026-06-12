@@ -4,32 +4,38 @@ open System Lake DSL
 package «NumLean» where
   version := v!"0.1.0"
   keywords := #["math"]
-  moreLinkArgs := #["-L.lake/build/lib", "-lNumLeanNative"]
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.30.0"
 
+target libNumLeanNative pkg : Dynlib := do
+  let entries ← (pkg.dir / "c").readDir
+  let cFiles := entries.filterMap fun entry =>
+    if entry.path.extension == some "c" then
+      some entry.path
+    else
+      none
+  let objJobs ← cFiles.mapM fun cFile => do
+    let srcJob ← inputFile cFile true
+    let oFile := (pkg.buildDir / "c" / cFile.fileName.get!).withExtension "o"
+    buildO oFile srcJob #["-I", (← getLeanIncludeDir).toString] #["-fPIC"] "cc" getLeanTrace
+  buildSharedLib "NumLeanNative" (pkg.sharedLibDir / nameToSharedLib "NumLeanNative")
+    objJobs #[] #[] #[] "cc" getLeanTrace
+
 @[default_target]
 lean_lib NumLean where
-  extraDepTargets := #[`NumLeanNative]
+
+lean_lib NumLean.Data.Float32Array where
+  moreLinkLibs := #[libNumLeanNative]
+  precompileModules := true
+
+lean_lib NumLean.Data.FloatArray.TensorOps where
+  moreLinkLibs := #[libNumLeanNative]
+  precompileModules := true
 
 lean_exe floatArrayTensorOpsTest where
   root := `Tests.FloatArrayTensorOps
-  extraDepTargets := #[`NumLeanNative]
   supportInterpreter := true
 
-extern_lib NumLeanNative pkg := do
-  let float32ArraySrcJob ← inputFile (pkg.dir / "c" / "float32_array.c") true
-  let tensorOpsSrcJob ← inputFile (pkg.dir / "c" / "float_array_tensor_ops.c") true
-  let lean ← getLeanInstall
-  let float32ArrayOJob ← buildO
-    (pkg.buildDir / "c" / "float32_array.o")
-    float32ArraySrcJob
-    #["-I", lean.includeDir.toString]
-    #["-fPIC"]
-  let tensorOpsOJob ← buildO
-    (pkg.buildDir / "c" / "float_array_tensor_ops.o")
-    tensorOpsSrcJob
-    #["-I", lean.includeDir.toString]
-    #["-fPIC"]
-  buildStaticLib (pkg.staticLibDir / nameToStaticLib "NumLeanNative") #[float32ArrayOJob, tensorOpsOJob]
+lean_lib Tests.Float32ArrayEval where
+  precompileModules := true

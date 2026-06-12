@@ -2,6 +2,7 @@ import NumLean.Algebra.Complex
 import NumLean.Algebra.Deriving
 import NumLean.Algebra.DerivingExamples
 import NumLean.Algebra.Equiv
+import NumLean.Algebra.Field
 import NumLean.Algebra.Float
 import NumLean.Algebra.Instances
 import NumLean.Algebra.Ops

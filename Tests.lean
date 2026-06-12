@@ -1,1 +1,2 @@
+import Tests.Float32ArrayEval
 import Tests.FloatArrayTensorOps
