@@ -53,7 +53,7 @@ unif_hint (prec : Float.Precision) where
 #guard_msgs in
 #check Float[64]
 
-/-- info: fun p ↦ Float[p] : Float.Precision → Type -/
+/-- info: fun p => Float[p] : Float.Precision → Type -/
 #guard_msgs in
 #check fun p => Float[p]
 

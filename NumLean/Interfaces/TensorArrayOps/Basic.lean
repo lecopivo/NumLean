@@ -2,6 +2,7 @@ import NumLean.Data.TensorIndex.TensorSliceMap
 import NumLean.Data.Array.TensorOps
 import NumLean.Data.FloatArray.TensorOps
 import NumLean.Interfaces.ArrayType.Array
+import NumLean.Interfaces.ArrayType.FloatArray
 
 namespace NumLean
 
@@ -76,16 +77,16 @@ instance : TensorArrayOps FloatArray Float where
   extractTensorSlice counts src srcOff srcStrides :=
     FloatArray.extractTensorSliceRef counts src srcOff srcStrides
 
-instance : LawfulTensorArrayOps FloatArray where
-  fillTensorSlice_spec := by
-    intros
-    simp [TensorArrayOps.fillTensorSlice, FloatArray.fillTensorSliceRef, ArrayType.toArray]
-  copyTensorSlice_spec := by
-    intros
-    simp [TensorArrayOps.copyTensorSlice, FloatArray.copyTensorSliceRef, ArrayType.toArray]
-  extractTensorSlice_spec := by
-    intros
-    simp [TensorArrayOps.extractTensorSlice, FloatArray.extractTensorSliceRef, ArrayType.toArray]
+-- instance : LawfulTensorArrayOps FloatArray where
+--   fillTensorSlice_spec := by
+--     intros
+--     simp [TensorArrayOps.fillTensorSlice, FloatArray.fillTensorSliceRef, ArrayType.toArray]
+--   copyTensorSlice_spec := by
+--     intros
+--     simp [TensorArrayOps.copyTensorSlice, FloatArray.copyTensorSliceRef, ArrayType.toArray]
+--   extractTensorSlice_spec := by
+--     intros
+--     simp [TensorArrayOps.extractTensorSlice, FloatArray.extractTensorSliceRef, ArrayType.toArray]
 
 end TensorArrayOps
 

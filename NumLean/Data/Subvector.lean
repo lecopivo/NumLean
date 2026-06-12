@@ -5,19 +5,19 @@ namespace NumLean
 variable (X : Type u)
 
 
-structure Subvector (X : Type u) {I J} (ι : J → I)
-    {nI nJ} [IndexType I nI] [IndexType J nJ]
-    {Ks : Type v} {K : Type w} [ScalarArray Ks K] [ScalarType X Ks]
-  where
-  data : Vector X I
+-- structure Subvector (X : Type u) {I J} (ι : J → I)
+--     {nI nJ} [IndexType I nI] [IndexType J nJ]
+--     {Ks : Type v} {K : Type w} [ScalarArray Ks K] [ScalarType X Ks]
+--   where
+--   data : Vector X I
 
-variable
-  {X : Type u} {I J} {ι : J → I}
-  {nI nJ} [IndexType I nI] [IndexType J nJ]
-  {Ks : Type v} {K : Type w} [ScalarArray Ks K] [ScalarType X Ks]
+-- variable
+--   {X : Type u} {I J} {ι : J → I}
+--   {nI nJ} [IndexType I nI] [IndexType J nJ]
+--   {Ks : Type v} {K : Type w} [ScalarArray Ks K] [ScalarType X Ks]
 
-instance : GetElem (Subvector X ι) J X (fun _ _ => True) where
-  getElem xs j _ := xs.data[ι j]
+-- instance : GetElem (Subvector X ι) J X (fun _ _ => True) where
+--   getElem xs j _ := xs.data[ι j]
 
 
 

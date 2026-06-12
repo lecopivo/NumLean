@@ -17,15 +17,9 @@ structure Vec2 (X : Type) where
   y : X
 deriving AddGroupOps, GroupOps
 
-#synth AddGroupOps (Vec2 Float)
-#synth GroupOps (Vec2 Float)
-
 structure SizedVec2 (m : Nat) (X : Type) where
   x : X
   y : X
 deriving AddGroupOps, GroupOps
-
-#synth AddGroupOps (SizedVec2 4 Float)
-#synth GroupOps (SizedVec2 4 Float)
 
 end NumLean

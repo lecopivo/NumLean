@@ -105,6 +105,7 @@ theorem getElem_set_ne (xs : FlatArray X) (i j : Nat) (x : X)
     (HasFlatArray.get_set_ne xs.data (offset (nX := nX) i) (offset (nX := nX) j) x
       (xs.offset_add_width_le_size hi) hsep (xs.offset_add_width_le_size hj))
 
+set_option linter.unnecessarySimpa false in
 instance : LawfulSetElem (FlatArray X) Nat where
   getElem_setElem_eq xs i v h := by
     simpa using getElem_set_eq xs i v h
@@ -371,37 +372,3 @@ theorem size_setIfInBounds (xs : FlatArray X) (i : Nat) (x : X) :
 end FlatArray
 
 end NumLean
-
-
-
-def ArrayType.copySlice (dims count : Vector Nat r)
-    (src : Array α) (srcoff srcinc : Vector Nat r)
-    (dst : Array α) (dstoff srcinc : Vector Nat r) := Id.run do
-  let mut srcoff := srcoff
-  let mut dstoff := dstoff
-  for i0 in 0...count[0] do
-      ...
-            for ir in 0...count[r-1] do
-              dst[dstoff] = src[srcoff]
-              srcoff += srcinc[r-1]
-              dstoff += dstinc[r-1]
-            srcoff += srcinc[r-1]*count[r-1]
-            dstoff += srcinc[r-1]*count[r-1]
-      ...
-    srcoff += srcinc[1] * count[1]
-    dstoff += srcinc[1] * count[1]
-
-
-def ArrayType.copySlice' [Inhabited α]
-    (dims count : Vector Nat 2)
-    (src : Array α) (srcoff srcinc : Vector Nat 2)
-    (dst : Array α) (dstoff dstinc : Vector Nat 2) := Id.run do
-
-  let mut dst := dst
-  for i in 0...count[0] do
-    for j in 0...count[1] do
-      let srcidx := (srcoff[0] + i * srcinc[0]) * dims[1] + (srcoff[1] + j * srcinc[1])
-      let dstidx := (dstoff[0] + i * dstinc[0]) * dims[1] + (dstoff[1] + j * dstinc[1])
-      dst := dst.set! dstidx src[srcidx]!
-
-  return dst

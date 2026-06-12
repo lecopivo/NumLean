@@ -64,7 +64,7 @@ elab:max (priority:=high+1) x:term noWs "[" is:term,* "]" : term => do
 
 local instance {X n} : DefaultIndexOfRank (Vector X n) 1 (Fin n) := ⟨⟩
 
-/-- info: fun i ↦ #v[1, 2, 3, 4][i] : Fin 4 → Nat -/
+/-- info: fun i => #v[1, 2, 3, 4][i] : Fin 4 → Nat -/
 #guard_msgs in
 #check fun i => #v[1,2,3,4][i]
 

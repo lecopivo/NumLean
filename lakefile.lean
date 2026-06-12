@@ -9,6 +9,7 @@ package «NumLean» where
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.27.0"
 
+@[default_target]
 lean_lib NumLean where
   extraDepTargets := #[`NumLeanNative]
 
@@ -18,11 +19,17 @@ lean_exe floatArrayTensorOpsTest where
   supportInterpreter := true
 
 extern_lib NumLeanNative pkg := do
-  let srcJob ← inputFile (pkg.dir / "c" / "float_array_tensor_ops.c") true
+  let float32ArraySrcJob ← inputFile (pkg.dir / "c" / "float32_array.c") true
+  let tensorOpsSrcJob ← inputFile (pkg.dir / "c" / "float_array_tensor_ops.c") true
   let lean ← getLeanInstall
-  let oJob ← buildO
-    (pkg.buildDir / "c" / "float_array_tensor_ops.o")
-    srcJob
+  let float32ArrayOJob ← buildO
+    (pkg.buildDir / "c" / "float32_array.o")
+    float32ArraySrcJob
     #["-I", lean.includeDir.toString]
     #["-fPIC"]
-  buildStaticLib (pkg.staticLibDir / nameToStaticLib "NumLeanNative") #[oJob]
+  let tensorOpsOJob ← buildO
+    (pkg.buildDir / "c" / "float_array_tensor_ops.o")
+    tensorOpsSrcJob
+    #["-I", lean.includeDir.toString]
+    #["-fPIC"]
+  buildStaticLib (pkg.staticLibDir / nameToStaticLib "NumLeanNative") #[float32ArrayOJob, tensorOpsOJob]

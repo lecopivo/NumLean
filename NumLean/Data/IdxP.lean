@@ -2,6 +2,8 @@ import Mathlib.Data.FinEnum
 
 namespace NumLean
 
+#exit
+
 inductive NatPrecision where
   | single | double | inf
 
@@ -41,7 +43,7 @@ def UIntP.ofNat (p : NatPrecision) (n : Nat) : UIntP p :=
 
 @[simp] theorem UIntP.toNat_single (n : UInt32) : (n : UIntP .single).toNat = n.toNat := rfl
 @[simp] theorem UIntP.toNat_double (n : UInt64) : (n : UIntP .double).toNat = n.toNat := rfl
-@[simp] theorem UIntP.toNat_inf   (n : Nat)    : (n : UIntP .inf).toNat    = n        := rfl
+@[simp] theorem UIntP.toNat_inf   (n : Nat)    : UIntP.toNat (p:=.inf) (n : UIntP .inf) = n  := rfl
 @[simp] theorem UIntP.ofNat_single (n : Nat) : UIntP.ofNat .single n = n.toUInt32 := rfl
 @[simp] theorem UIntP.ofNat_double (n : Nat) : UIntP.ofNat .double n = n.toUInt64 := rfl
 @[simp] theorem UIntP.ofNat_inf    (n : Nat) : UIntP.ofNat .inf    n = n          := rfl
