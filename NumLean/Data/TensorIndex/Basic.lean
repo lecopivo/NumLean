@@ -1,6 +1,7 @@
 import Mathlib.Data.Vector.Basic
 import Mathlib.Tactic
 import Init.Data.Iterators
+import Init.Data.Iterators.Consumers.Monadic.Loop
 
 open scoped BigOperators
 
@@ -143,7 +144,7 @@ def unflattenForOrder {rank : Nat} (dims : Vector Nat rank)
 
 namespace Iterator
 
-open Std.Iterators
+open Std
 
 /-- Internal state for iterating over tensor indices. -/
 structure State {rank : Nat} (dims : Vector Nat rank) (axis : AxisOrder rank) where
@@ -156,8 +157,7 @@ instance {rank : Nat} {dims : Vector Nat rank} {axis : AxisOrder rank} [Pure m] 
   step it := pure <| Std.Shrink.deflate <|
     if h : it.internalState.pos < numel dims then
       let idx := unflattenForOrder dims axis ⟨it.internalState.pos, h⟩
-      ⟨.yield (toIterM { pos := it.internalState.pos + 1 } m
-        (TensorIndex dims)) idx, trivial⟩
+      ⟨.yield (⟨{ pos := it.internalState.pos + 1 }⟩ : IterM m (TensorIndex dims)) idx, trivial⟩
     else
       ⟨.done, trivial⟩
 
@@ -173,8 +173,8 @@ end Iterator
 @[always_inline, inline]
 def range {rank : Nat} (dims : Vector Nat rank)
     (axis : AxisOrder rank := rowMajorAxisOrder rank) :
-    Std.Iterators.Iter (α := Iterator.State dims axis) (TensorIndex dims) :=
-  (⟨{ pos := 0 }⟩ : Std.Iterators.Iter (α := Iterator.State dims axis) (TensorIndex dims))
+    Std.Iter (α := Iterator.State dims axis) (TensorIndex dims) :=
+  (⟨{ pos := 0 }⟩ : Std.Iter (α := Iterator.State dims axis) (TensorIndex dims))
 
 end TensorIndex
 

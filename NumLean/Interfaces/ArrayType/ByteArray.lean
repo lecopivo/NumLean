@@ -15,9 +15,9 @@ instance : ArrayType ByteArray UInt8 where
   emptyWithCapacity c := ByteArray.emptyWithCapacity c
   emptyWithCapacity_spec := by simp
   uget as i h := as.uget i h
-  uget_spec := by intros; simp[ByteArray.uget]
+  uget_spec := by intros; rfl
   get as i h := as.get i h
-  get_spec := by intros; simp[ByteArray.get]
+  get_spec := by intros; rfl
   uset as i a h := as.uset i a h
   uset_spec := by intros; simp[ByteArray.uset]
   set as i a h := as.set i a h
