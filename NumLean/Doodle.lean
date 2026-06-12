@@ -3,7 +3,7 @@
 
 
 /-- `As` is an array with values of type `A` i.e. is isomoprhic to `Array A`. -/
-class ArrayType (As : Type u) (A : outParam (Type v)) where
+class ArrayOps (As : Type u) (A : outParam (Type v)) where
   toArray : As → Array A
   fromArray : Array A → As
 
@@ -13,8 +13,8 @@ For example
 - for `Float` we have `FloatArray`
 - for `Real` we have `Array Real`
 - for `UInt8` we have `ByteArray` -/
-class DefaultArrayType (As : outParam (Type u)) (A : Type u) extends
-  ArrayType As A
+class DefaultArrayOps (As : outParam (Type u)) (A : Type u) extends
+  ArrayOps As A
 
 
 /-- Type `X` has flat representation as a collection of `K` i.e. is isomorphic to `Vector K n`.
@@ -35,11 +35,11 @@ class DefaultFlatRepr (X : Type u) (K : outParam (Type v)) (n : outParam Nat) ex
   FlatRepr X K n
 
 /-- Type `X` can be stored in an array `Ks` that is an array of `K`. -/
-class FlatArray (X : Type u) (Ks : Type v) (nX : outParam Nat) {K : outParam (Type w)} [ArrayType Ks K]
+class FlatArray (X : Type u) (Ks : Type v) (nX : outParam Nat) {K : outParam (Type w)} [ArrayOps Ks K]
   extends
     FlatRepr X K nX
 
 /-- The default flat array type -/
-class DafaultFlatArray (X : Type u) (Ks : outParam (Type v)) (nX : outParam Nat) {K : outParam (Type w)} [ArrayType Ks K]
+class DafaultFlatArray (X : Type u) (Ks : outParam (Type v)) (nX : outParam Nat) {K : outParam (Type w)} [ArrayOps Ks K]
   extends
     FlatArray X Ks nX

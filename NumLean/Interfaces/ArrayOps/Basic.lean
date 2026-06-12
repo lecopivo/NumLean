@@ -5,7 +5,7 @@ namespace NumLean
 
 open Function
 
-class ArrayType (As : Type u) (A : outParam (Type w)) where
+class ArrayOps (As : Type u) (A : outParam (Type w)) where
 
   toArray (as : As) : Array A
   fromArray (as : Array A) : As
@@ -66,18 +66,18 @@ class ArrayType (As : Type u) (A : outParam (Type w)) where
     toArray (extractSlice n src srcOff srcInc) =
       (toArray src).extractSlice n srcOff srcInc
 
-namespace ArrayType
+namespace ArrayOps
 
-variable {As : Type u} {A : Type w} [ArrayType As A]
+variable {As : Type u} {A : Type w} [ArrayOps As A]
 
 @[simp]
 theorem toArray_fromArray (as : Array A) : toArray (fromArray (As:=As) as) = as :=
-  ArrayType.right_inv as
+  ArrayOps.right_inv as
 
 @[simp]
 theorem fromArray_toArray (as : As) : fromArray (toArray as) = as :=
-  ArrayType.left_inv as
+  ArrayOps.left_inv as
 
-end ArrayType
+end ArrayOps
 
 end NumLean

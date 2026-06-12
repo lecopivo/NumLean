@@ -1,4 +1,4 @@
-import NumLean.Interfaces.ArrayType.Array
+import NumLean.Interfaces.ArrayOps.Array
 import NumLean.Interfaces.BlasOps.Basic
 import NumLean.Interfaces.BlasOps.ArrayOps
 import NumLean.Interfaces.BlasOps.ArrayLemmas

@@ -1,5 +1,5 @@
 import Mathlib.Analysis.RCLike.Basic
-import NumLean.Interfaces.ArrayType.Basic
+import NumLean.Interfaces.ArrayOps.Basic
 import NumLean.Interfaces.BlasOps.ArrayOps
 
 namespace NumLean
@@ -53,9 +53,9 @@ class BLASOps (Ks : Type u) (K : outParam (Type v)) where
   -- amax (n : Nat) (xs : Ks) (offx incx : Nat) : Nat
 
 
-open ArrayType BLASOps in
+open ArrayOps BLASOps in
 class LawfulBLASOps (Ks : Type u) {K : outParam (Type v)}
-    [BLASOps Ks K] [ArrayType Ks K] [RCLike K] where
+    [BLASOps Ks K] [ArrayOps Ks K] [RCLike K] where
 
   axpby_spec (n : Nat) (a : K) (xs : Ks) (xoff xinc : Nat) (b : K) (ys : Ks) (yoff yinc : Nat) :
     toArray (axpby n a xs xoff xinc b ys yoff yinc)

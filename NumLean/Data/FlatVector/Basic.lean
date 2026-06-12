@@ -4,14 +4,14 @@ import NumLean.Interfaces.IndexType
 namespace NumLean
 
 structure FlatVector (X : Type u) (I : Type v)
-    {Ks K nX nI} [ArrayType Ks K] [HasDefaultFlatArray X Ks nX] [IndexType I nI] where
+    {Ks K nX nI} [ArrayOps Ks K] [HasDefaultFlatArray X Ks nX] [IndexType I nI] where
   toFlatArray : FlatArray X
   size_toFlatArray : toFlatArray.size = nI
 
 namespace FlatVector
 
 variable {X : Type u} {I : Type v}
-    {Ks K nX nI} [ArrayType Ks K] [HasDefaultFlatArray X Ks nX] [IndexType I nI]
+    {Ks K nX nI} [ArrayOps Ks K] [HasDefaultFlatArray X Ks nX] [IndexType I nI]
 
 instance : GetElem (FlatVector X I) I X (fun _ _ => True) where
   getElem xs i h := xs.toFlatArray[toFin i]'(by have := xs.2; grind)

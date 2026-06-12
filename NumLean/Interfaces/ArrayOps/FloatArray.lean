@@ -1,13 +1,13 @@
 import Batteries.Data.FloatArray
-import NumLean.Interfaces.ArrayType.Basic
+import NumLean.Interfaces.ArrayOps.Basic
 
 namespace NumLean
 
-namespace ArrayType
+namespace ArrayOps
 
 -- todo: some implementations are still bad
 
-instance : ArrayType FloatArray Float where
+instance : ArrayOps FloatArray Float where
   toArray := FloatArray.data
   fromArray := FloatArray.mk
   left_inv := by intro _; rfl
@@ -40,5 +40,5 @@ instance : ArrayType FloatArray Float where
   extractSlice n src srcOff srcInc := FloatArray.mk (src.data.extractSlice n srcOff srcInc)
   extractSlice_spec := by intros; rfl
 
-end ArrayType
+end ArrayOps
 end NumLean

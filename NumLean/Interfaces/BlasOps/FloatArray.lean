@@ -1,4 +1,4 @@
-import NumLean.Interfaces.ArrayType.FloatArray
+import NumLean.Interfaces.ArrayOps.FloatArray
 import NumLean.Interfaces.BlasOps.Basic
 
 namespace NumLean

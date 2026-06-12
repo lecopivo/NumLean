@@ -7,7 +7,7 @@ structure Vec3 (R : Type) where
 #check ForIn
 
 /-- As is effectivelly `Array A` -/
-class ArrayType (As : Type u) (A : outParam (Type w)) where
+class ArrayOps (As : Type u) (A : outParam (Type w)) where
   size : As → Nat
   usize : As → UInt64
 

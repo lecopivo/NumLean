@@ -1,11 +1,11 @@
 import Batteries.Data.ByteArray
-import NumLean.Interfaces.ArrayType.Basic
+import NumLean.Interfaces.ArrayOps.Basic
 
 namespace NumLean
 
-namespace ArrayType
+namespace ArrayOps
 
-instance : ArrayType ByteArray UInt8 where
+instance : ArrayOps ByteArray UInt8 where
   toArray := ByteArray.data
   fromArray := ByteArray.mk
   left_inv := by intro; rfl
@@ -38,5 +38,5 @@ instance : ArrayType ByteArray UInt8 where
   extractSlice n src srcOff srcInc := ByteArray.mk (src.data.extractSlice n srcOff srcInc)
   extractSlice_spec := by intros; simp
 
-end ArrayType
+end ArrayOps
 end NumLean

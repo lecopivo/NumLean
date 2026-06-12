@@ -26,10 +26,10 @@ import NumLean.Data.TensorIndex.Monotone
 import NumLean.Data.TensorIndex.TensorIndexType
 import NumLean.Data.TensorIndex.TensorSliceMap
 import NumLean.Doodle
-import NumLean.Interfaces.ArrayType.Array
-import NumLean.Interfaces.ArrayType.Basic
-import NumLean.Interfaces.ArrayType.ByteArray
-import NumLean.Interfaces.ArrayType.FloatArray
+import NumLean.Interfaces.ArrayOps.Array
+import NumLean.Interfaces.ArrayOps.Basic
+import NumLean.Interfaces.ArrayOps.ByteArray
+import NumLean.Interfaces.ArrayOps.FloatArray
 import NumLean.Interfaces.BlasOps.Array
 import NumLean.Interfaces.BlasOps.ArrayLemmas
 import NumLean.Interfaces.BlasOps.ArrayOps

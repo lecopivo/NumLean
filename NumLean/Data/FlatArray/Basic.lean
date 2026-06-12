@@ -5,36 +5,36 @@ import Mathlib.Logic.Function.Iterate
 
 namespace NumLean
 
-structure FlatArray (X : Type u) {Ks K nX} [ArrayType Ks K] [HasDefaultFlatArray X Ks nX] where
+structure FlatArray (X : Type u) {Ks K nX} [ArrayOps Ks K] [HasDefaultFlatArray X Ks nX] where
   data : Ks
-  h_size : ArrayType.size data % nX = 0
+  h_size : ArrayOps.size data % nX = 0
 
 namespace FlatArray
 
-variable {X : Type u} {Ks K nX} [ArrayType Ks K] [HasDefaultFlatArray X Ks nX]
+variable {X : Type u} {Ks K nX} [ArrayOps Ks K] [HasDefaultFlatArray X Ks nX]
 
 /-! ### Preliminary definitions and theorems -/
 
 @[inline]
 def offset (i : Nat) : Nat := i * nX
 
-def size (xs : FlatArray X) : Nat := ArrayType.size xs.data / nX
+def size (xs : FlatArray X) : Nat := ArrayOps.size xs.data / nX
 
-theorem size_mul_width (xs : FlatArray X) : xs.size * nX = ArrayType.size xs.data := by
+theorem size_mul_width (xs : FlatArray X) : xs.size * nX = ArrayOps.size xs.data := by
   unfold size
   by_cases h0 : nX = 0
   · subst h0
-    have hs : ArrayType.size xs.data = 0 := by simpa using xs.h_size
+    have hs : ArrayOps.size xs.data = 0 := by simpa using xs.h_size
     simp [hs]
   · exact Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero xs.h_size)
 
 theorem offset_add_width_le_size (xs : FlatArray X) {i : Nat} (h : i < xs.size) :
-    offset (nX := nX) i + nX ≤ ArrayType.size xs.data := by
+    offset (nX := nX) i + nX ≤ ArrayOps.size xs.data := by
   calc
     offset (nX := nX) i + nX = (i + 1) * nX := by
       simp [offset, Nat.succ_mul]
     _ ≤ xs.size * nX := Nat.mul_le_mul_right nX (Nat.succ_le_of_lt h)
-    _ = ArrayType.size xs.data := xs.size_mul_width
+    _ = ArrayOps.size xs.data := xs.size_mul_width
 
 /-! ### Indexing -/
 
@@ -125,27 +125,27 @@ theorem ext {xs ys : FlatArray X}
   | mk xs hxs =>
     cases ys with
     | mk ys hys =>
-      have hsize : ArrayType.size xs = ArrayType.size ys := by
+      have hsize : ArrayOps.size xs = ArrayOps.size ys := by
         have hx :
             (FlatArray.size ({ data := xs, h_size := hxs } : FlatArray X)) * nX =
-              ArrayType.size xs :=
+              ArrayOps.size xs :=
           size_mul_width (X := X) (Ks := Ks) (K := K) (nX := nX)
             { data := xs, h_size := hxs }
         have hy :
             (FlatArray.size ({ data := ys, h_size := hys } : FlatArray X)) * nX =
-              ArrayType.size ys :=
+              ArrayOps.size ys :=
           size_mul_width (X := X) (Ks := Ks) (K := K) (nX := nX)
             { data := ys, h_size := hys }
         rw [← hx, ← hy, h₁]
       have hdata : xs = ys := by
-        apply ArrayType.left_inv.injective
+        apply ArrayOps.left_inv.injective
         apply Array.ext
-        · simpa [ArrayType.size_spec] using hsize
+        · simpa [ArrayOps.size_spec] using hsize
         · intro k hkx hky
-          have hkx' : k < ArrayType.size xs := by simpa [ArrayType.size_spec] using hkx
-          have hky' : k < ArrayType.size ys := by simpa [ArrayType.size_spec] using hky
+          have hkx' : k < ArrayOps.size xs := by simpa [ArrayOps.size_spec] using hkx
+          have hky' : k < ArrayOps.size ys := by simpa [ArrayOps.size_spec] using hky
           by_cases hnX : nX = 0
-          · have hsx : ArrayType.size xs = 0 := by simpa [hnX] using hxs
+          · have hsx : ArrayOps.size xs = 0 := by simpa [hnX] using hxs
             exact False.elim (Nat.not_lt_zero _ (hsx ▸ hkx'))
           · have hpos : 0 < nX := Nat.pos_of_ne_zero hnX
             have hi₁ :
@@ -158,10 +158,10 @@ theorem ext {xs ys : FlatArray X}
               rw [Nat.div_lt_iff_lt_mul hpos]
               simpa [size_mul_width (X := X) (Ks := Ks) (K := K) (nX := nX)
                 { data := ys, h_size := hys }] using hky'
-            have hoffx : offset (nX := nX) (k / nX) + nX ≤ ArrayType.size xs :=
+            have hoffx : offset (nX := nX) (k / nX) + nX ≤ ArrayOps.size xs :=
               offset_add_width_le_size (X := X) (Ks := Ks) (K := K) (nX := nX)
                 { data := xs, h_size := hxs } hi₁
-            have hoffy : offset (nX := nX) (k / nX) + nX ≤ ArrayType.size ys :=
+            have hoffy : offset (nX := nX) (k / nX) + nX ≤ ArrayOps.size ys :=
               offset_add_width_le_size (X := X) (Ks := Ks) (K := K) (nX := nX)
                 { data := ys, h_size := hys } hi₂
             have hxy :
@@ -179,7 +179,7 @@ theorem ext {xs ys : FlatArray X}
                   (off := offset (nX := nX) (k / nX)) (i := k % nX)
                   (hoff := hoffy) (hi := Nat.mod_lt _ hpos)] at hcomp
             simp [offset] at hcomp
-            simpa [ArrayType.get_spec, Nat.div_add_mod' k nX] using hcomp
+            simpa [ArrayOps.get_spec, Nat.div_add_mod' k nX] using hcomp
       cases hdata
       simp
 
@@ -187,8 +187,8 @@ theorem ext {xs ys : FlatArray X}
 
 @[inline]
 def emptyWithCapacity (c : Nat) : FlatArray X :=
-  { data := ArrayType.emptyWithCapacity (c * nX)
-    h_size := by rw[ArrayType.size_spec, ArrayType.emptyWithCapacity_spec]; simp }
+  { data := ArrayOps.emptyWithCapacity (c * nX)
+    h_size := by rw[ArrayOps.size_spec, ArrayOps.emptyWithCapacity_spec]; simp }
 
 def empty : FlatArray X := emptyWithCapacity 0
 
@@ -240,7 +240,7 @@ def push (xs : FlatArray X) (x : X) : FlatArray X :=
     h_size := by simp [HasFlatArray.size_push, xs.h_size] }
 
 def pop (xs : FlatArray X) : FlatArray X :=
-  { data := Nat.iterate ArrayType.pop nX xs.data
+  { data := Nat.iterate ArrayOps.pop nX xs.data
     h_size := by sorry }
 
 theorem size_push_of_pos (xs : FlatArray X) (x : X) (hnX : 0 < nX) :
@@ -276,16 +276,16 @@ theorem size_replicate (n : Nat) (x : X) :
 
 /-! ### Swapping -/
 
--- todo: these should be part of ArrayType
-def ArrayType.swapSlice (n : Nat) (xs : Ks) (xoff xinc : Nat) (yx : Ks) (yoff yinc : Nat) : Ks × Ks := sorry
+-- todo: these should be part of ArrayOps
+def ArrayOps.swapSlice (n : Nat) (xs : Ks) (xoff xinc : Nat) (yx : Ks) (yoff yinc : Nat) : Ks × Ks := sorry
 -- todo: this is probably valid only if the ranges are non-overlapping
-def ArrayType.swapSelf (n : Nat) (xs : Ks) (xoff xinc : Nat) (yoff yinc : Nat) : Ks := sorry
+def ArrayOps.swapSelf (n : Nat) (xs : Ks) (xoff xinc : Nat) (yoff yinc : Nat) : Ks := sorry
 
 @[inline]
 def swap (xs : FlatArray X) (i j : Nat)
     (hi : i < xs.size := by get_elem_tactic) (hj : j < xs.size := by get_elem_tactic) :
     FlatArray X :=
-  { data := ArrayType.swapSelf nX xs.data (i*nX) 1 (j*nX) 1
+  { data := ArrayOps.swapSelf nX xs.data (i*nX) 1 (j*nX) 1
     h_size := sorry }
 
 def swapIfInBounds (xs : FlatArray X) (i j : Nat) : FlatArray X := sorry
@@ -317,7 +317,7 @@ theorem getElem_swap_of_ne (xs : FlatArray X) (i j k : Nat)
 
 @[inline]
 def append (xs ys : FlatArray X) : FlatArray X :=
-  { data := ArrayType.append xs.data ys.data
+  { data := ArrayOps.append xs.data ys.data
     h_size := sorry }
 
 instance : Append (FlatArray X) where
@@ -340,7 +340,7 @@ theorem getElem_append_right {xs ys : FlatArray X} {i : Nat} (hle : xs.size ≤ 
 /-! ### Extraction and slicing -/
 
 def extract (xs : FlatArray X) (start : Nat := 0) (stop : Nat := xs.size) : FlatArray X :=
-  { data := ArrayType.extractSlice ((stop - start) * nX) xs.data (start * nX) 1
+  { data := ArrayOps.extractSlice ((stop - start) * nX) xs.data (start * nX) 1
     h_size := sorry }
 
 def extractSlice (n : Nat) (xs : FlatArray X) (srcOff srcInc : Nat) : FlatArray X := sorry

@@ -1,4 +1,4 @@
-import NumLean.Interfaces.ArrayType.Basic
+import NumLean.Interfaces.ArrayOps.Basic
 
 namespace NumLean
 

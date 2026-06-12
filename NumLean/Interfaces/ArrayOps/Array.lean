@@ -1,10 +1,10 @@
-import NumLean.Interfaces.ArrayType.Basic
+import NumLean.Interfaces.ArrayOps.Basic
 
 namespace NumLean
 
-namespace ArrayType
+namespace ArrayOps
 
-instance {A : Type u} : ArrayType (Array A) A where
+instance {A : Type u} : ArrayOps (Array A) A where
   toArray as := as
   fromArray as := as
   left_inv := fun _ => rfl
@@ -38,5 +38,5 @@ instance {A : Type u} : ArrayType (Array A) A where
   extractSlice_spec _ _ _ _ := rfl
 
 
-end ArrayType
+end ArrayOps
 end NumLean
