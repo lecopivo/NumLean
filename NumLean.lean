@@ -19,7 +19,6 @@ import NumLean.Data.Idx
 -- import NumLean.Data.IdxP
 import NumLean.Data.Prod
 import NumLean.Data.Sigma
-import NumLean.Data.Subvector
 import NumLean.Data.TensorIndex
 import NumLean.Data.TensorIndex.Basic
 import NumLean.Data.TensorIndex.Dense
