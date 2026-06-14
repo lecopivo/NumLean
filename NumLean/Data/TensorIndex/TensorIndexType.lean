@@ -1,95 +1,84 @@
-import NumLean.Data.TensorIndex.Dense
+import NumLean.Data.TensorIndex.Hierarchical
 import NumLean.Interfaces.IndexType
 
 namespace NumLean
-
+open TensorIndex
 /-- `I` is tensor index type of given rank `rank`. -/
-class TensorIndexTypeOfRank (I : Type u) (n : outParam Nat)
-    (rank : Nat) (dims : outParam (Vector Nat rank))
-    (axis : outParam (TensorIndex.AxisOrder rank))
+class TensorIndexTypeOfRank (I : Type u) (n : outParam Nat) (rank : HRank)
+  (shape : outParam (Shape rank))
     extends IndexType I n where
-  /-- The flat index size agrees with the tensor shape. -/
-  n_eq_numel : n = TensorIndex.numel dims
+
+  n_eq_shape_size : n = shape.size
+
+  layout : Layout shape Int
+  compact_layout : layout.Compact
 
   /-- Tensor-shaped view of this flat index type. -/
-  tensorEquiv : I ≃ TensorIndex dims
+  tensorEquiv : I ≃ FinIndex shape
 
   /-- The `IndexType` flat position is the dense tensor offset for the configured axis order. -/
-  toFin_eq_offset (i : I) :
-    (toFin i).1 =
-      (tensorEquiv i).offset (TensorIndex.denseStridesForOrder dims axis)
+  layout_eval_tensorEquiv_eq_toFin (i : I) :
+    layout.eval (tensorEquiv i).1 = (toFin i).1
 
 /-- `I` is tensor index type of canonical rank `rank`. -/
-class TensorIndexType (I : Type u) (n : outParam Nat)
-    (rank : outParam Nat) (dims : outParam (Vector Nat rank))
-    (axis : outParam (TensorIndex.AxisOrder rank))
-    extends TensorIndexTypeOfRank I n rank dims axis
+class TensorIndexType (I : Type u) (n : outParam Nat) (rank : outParam HRank)
+  (shape : outParam (Shape rank))
+    extends TensorIndexTypeOfRank I n rank shape
 
 namespace TensorIndexType
 
-variable {I : Type u} {n rank : Nat} {dims : Vector Nat rank}
-    {axis : TensorIndex.AxisOrder rank} [TensorIndexType I n rank dims axis]
+open TensorIndexTypeOfRank
+
+variable {I : Type u} {n : Nat} {rank} {shape : Shape rank}
+    [TensorIndexType I n rank shape]
 
 /-- Convert a flat index type to its tensor-shaped index. -/
-def toTensorIndex (i : I) : TensorIndex dims :=
-  TensorIndexTypeOfRank.tensorEquiv i
+def toFinIndex (i : I) : FinIndex shape := tensorEquiv i
 
 /-- Convert a tensor-shaped index back to the flat index type. -/
-def fromTensorIndex (idx : TensorIndex dims) : I :=
-  TensorIndexTypeOfRank.tensorEquiv.symm idx
+def fromFinIndex (idx : FinIndex shape) : I := tensorEquiv.symm idx
 
 @[simp]
-theorem fromTensorIndex_toTensorIndex (i : I) :
-    fromTensorIndex (toTensorIndex i) = i := by
-  simp [fromTensorIndex, toTensorIndex]
+theorem fromFinIndex_toFinIndex (i : I) :
+    fromFinIndex (toFinIndex i) = i := by
+  simp [fromFinIndex, toFinIndex]
 
 @[simp]
-theorem toTensorIndex_fromTensorIndex (idx : TensorIndex dims) :
-    toTensorIndex (fromTensorIndex (I := I) idx) = idx := by
-  simp [fromTensorIndex, toTensorIndex]
+theorem toFinIndex_fromFinIndex (idx : FinIndex shape) :
+    toFinIndex (fromFinIndex (I := I) idx) = idx := by
+  simp [fromFinIndex, toFinIndex]
 
 end TensorIndexType
 
-namespace TensorIndex
+namespace TensorIndexTypa
 
-/-- A one-dimensional tensor index is equivalent to `Fin n`. -/
-def finEquivTensorIndexSingleton (n : Nat) : Fin n ≃ TensorIndex #v[n] where
-  toFun i :=
-    { val := Vector.ofFn fun _ : Fin 1 => i.1
-      valid := by
-        intro k
-        fin_cases k
-        simp [i.2] }
-  invFun idx := ⟨idx.val[0], by simpa using idx.valid 0⟩
-  left_inv i := by
-    apply Fin.ext
-    simp
-  right_inv idx := by
-    cases idx with
-    | mk val valid =>
-      have hval : (Vector.ofFn fun _ : Fin 1 => val[0]) = val := by
-        apply Vector.ext
-        intro i hi
-        have hi0 : i = 0 := by omega
-        subst hi0
-        simp
-      simpa [TensorIndex.mk.injEq] using hval
 
-instance instTensorIndexTypeFin (n : Nat) :
-    TensorIndexType (Fin n) n 1 #v[n] (rowMajorAxisOrder 1) where
+instance : TensorIndexType (Fin n) n .leaf (.leaf n) where
+  n_eq_shape_size := by rfl
+  layout := {
+    offset := 0
+    stride := .leaf 1
+  }
+  compact_layout := sorry
+  tensorEquiv := sorry
+  layout_eval_tensorEquiv_eq_toFin := sorry
+
+
+instance instFinIndexTypeFin (n : Nat) :
+    FinIndexType (Fin n) n 1 #v[n] (rowMajorAxisOrder 1) where
   n_eq_numel := by
     change n = ∏ _ : Fin 1, n
     simp
-  tensorEquiv := finEquivTensorIndexSingleton n
+  tensorEquiv := finEquivFinIndexSingleton n
   toFin_eq_offset := by
     intro i
     calc
       ↑(toFin i) = i.1 := rfl
-      _ = (finEquivTensorIndexSingleton n i).offset
+      _ = (finEquivFinIndexSingleton n i).offset
           (denseStridesForOrder #v[n] (rowMajorAxisOrder 1)) := by
-          simp [finEquivTensorIndexSingleton, denseStridesForOrder, offset, offsetOf,
+          simp [finEquivFinIndexSingleton, denseStridesForOrder, offset, offsetOf,
             rowMajorAxisOrder]
 
-end TensorIndex
+end FinIndex
 
 end NumLean

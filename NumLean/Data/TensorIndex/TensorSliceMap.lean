@@ -37,7 +37,7 @@ def TensorSliceInBounds {rank : Nat} (dims : Vector Nat rank)
   ∀ jt : TensorIndex dims, ioffset + jt.offset istrides < nI
 
 -- this does not fix any particular linear order but guarantees injectivity
-structure TensorSliceMap (J I : Type u) {nJ nI : Nat} {jrank : Nat}
+structure TensorSliceMap (J I : Type*) {nJ nI : Nat} {jrank : Nat}
     {jdims : Vector Nat jrank} {jaxis : TensorIndex.AxisOrder jrank}
     [TensorIndexType J nJ jrank jdims jaxis] [IndexType I nI] where
   /-- Efficient implementation of this slice map. -/
@@ -73,6 +73,17 @@ def toFun (m : TensorSliceMap J I) : J → I :=
 
 instance : CoeFun (TensorSliceMap J I) (fun _ => J → I) where
   coe := toFun
+
+def mkFinRange (start count : Nat) (h : start + count ≤ nI) : TensorSliceMap (Fin count) I where
+  map idx :=
+    let i : Fin nI := ⟨start + idx.1, by grind⟩
+    IndexType.fromFin i
+  ioffset := start
+  istrides := #v[1]
+  istrides_valid := sorry
+  in_bounds := sorry
+  map_eq_toFun := sorry
+
 
 /-- The canonical offset-based definition that `map` must implement. -/
 def specFun (m : TensorSliceMap J I) : J → I :=

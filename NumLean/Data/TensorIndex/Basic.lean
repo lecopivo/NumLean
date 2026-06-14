@@ -22,28 +22,28 @@ variable {rank : Nat} {dims : Vector Nat rank}
 /-- A permutation of axes, ordered from most significant to least significant. -/
 abbrev AxisOrder (rank : Nat) := Equiv.Perm (Fin rank)
 
+instance {r} {dims : Vector Nat r} : CoeOut (TensorIndex dims) (Vector Nat r) := ⟨(·.val)⟩
+
 /-- Flat offset for a raw tensor index and one flat stride per tensor axis. -/
-def offsetOf {rank : Nat} (strides idx : Vector Nat rank) : Nat :=
+def offsetOf {rank : Nat} (strides : Vector Int rank) (idx : Vector Nat rank) : Int :=
   ∑ i : Fin rank, idx[i] * strides[i]
 
 /-- Flat offset for a bounded tensor index and one flat stride per tensor axis. -/
-def offset (idx : TensorIndex dims) (strides : Vector Nat rank) : Nat :=
+def offset (idx : TensorIndex dims) (strides : Vector Int rank) : Int :=
   offsetOf strides idx.val
 
 /-- Valid strides are those whose offset map is injective on the bounded tensor index set. -/
-def ValidStrides {rank : Nat} (dims strides : Vector Nat rank) : Prop :=
+def InjectiveStrides {rank : Nat} (dims : Vector Nat rank) (strides : Vector Int rank) : Prop :=
   Function.Injective fun idx : TensorIndex dims => offset idx strides
 
-/-- Flat offset rewritten through an explicit axis order. -/
-def orderedOffset {rank : Nat} (order : AxisOrder rank)
-    (strides idx : Vector Nat rank) : Nat :=
-  ∑ i : Fin rank, idx[order i] * strides[order i]
+/-- In bounds strides produce offset values in the range `[lo, hi]`. -/
+def InBoundsStrides {r} (dims : Vector Nat r) (strides : Vector Int r) (lo hi : Int) : Prop :=
+  ∀ idx : TensorIndex dims, lo ≤ idx.offset strides ∧ idx.offset strides ≤ hi
 
-theorem offsetOf_eq_orderedOffset {rank : Nat} (order : AxisOrder rank)
-    (strides idx : Vector Nat rank) :
-    offsetOf strides idx = orderedOffset order strides idx := by
-  simpa [offsetOf, orderedOffset] using
-    (Equiv.sum_comp order (fun i : Fin rank => idx[i] * strides[i])).symm
+structure IsLayoutStrides {r} (dims : Vector Nat r) (strides : Vector Int r) (n : Nat) : Prop where
+  in_bounds : InBoundsStrides dims strides 0 (n-1)
+  bijective : Function.Bijective (fun idx : TensorIndex dims =>
+    Fin.mk (n:=n) (idx.offset strides).toNat (by have := in_bounds idx; grind))
 
 /-- The axis order used by row-major dense strides: axis `0` is most significant. -/
 def rowMajorAxisOrder (rank : Nat) : AxisOrder rank :=
@@ -77,13 +77,13 @@ def numel {r : Nat} (dims : Vector Nat r) : Nat :=
   ∏ i : Fin r, dims[i]
 
 @[simp]
-theorem offsetOf_nil (stride idx : Vector Nat 0) :
-    offsetOf stride idx = 0 := by
+theorem offsetOf_nil (strides : Vector Int 0) (idx : Vector Nat 0) :
+    offsetOf strides idx = 0 := by
   simp [offsetOf]
 
-theorem offsetOf_eq_sum {r : Nat} (stride idx : Vector Nat r) :
-    offsetOf stride idx =
-      ∑ i : Fin r, idx[i] * stride[i] :=
+theorem offsetOf_eq_sum {r : Nat} (strides : Vector Int r) (idx : Vector Nat r) :
+    offsetOf strides idx =
+      ∑ i : Fin r, idx[i] * strides[i] :=
   rfl
 
 theorem numel_decomp_succ {n : Nat} (dims : Vector Nat (n + 1)) :

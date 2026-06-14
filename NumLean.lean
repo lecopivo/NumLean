@@ -17,6 +17,7 @@ import NumLean.Data.Float32Array
 import NumLean.Data.FloatArray.TensorOps
 import NumLean.Data.FloatP
 import NumLean.Data.Idx
+import NumLean.Data.KernelExpr
 -- import NumLean.Data.IdxP
 import NumLean.Data.Prod
 import NumLean.Data.Sigma
@@ -64,5 +65,6 @@ import NumLean.Mathlib.FiberedAddTorsor.Prod
 import NumLean.Mathlib.FiberedAddTorsor.Topology
 import NumLean.Mathlib.IsContinuousLinearMap
 import NumLean.Meta.RewriteBy
+import NumLean.Tactic.ApplyRuleSets
 -- import NumLean.TargetTests
 import NumLean.TestUIntProofs
