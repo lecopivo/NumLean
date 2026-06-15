@@ -36,26 +36,22 @@ def prodEquiv {p q : HRank} {shape₀ : Shape p} {shape₁ : Shape q} :
     cases idx with
     | mk left right => rfl
 
-@[implicit_reducible]
-def fintype : {p : HRank} → (shape : Shape p) → Fintype (FinIndex shape)
-  | .leaf, .leaf dim => Fintype.ofEquiv (Fin dim) (leafEquiv dim).symm
+/-- Canonical dense row-major equivalence between bounded hierarchical indices and flat offsets. -/
+def equivFin : {p : HRank} → (shape : Shape p) → FinIndex shape ≃ Fin shape.size
+  | .leaf, .leaf dim => leafEquiv dim
   | .prod _ _, .prod shape₀ shape₁ =>
-      letI := fintype shape₀
-      letI := fintype shape₁
-      Fintype.ofEquiv (FinIndex shape₀ × FinIndex shape₁) FinIndex.prodEquiv.symm
+      prodEquiv.trans ((Equiv.prodCongr (equivFin shape₀) (equivFin shape₁)).trans finProdFinEquiv)
+
+@[implicit_reducible]
+def fintype {p : HRank} (shape : Shape p) : Fintype (FinIndex shape) :=
+  Fintype.ofEquiv (Fin shape.size) (equivFin shape).symm
 
 instance {p : HRank} {shape : Shape p} : Fintype (FinIndex shape) :=
   fintype shape
 
 theorem card_eq_shape_size {p : HRank} (shape : Shape p) :
     Fintype.card (FinIndex shape) = shape.size := by
-  induction shape with
-  | leaf dim =>
-      simpa [Shape.size] using Fintype.card_congr (leafEquiv dim)
-  | prod shape₀ shape₁ h₀ h₁ =>
-      rw [Shape.size_prod]
-      have hcard := Fintype.card_congr (FinIndex.prodEquiv (shape₀ := shape₀) (shape₁ := shape₁))
-      simpa [Fintype.card_prod, h₀, h₁] using hcard
+  simpa using Fintype.card_congr (equivFin shape)
 
 end FinIndex
 

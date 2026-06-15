@@ -1,4 +1,4 @@
-import NumLean.Data.HTuple.Ops
+import NumLean.Data.HTuple.Algebra
 import Mathlib.Logic.Equiv.Fin.Basic
 
 namespace NumLean
@@ -85,11 +85,11 @@ theorem offset_prod {I : Type u} {D : Type v} [Zero D] [Add D] [SMul I D]
     i.offset stride + j.offset stride' := by
   simp [TIndex.offset, HTuple.inner, HTuple.innerWith]
 
-theorem offset_smul {I : Type u} {D : Type v} [AddCommGroup D] [Semigroup I] [SemigroupAction I D]
+theorem offset_smul {I : Type u} {D : Type v} [AddCommGroup D] [Semiring I] [Module I D]
     (p : HRank) (shape : Shape p) (idx : TIndex I p) (stride : Stride D shape) (n : Nat) :
     idx.offset (n • stride) =
     n • idx.offset stride := by
-  sorry
+  exact HTuple.inner_smul_right idx stride n
 
 end TIndex
 

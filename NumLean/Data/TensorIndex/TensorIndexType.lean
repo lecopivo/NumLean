@@ -57,9 +57,9 @@ instance {I nI} [IndexType I nI] : TensorIndexTypeOfRank I nI .leaf (.leaf nI) w
   size_eq_shape_size := by rfl
   layout := .ofFin nI
   compact_layout := Layout.compact_ofFin
-  tensorEquiv := (IndexType.equivFin (I := I)).trans ((FinIndex.leafEquiv nI).symm)
+  tensorEquiv := (IndexType.equivFin (I := I)).trans ((FinIndex.equivFin (.leaf nI)).symm)
   layout_eval_tensorEquiv_eq_toFin := by
-    intro i; simp [Layout.ofFin, FinIndex.leafEquiv, IndexType.equivFin]
+    intro i; simp [Layout.ofFin, FinIndex.equivFin, FinIndex.leafEquiv, IndexType.equivFin]
 
 /-- Default h-rank of `Fin n` is `.leaf` -/
 instance : TensorIndexType (Fin n) n .leaf (.leaf n) where

@@ -169,7 +169,7 @@ theorem offset_eq_sum_get {p : HRank} (idx : TIndex Nat p) {shape : Shape p}
                 (by intro axis; cases axis <;> rfl)
 
 /-- Scaling a stride scales the resulting natural offset. -/
-theorem offset_smul {p : HRank} (idx : TIndex Nat p) {shape : Shape p}
+theorem offset_smul_nat {p : HRank} (idx : TIndex Nat p) {shape : Shape p}
     (stride : Stride Nat shape) (k : Nat) :
     idx.offset (k • stride) = k * idx.offset stride := by
   induction p with
