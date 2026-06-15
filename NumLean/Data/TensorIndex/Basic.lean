@@ -1,5 +1,6 @@
 import NumLean.Data.HTuple.Algebra
 import Mathlib.Logic.Equiv.Fin.Basic
+import Mathlib.Logic.Equiv.Prod
 
 namespace NumLean
 
@@ -29,32 +30,36 @@ end Shape
 
 namespace TIndex
 
-/-- A natural hierarchical coordinate is in bounds for a positive hierarchical shape. -/
-def InBounds {p : HRank} (shape : Shape p) (idx : TIndex Nat p) : Prop :=
+/-- An integer hierarchical coordinate is in bounds for a positive hierarchical shape. -/
+def InBounds {p : HRank} (shape : Shape p) (idx : TIndex Int p) : Prop :=
   match shape, idx with
-  | .leaf dim, .leaf i => i < dim
+  | .leaf dim, .leaf i => 0 ≤ i ∧ i < dim
   | .prod shape₀ shape₁, .prod idx₀ idx₁ => InBounds shape₀ idx₀ ∧ InBounds shape₁ idx₁
 
-theorem size_pos_of_inBounds {p : HRank} {shape : Shape p} {idx : TIndex Nat p}
+theorem size_pos_of_inBounds {p : HRank} {shape : Shape p} {idx : TIndex Int p}
     (h : InBounds shape idx) : 0 < shape.size := by
   induction p with
   | leaf =>
       cases shape with | leaf dim =>
       cases idx with | leaf i =>
-      exact Nat.lt_of_le_of_lt (Nat.zero_le _) h
+      simp [InBounds] at h
+      by_contra hdim
+      have hdim0 : dim = 0 := Nat.eq_zero_of_not_pos hdim
+      have hdim0Int : (dim : Int) = 0 := by exact_mod_cast hdim0
+      omega
   | prod p q hp hq =>
       cases shape with | prod shape₀ shape₁ =>
       cases idx with | prod idx₀ idx₁ =>
       exact Nat.mul_pos (hp h.1) (hq h.2)
 
-theorem inBounds_get {p : HRank} {shape : Shape p} {idx : TIndex Nat p}
+theorem inBounds_get {p : HRank} {shape : Shape p} {idx : TIndex Int p}
     (h : InBounds shape idx) (axis : HTuple.Index p) : idx.get axis < shape.get axis := by
   induction p with
   | leaf =>
       cases shape with | leaf dim =>
       cases idx with | leaf i =>
       cases axis
-      exact h
+      exact h.2
   | prod p q hp hq =>
       cases shape with | prod shape₀ shape₁ =>
       cases idx with | prod idx₀ idx₁ =>
@@ -63,10 +68,33 @@ theorem inBounds_get {p : HRank} {shape : Shape p} {idx : TIndex Nat p}
       | left axis => exact hp h₀ axis
       | right axis => exact hq h₁ axis
 
+theorem inBounds_of_get {p : HRank} {shape : Shape p} {idx : TIndex Int p}
+    (h : ∀ axis : HTuple.Index p, 0 ≤ idx.get axis ∧ idx.get axis < shape.get axis) :
+    InBounds shape idx := by
+  induction p with
+  | leaf =>
+      cases shape with | leaf dim =>
+      cases idx with | leaf i =>
+      exact h HTuple.Index.leaf
+  | prod p q hp hq =>
+      cases shape with | prod shape₀ shape₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      constructor
+      · exact hp (fun axis => h (.left axis))
+      · exact hq (fun axis => h (.right axis))
+
 /-- Evaluate a hierarchical coordinate against a generalized stride. -/
 def offset {α : Type u} {D : Type v} [Zero D] [Add D] [SMul α D]
     {p : HRank} (idx : TIndex α p) {shape : Shape p} (stride : Stride D shape) : D :=
   HTuple.inner idx stride
+
+def rowMajorStride {r} (shape : Shape r) : Stride Int shape :=
+  match shape with
+  | .leaf _ => .leaf 1
+  | .prod shape₁ shape₂ =>
+    let s₁ := rowMajorStride shape₁
+    let s₂ := rowMajorStride shape₂
+    .prod (Shape.size shape₂ • s₁) s₂
 
 @[simp]
 theorem offset_leaf {I : Type u} {D : Type v} [Zero D] [Add D] [SMul I D]
@@ -91,17 +119,66 @@ theorem offset_smul {I : Type u} {D : Type v} [AddCommGroup D] [Semiring I] [Mod
     n • idx.offset stride := by
   exact HTuple.inner_smul_right idx stride n
 
+@[simp]
+theorem offset_zero_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p : HRank} {shape : Shape p} (stride : Stride D shape) :
+    (0 : TIndex R p).offset stride = 0 := by
+  exact HTuple.inner_zero_left stride
+
+theorem offset_add_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p : HRank} {shape : Shape p} (idx idx' : TIndex R p) (stride : Stride D shape) :
+    (idx + idx').offset stride = idx.offset stride + idx'.offset stride := by
+  exact HTuple.inner_add_left idx idx' stride
+
+theorem offset_smul_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p : HRank} {shape : Shape p} (n : R) (idx : TIndex R p) (stride : Stride D shape) :
+    (n • idx).offset stride = n • idx.offset stride := by
+  exact HTuple.inner_smul_left n idx stride
+
+theorem offset_map_offset {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p q : HRank} {shape : Shape p} {shape' : Shape q}
+    (idx : TIndex R q) (strides : Stride (TIndex R p) shape')
+    (stride : Stride D shape) :
+    idx.offset (shape := shape') (HTuple.map (fun coord => coord.offset stride) strides) =
+      (idx.offset (shape := shape') strides).offset stride := by
+  exact HTuple.inner_map_inner idx strides stride
+
+theorem offset_map_prod_left {R : Type u} [Semiring R] {p q r : HRank} {shape : Shape r}
+    (idx : TIndex R r) (strides : Stride (TIndex R p) shape) :
+    idx.offset (shape := shape)
+        (HTuple.map (fun x => HTuple.prod x (0 : TIndex R q)) strides) =
+      HTuple.prod (idx.offset (shape := shape) strides) 0 := by
+  exact HTuple.inner_map_prod_left idx strides
+
+theorem offset_map_prod_right {R : Type u} [Semiring R] {p q r : HRank} {shape : Shape r}
+    (idx : TIndex R r) (strides : Stride (TIndex R q) shape) :
+    idx.offset (shape := shape)
+        (HTuple.map (fun x => HTuple.prod (0 : TIndex R p) x) strides) =
+      HTuple.prod 0 (idx.offset (shape := shape) strides) := by
+  exact HTuple.inner_map_prod_right idx strides
+
+@[simp]
+theorem offset_basisTuple {R : Type u} [Semiring R] {p : HRank} {shape : Shape p} (idx : TIndex R p) :
+    idx.offset (shape := shape) (HTuple.basisTuple p) = idx := by
+  exact HTuple.inner_basisTuple idx
+
+@[simp]
+theorem map_offset_basisTuple {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p : HRank} {shape : Shape p} (stride : Stride D shape) :
+    HTuple.map (fun coord : TIndex R p => coord.offset stride) (HTuple.basisTuple p) = stride := by
+  exact HTuple.map_inner_basisTuple stride
+
 end TIndex
 
-/-- A bounded hierarchical tensor index, analogous to `Fin n`. -/
-structure FinIndex {p : HRank} (shape : Shape p) where
-  val : TIndex Nat p
+/-- A bounded integer hierarchical tensor index, analogous to `Fin n`. -/
+structure FinTIndex {p : HRank} (shape : Shape p) where
+  val : TIndex Int p
   isLt : TIndex.InBounds shape val
 
-namespace FinIndex
+namespace FinTIndex
 
 /-- Bounded hierarchical indices are equal when their underlying coordinates are equal. -/
-theorem ext {p : HRank} {shape : Shape p} {idx idx' : FinIndex shape}
+theorem ext {p : HRank} {shape : Shape p} {idx idx' : FinTIndex shape}
     (h : idx.val = idx'.val) : idx = idx' := by
   cases idx
   cases idx'
@@ -109,10 +186,72 @@ theorem ext {p : HRank} {shape : Shape p} {idx idx' : FinIndex shape}
   subst h
   rfl
 
-instance {p : HRank} {shape : Shape p} : CoeOut (FinIndex shape) (TIndex Nat p) where
+instance {p : HRank} {shape : Shape p} : CoeOut (FinTIndex shape) (TIndex Int p) where
   coe idx := idx.val
 
-end FinIndex
+/-- Bounded indices of a leaf shape are ordinary finite indices. -/
+@[simps]
+def leafEquiv (dim : Nat) : FinTIndex (.leaf dim) ≃ Fin dim where
+  toFun idx := match idx with
+    | ⟨HTuple.leaf i, h⟩ =>
+        ⟨i.toNat, by
+          simp [TIndex.InBounds] at h
+          omega⟩
+  invFun i := ⟨HTuple.leaf i.1, ⟨Int.natCast_nonneg _, by exact_mod_cast i.2⟩⟩
+  left_inv := by
+    intro idx
+    cases idx with
+    | mk val h =>
+      cases val with
+      | leaf i =>
+          apply FinTIndex.ext
+          simp [TIndex.InBounds] at h
+          exact congrArg HTuple.leaf (Int.toNat_of_nonneg h.1)
+  right_inv := by intro i; rfl
+
+/-- Bounded indices of a product shape are pairs of bounded indices. -/
+@[simps]
+def prodEquiv {p q : HRank} (shape₀ : Shape p) (shape₁ : Shape q) :
+    FinTIndex (HTuple.prod shape₀ shape₁) ≃ FinTIndex shape₀ × FinTIndex shape₁ where
+  toFun idx :=
+    match idx with
+    | ⟨HTuple.prod idx₀ idx₁, h⟩ => (⟨idx₀, h.1⟩, ⟨idx₁, h.2⟩)
+  invFun idx := ⟨HTuple.prod idx.1.val idx.2.val, ⟨idx.1.isLt, idx.2.isLt⟩⟩
+  left_inv := by
+    intro idx
+    cases idx with
+    | mk val h =>
+    cases val with
+    | prod idx₀ idx₁ => rfl
+  right_inv := by
+    intro idx
+    cases idx with
+    | mk left right => rfl
+
+/-- Canonical dense row-major equivalence between bounded hierarchical indices and flat offsets. -/
+def equivFin : {p : HRank} → (shape : Shape p) → FinTIndex shape ≃ Fin shape.size
+  | .leaf, .leaf dim => leafEquiv dim
+  | .prod _ _, .prod shape₀ shape₁ =>
+      let f := prodEquiv shape₀ shape₁
+      let g := Equiv.prodCongr (equivFin shape₀) (equivFin shape₁)
+      let h := finProdFinEquiv
+      f.trans (g.trans h)
+
+theorem offset_rowMajorEquiv_eq_equivFin {r} {shape : Shape r} (idx : FinTIndex shape) : --
+    idx.val.offset (TIndex.rowMajorStride shape) = (equivFin shape idx) := by
+  induction shape
+  case leaf =>
+    have ⟨.leaf idx, hidx⟩ := idx
+    set_option backward.isDefEq.respectTransparency false in
+    simp [TIndex.rowMajorStride, equivFin, leafEquiv, hidx.1]
+  case prod shape₁ shape₂ h₁ h₂ =>
+    have ⟨.prod idx₁ idx₂, hidx⟩ := idx
+    set_option backward.isDefEq.respectTransparency false in
+    simp [TIndex.rowMajorStride, equivFin, ← h₁, ← h₂, - nsmul_eq_mul, TIndex.offset_smul]
+    rw[add_comm]
+
+
+end FinTIndex
 
 end TensorIndex
 

@@ -1,3 +1,4 @@
+import NumLean.Data.TensorIndex.AxisOrder
 import NumLean.Data.TensorIndex.Layout
 import NumLean.Data.HTuple.Algebra
 
@@ -6,33 +7,6 @@ open scoped BigOperators
 namespace NumLean
 
 namespace TensorIndex
-
-instance {p : HRank} : Fintype (HTuple.Index p) :=
-  Fintype.ofEquiv (Fin p.size) (HTuple.Index.equivFin p).symm
-
-/-- A permutation of hierarchical axes, ordered from least significant to most significant.
-
-This follows the colexicographic convention used by the CUTE paper: for a product-shaped
-coordinate `(i, j)`, the left component `i` is the fastest-moving coordinate in the natural
-order. -/
-abbrev AxisOrder (p : HRank) := Fin p.size ≃ HTuple.Index p
-
-namespace AxisOrder
-
-/-- The axis order induced by the left-to-right order of `HTuple.Index`.
-
-For a matrix-shaped profile `(row, col)`, this is column-major/colexicographic order. -/
-def colMajor (p : HRank) : AxisOrder p :=
-  (HTuple.Index.equivFin p).symm
-
-/-- The reversed left-to-right axis order.
-
-For a matrix-shaped profile `(row, col)`, this is row-major order. -/
-def rowMajor (p : HRank) : AxisOrder p :=
-  (⟨Fin.rev, Fin.rev, Fin.rev_rev, Fin.rev_rev⟩ : Fin p.size ≃ Fin p.size).trans
-    (HTuple.Index.equivFin p).symm
-
-end AxisOrder
 
 namespace Shape
 
@@ -45,10 +19,6 @@ private def prodIndexEquiv (p q : HRank) : (HTuple.Index p ⊕ HTuple.Index q) �
     | .right i => .inr i
   left_inv := by intro i; cases i <;> rfl
   right_inv := by intro i; cases i <;> rfl
-
-/-- Dimension of a shape at a leaf axis, as a natural number. -/
-def dim {p : HRank} (shape : Shape p) (axis : HTuple.Index p) : Nat :=
-  shape.get axis
 
 theorem size_eq_prod_dim {p : HRank} (shape : Shape p) :
     shape.size = ∏ axis : HTuple.Index p, shape.dim axis := by
@@ -243,22 +213,22 @@ def colMajorOffset {p : HRank} (idx : TIndex Nat p) (shape : Shape p) : Nat :=
 
 end TIndex
 
-namespace FinIndex
+namespace FinTIndex
 
 /-- Offset computed with the dense stride for a chosen axis order. -/
-def offsetForOrder {p : HRank} {shape : Shape p} (idx : FinIndex shape)
+def offsetForOrder {p : HRank} {shape : Shape p} (idx : FinTIndex shape)
     (order : AxisOrder p) : Nat :=
   (idx : TIndex Nat p).offsetForOrder shape order
 
 /-- Row-major dense offset. -/
-def rowMajorOffset {p : HRank} {shape : Shape p} (idx : FinIndex shape) : Nat :=
+def rowMajorOffset {p : HRank} {shape : Shape p} (idx : FinTIndex shape) : Nat :=
   idx.offsetForOrder (AxisOrder.rowMajor p)
 
 /-- Column-major dense offset. -/
-def colMajorOffset {p : HRank} {shape : Shape p} (idx : FinIndex shape) : Nat :=
+def colMajorOffset {p : HRank} {shape : Shape p} (idx : FinTIndex shape) : Nat :=
   (idx : TIndex Nat p).colMajorOffset shape
 
-end FinIndex
+end FinTIndex
 
 private def flatNumel {rank : Nat} (dims : Vector Nat rank) : Nat :=
   ∏ i : Fin rank, dims[i]
@@ -395,7 +365,7 @@ private theorem flatNumel_orderedDims {p : HRank} (shape : Shape p) (order : Axi
   simpa [flatNumel, orderedDims] using
     (Equiv.prod_comp order (fun axis : HTuple.Index p => shape.dim axis))
 
-private theorem orderedIndex_inBounds {p : HRank} {shape : Shape p} (idx : FinIndex shape)
+private theorem orderedIndex_inBounds {p : HRank} {shape : Shape p} (idx : FinTIndex shape)
     (order : AxisOrder p) :
     VectorInBounds (orderedIndex idx.val order) (orderedDims shape order) := by
   intro i
@@ -419,7 +389,7 @@ private theorem offset_denseStrideForOrder_eq_denseOffset {p : HRank} (shape : S
           simp [Shape.denseStrideForOrder]
 
 private theorem offset_denseStrideForOrder_lt_size {p : HRank} {shape : Shape p}
-    (idx : FinIndex shape) (order : AxisOrder p) :
+    (idx : FinTIndex shape) (order : AxisOrder p) :
     (idx : TIndex Nat p).offset (shape.denseStrideForOrder order) < shape.size := by
   rw [offset_denseStrideForOrder_eq_denseOffset]
   rw [← flatNumel_orderedDims shape order]
@@ -427,10 +397,10 @@ private theorem offset_denseStrideForOrder_lt_size {p : HRank} {shape : Shape p}
 
 private theorem offset_denseStrideForOrder_injective {p : HRank} {shape : Shape p}
     (order : AxisOrder p) :
-    Function.Injective fun idx : FinIndex shape =>
+    Function.Injective fun idx : FinTIndex shape =>
       (idx : TIndex Nat p).offset (shape.denseStrideForOrder order) := by
   intro idx idx' hoff
-  apply FinIndex.ext
+  apply FinTIndex.ext
   apply HTuple.ext
   intro axis
   let i := order.symm axis
@@ -445,7 +415,7 @@ private theorem offset_denseStrideForOrder_injective {p : HRank} {shape : Shape 
 namespace Shape
 
 /-- Decode a column-major/colexicographic flat index into a bounded hierarchical index. -/
-def colMajorIndexOfFin : {p : HRank} → (shape : Shape p) → Fin shape.size → FinIndex shape
+def colMajorIndexOfFin : {p : HRank} → (shape : Shape p) → Fin shape.size → FinTIndex shape
   | .leaf, .leaf dim, flat =>
       { val := .leaf flat.1
         isLt := flat.2 }
@@ -471,10 +441,10 @@ def colMajorIndexOfFin : {p : HRank} → (shape : Shape p) → Fin shape.size �
 
 end Shape
 
-namespace FinIndex
+namespace FinTIndex
 
 /-- Encode a bounded hierarchical index as a column-major/colexicographic flat index. -/
-def toColMajorFin : {p : HRank} → {shape : Shape p} → FinIndex shape → Fin shape.size
+def toColMajorFin : {p : HRank} → {shape : Shape p} → FinTIndex shape → Fin shape.size
   | .leaf, .leaf _dim, ⟨.leaf i, h⟩ => ⟨i, h⟩
   | .prod _ _, .prod shape₀ shape₁, ⟨.prod idx₀ idx₁, h⟩ =>
       let leftFlat := toColMajorFin (shape := shape₀) ⟨idx₀, h.1⟩
@@ -491,7 +461,7 @@ def toColMajorFin : {p : HRank} → {shape : Shape p} → FinIndex shape → Fin
           _ ≤ Shape.size shape₀ * Shape.size shape₁ :=
                 Nat.mul_le_mul_left _ (Nat.succ_le_of_lt hright)⟩
 
-end FinIndex
+end FinTIndex
 
 namespace Shape
 
@@ -512,12 +482,12 @@ theorem denseLayoutForOrder_compact {p : HRank} (shape : Shape p) (order : AxisO
         exact_mod_cast hlt
       simpa [layout, denseLayoutForOrder, denseIntStrideForOrder, Layout.eval, hoff] using hltInt
   refine ⟨bounded, ?_⟩
-  let f : FinIndex shape → Fin shape.size := fun idx =>
+  let f : FinTIndex shape → Fin shape.size := fun idx =>
     (⟨(layout.eval idx.1).toNat, by
       have := bounded idx
       simp_all only [Int.toNat_lt]⟩ : Fin shape.size)
-  have hcard : Fintype.card (FinIndex shape) = Fintype.card (Fin shape.size) := by
-    simpa using FinIndex.card_eq_shape_size shape
+  have hcard : Fintype.card (FinTIndex shape) = Fintype.card (Fin shape.size) := by
+    simpa using FinTIndex.card_eq_shape_size shape
   have hinj : Function.Injective f := by
     intro idx idx' h
     apply offset_denseStrideForOrder_injective order

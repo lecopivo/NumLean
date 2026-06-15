@@ -39,3 +39,5 @@ lean_exe floatArrayTensorOpsTest where
 
 lean_lib Tests.Float32ArrayEval where
   precompileModules := true
+
+lean_lib Tests.TensorIndexRangeIterators where

@@ -105,7 +105,6 @@ theorem get_smul [SMul R α] {p : Profile} (r : R) (x : HTuple α p) (i : Index 
 
 /-- Pointwise semigroup structure on hierarchical tuples. -/
 instance instSemigroup [Semigroup α] {p : Profile} : Semigroup (HTuple α p) where
-  mul := (· * ·)
   mul_assoc := by
     intro a b c
     apply ext
@@ -114,27 +113,19 @@ instance instSemigroup [Semigroup α] {p : Profile} : Semigroup (HTuple α p) wh
 
 /-- Pointwise commutative semigroup structure on hierarchical tuples. -/
 instance instCommSemigroup [CommSemigroup α] {p : Profile} : CommSemigroup (HTuple α p) where
-  mul := (· * ·)
-  mul_assoc := by
-    intro a b c
-    apply ext
-    intro i
-    simp [mul_assoc]
   mul_comm := by
     intro a b
     apply ext
     intro i
     simp [mul_comm]
 
+/-- Pointwise natural powers on hierarchical tuples. -/
+def npow [Pow α Nat] {p : Profile} (n : Nat) (a : HTuple α p) : HTuple α p :=
+  a.map (fun x => x ^ n)
+
 /-- Pointwise multiplicative monoid structure on hierarchical tuples. -/
 instance instMonoid [Monoid α] {p : Profile} : Monoid (HTuple α p) where
-  one := (1 : HTuple α p)
-  mul := (· * ·)
-  mul_assoc := by
-    intro a b c
-    apply ext
-    intro i
-    simp [mul_assoc]
+  npow := HTuple.npow
   one_mul := by
     intro a
     apply ext
@@ -145,26 +136,19 @@ instance instMonoid [Monoid α] {p : Profile} : Monoid (HTuple α p) where
     apply ext
     intro i
     simp
+  npow_zero := by
+    intro a
+    apply ext
+    intro i
+    simp [HTuple.npow]
+  npow_succ := by
+    intro n a
+    apply ext
+    intro i
+    simp [HTuple.npow, pow_succ]
 
 /-- Pointwise commutative monoid structure on hierarchical tuples. -/
 instance instCommMonoid [CommMonoid α] {p : Profile} : CommMonoid (HTuple α p) where
-  one := (1 : HTuple α p)
-  mul := (· * ·)
-  mul_assoc := by
-    intro a b c
-    apply ext
-    intro i
-    simp [mul_assoc]
-  one_mul := by
-    intro a
-    apply ext
-    intro i
-    simp
-  mul_one := by
-    intro a
-    apply ext
-    intro i
-    simp
   mul_comm := by
     intro a b
     apply ext
@@ -173,8 +157,6 @@ instance instCommMonoid [CommMonoid α] {p : Profile} : CommMonoid (HTuple α p)
 
 /-- Pointwise additive commutative monoid structure on hierarchical tuples. -/
 instance instAddCommMonoid [AddCommMonoid α] {p : Profile} : AddCommMonoid (HTuple α p) where
-  zero := (0 : HTuple α p)
-  add := (· + ·)
   nsmul := (· • ·)
   add_assoc := by
     intro a b c
@@ -209,27 +191,10 @@ instance instAddCommMonoid [AddCommMonoid α] {p : Profile} : AddCommMonoid (HTu
 
 /-- Pointwise additive commutative group structure on hierarchical tuples. -/
 instance instAddCommGroup [AddCommGroup α] {p : Profile} : AddCommGroup (HTuple α p) where
-  zero := (0 : HTuple α p)
-  add := (· + ·)
   neg := Neg.neg
   sub := Sub.sub
   nsmul := (· • ·)
   zsmul := (· • ·)
-  add_assoc := by
-    intro a b c
-    apply ext
-    intro i
-    simp [add_assoc]
-  zero_add := by
-    intro a
-    apply ext
-    intro i
-    simp
-  add_zero := by
-    intro a
-    apply ext
-    intro i
-    simp
   nsmul_zero := by
     intro a
     apply ext
@@ -265,11 +230,6 @@ instance instAddCommGroup [AddCommGroup α] {p : Profile} : AddCommGroup (HTuple
     apply ext
     intro i
     simpa using SubNegMonoid.zsmul_neg' n (a.get i)
-  add_comm := by
-    intro a b
-    apply ext
-    intro i
-    simp [add_comm]
 
 /-- Pointwise module structure on hierarchical tuples. -/
 instance instModule [Semiring R] [AddCommMonoid α] [Module R α] {p : Profile} :
@@ -313,7 +273,7 @@ instance instSemiring [Semiring α] {p : Profile} : Semiring (HTuple α p) where
   add := (· + ·)
   mul := (· * ·)
   nsmul := (· • ·)
-  npow := fun n a => HTuple.ofFn fun i => (a.get i) ^ n
+  npow := HTuple.npow
   add_assoc := by
     intro a b c
     apply ext
@@ -393,12 +353,12 @@ instance instSemiring [Semiring α] {p : Profile} : Semiring (HTuple α p) where
     intro a
     apply ext
     intro i
-    simp
+    simp [HTuple.npow]
   npow_succ := by
     intro n a
     apply ext
     intro i
-    simp [pow_succ]
+    simp [HTuple.npow, pow_succ]
 
 /-- Pointwise commutative semiring structure on hierarchical tuples. -/
 instance instCommSemiring [CommSemiring α] {p : Profile} : CommSemiring (HTuple α p) where
@@ -431,6 +391,178 @@ theorem inner_smul_right {I : Type u} {D : Type v} [AddCommGroup D] [Semiring I]
               rw [hp idx₀ stride₀, hq idx₁ stride₁]
         _ = n • HTuple.inner (HTuple.prod idx₀ idx₁) (HTuple.prod stride₀ stride₁) := by
               simp [HTuple.inner, HTuple.innerWith]
+
+@[simp]
+theorem inner_zero_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p : Profile} (stride : HTuple D p) :
+    HTuple.inner (0 : HTuple R p) stride = 0 := by
+  induction p with
+  | leaf =>
+      cases stride with | leaf s =>
+      simp [HTuple.inner, HTuple.innerWith]
+  | prod p q hp hq =>
+      cases stride with | prod stride₀ stride₁ =>
+      change HTuple.inner (0 : HTuple R p) stride₀ + HTuple.inner (0 : HTuple R q) stride₁ = 0
+      rw [hp stride₀, hq stride₁, zero_add]
+
+theorem inner_add_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p : Profile} (idx idx' : HTuple R p) (stride : HTuple D p) :
+    HTuple.inner (idx + idx') stride = HTuple.inner idx stride + HTuple.inner idx' stride := by
+  induction p with
+  | leaf =>
+      cases idx with | leaf i =>
+      cases idx' with | leaf j =>
+      cases stride with | leaf s =>
+      simpa [HTuple.inner, HTuple.innerWith] using add_smul i j s
+  | prod p q hp hq =>
+      cases idx with | prod idx₀ idx₁ =>
+      cases idx' with | prod idx'₀ idx'₁ =>
+      cases stride with | prod stride₀ stride₁ =>
+      change HTuple.inner (idx₀ + idx'₀) stride₀ + HTuple.inner (idx₁ + idx'₁) stride₁ =
+        (HTuple.inner idx₀ stride₀ + HTuple.inner idx₁ stride₁) +
+          (HTuple.inner idx'₀ stride₀ + HTuple.inner idx'₁ stride₁)
+      rw [hp idx₀ idx'₀ stride₀, hq idx₁ idx'₁ stride₁]
+      ac_rfl
+
+theorem inner_smul_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p : Profile} (n : R) (idx : HTuple R p) (stride : HTuple D p) :
+    HTuple.inner (n • idx) stride = n • HTuple.inner idx stride := by
+  induction p with
+  | leaf =>
+      cases idx with | leaf i =>
+      cases stride with | leaf s =>
+      simp [HTuple.inner, HTuple.innerWith, mul_smul]
+  | prod p q hp hq =>
+      cases idx with | prod idx₀ idx₁ =>
+      cases stride with | prod stride₀ stride₁ =>
+      change HTuple.inner (n • idx₀) stride₀ + HTuple.inner (n • idx₁) stride₁ =
+        n • (HTuple.inner idx₀ stride₀ + HTuple.inner idx₁ stride₁)
+      rw [hp idx₀ stride₀, hq idx₁ stride₁, smul_add]
+
+theorem inner_map_inner {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p q : Profile} (idx : HTuple R q) (strides : HTuple (HTuple R p) q)
+    (stride : HTuple D p) :
+    HTuple.inner idx (HTuple.map (fun coord => HTuple.inner coord stride) strides) =
+      HTuple.inner (HTuple.inner idx strides) stride := by
+  induction q with
+  | leaf =>
+      cases idx with | leaf i =>
+      cases strides with | leaf coord =>
+      simpa [HTuple.inner, HTuple.innerWith] using (inner_smul_left i coord stride).symm
+  | prod q₀ q₁ h₀ h₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      cases strides with | prod strides₀ strides₁ =>
+      change HTuple.inner idx₀ (HTuple.map (fun coord => HTuple.inner coord stride) strides₀) +
+          HTuple.inner idx₁ (HTuple.map (fun coord => HTuple.inner coord stride) strides₁) =
+        HTuple.inner (HTuple.inner idx₀ strides₀ + HTuple.inner idx₁ strides₁) stride
+      rw [h₀ idx₀ strides₀, h₁ idx₁ strides₁]
+      exact (inner_add_left (HTuple.inner idx₀ strides₀) (HTuple.inner idx₁ strides₁) stride).symm
+
+theorem inner_map_prod_left {R : Type u} [Semiring R] {p q r : Profile}
+    (idx : HTuple R r) (strides : HTuple (HTuple R p) r) :
+    HTuple.inner idx (HTuple.map (fun x => HTuple.prod x (0 : HTuple R q)) strides) =
+      HTuple.prod (HTuple.inner idx strides) 0 := by
+  induction r with
+  | leaf =>
+      cases idx with | leaf i =>
+      cases strides with | leaf stride =>
+      change i • HTuple.prod stride (0 : HTuple R q) = HTuple.prod (i • stride) 0
+      simp [HTuple.smul_prod]
+  | prod r₀ r₁ h₀ h₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      cases strides with | prod strides₀ strides₁ =>
+      change HTuple.inner idx₀ (HTuple.map (fun x => HTuple.prod x (0 : HTuple R q)) strides₀) +
+          HTuple.inner idx₁ (HTuple.map (fun x => HTuple.prod x (0 : HTuple R q)) strides₁) =
+        HTuple.prod (HTuple.inner idx₀ strides₀ + HTuple.inner idx₁ strides₁) 0
+      rw [h₀ idx₀ strides₀, h₁ idx₁ strides₁]
+      simp
+
+theorem inner_map_prod_right {R : Type u} [Semiring R] {p q r : Profile}
+    (idx : HTuple R r) (strides : HTuple (HTuple R q) r) :
+    HTuple.inner idx (HTuple.map (fun x => HTuple.prod (0 : HTuple R p) x) strides) =
+      HTuple.prod 0 (HTuple.inner idx strides) := by
+  induction r with
+  | leaf =>
+      cases idx with | leaf i =>
+      cases strides with | leaf stride =>
+      change i • HTuple.prod (0 : HTuple R p) stride = HTuple.prod 0 (i • stride)
+      simp [HTuple.smul_prod]
+  | prod r₀ r₁ h₀ h₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      cases strides with | prod strides₀ strides₁ =>
+      change HTuple.inner idx₀ (HTuple.map (fun x => HTuple.prod (0 : HTuple R p) x) strides₀) +
+          HTuple.inner idx₁ (HTuple.map (fun x => HTuple.prod (0 : HTuple R p) x) strides₁) =
+        HTuple.prod 0 (HTuple.inner idx₀ strides₀ + HTuple.inner idx₁ strides₁)
+      rw [h₀ idx₀ strides₀, h₁ idx₁ strides₁]
+      simp
+
+@[simp]
+theorem inner_basisTuple {R : Type u} [Semiring R] {p : Profile} (idx : HTuple R p) :
+    HTuple.inner idx (HTuple.basisTuple p) = idx := by
+  induction p with
+  | leaf =>
+      cases idx with | leaf i =>
+      change i • (HTuple.leaf 1 : HTuple R .leaf) = HTuple.leaf i
+      simp
+  | prod p q hp hq =>
+      cases idx with | prod idx₀ idx₁ =>
+      change HTuple.inner idx₀
+            (HTuple.map (fun x => HTuple.prod x (0 : HTuple R q)) (HTuple.basisTuple p)) +
+          HTuple.inner idx₁
+            (HTuple.map (fun x => HTuple.prod (0 : HTuple R p) x) (HTuple.basisTuple q)) =
+        HTuple.prod idx₀ idx₁
+      have hleft : HTuple.inner idx₀
+            (HTuple.map (fun x => HTuple.prod x (0 : HTuple R q)) (HTuple.basisTuple p)) =
+          HTuple.prod idx₀ 0 := by
+        have h := inner_map_prod_left (q := q) idx₀ (HTuple.basisTuple p)
+        rw [hp idx₀] at h
+        exact h
+      have hright : HTuple.inner idx₁
+            (HTuple.map (fun x => HTuple.prod (0 : HTuple R p) x) (HTuple.basisTuple q)) =
+          HTuple.prod 0 idx₁ := by
+        have h := inner_map_prod_right (p := p) idx₁ (HTuple.basisTuple q)
+        rw [hq idx₁] at h
+        exact h
+      rw [hleft, hright]
+      simp
+
+@[simp]
+theorem map_inner_basisTuple {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p : Profile} (stride : HTuple D p) :
+    HTuple.map (fun coord : HTuple R p => HTuple.inner coord stride) (HTuple.basisTuple p) = stride := by
+  induction p with
+  | leaf =>
+      cases stride with | leaf s =>
+      simp [HTuple.inner, HTuple.innerWith, HTuple.basisTuple]
+  | prod p q hp hq =>
+      cases stride with | prod stride₀ stride₁ =>
+      simp [HTuple.basisTuple]
+      constructor
+      · apply HTuple.ext
+        intro i
+        have hget : HTuple.inner ((HTuple.basisTuple (α := R) p).get i) stride₀ = stride₀.get i := by
+          simpa using congrArg (fun x => x.get i) (hp stride₀)
+        simp only [get_map]
+        change HTuple.inner ((HTuple.basisTuple (α := R) p).get i) stride₀ +
+            HTuple.inner (0 : HTuple R q) stride₁ = stride₀.get i
+        rw [hget, inner_zero_left, add_zero]
+      · apply HTuple.ext
+        intro i
+        have hget : HTuple.inner ((HTuple.basisTuple (α := R) q).get i) stride₁ = stride₁.get i := by
+          simpa using congrArg (fun x => x.get i) (hq stride₁)
+        simp only [get_map]
+        change HTuple.inner (0 : HTuple R p) stride₀ +
+            HTuple.inner ((HTuple.basisTuple (α := R) q).get i) stride₁ = stride₁.get i
+        rw [hget, inner_zero_left, zero_add]
+
+/-- Regression test: the inherited integer scalar action on `HTuple` is definitionally the
+pointwise action supplied by its additive group structure. -/
+example {α : Type u} [AddCommGroup α] {p : Profile} :
+    (inferInstance : SMul Int (HTuple α p)) = SubNegMonoid.toZSMul := rfl
+
+/-- Regression test: powers on `HTuple` use the shared pointwise `map` implementation. -/
+example {α : Type u} [Monoid α] {p : Profile} :
+    ((fun n (a : HTuple α p) => a ^ n) : Nat → HTuple α p → HTuple α p) = HTuple.npow := rfl
 
 end HTuple
 

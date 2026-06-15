@@ -1,4 +1,5 @@
 import NumLean.Data.TensorIndex.Layout
+import NumLean.Data.TensorIndex.FinTIndex
 import NumLean.Interfaces.IndexType
 
 namespace NumLean
@@ -14,11 +15,11 @@ class TensorIndexTypeOfRank (I : Type u) (n : outParam Nat) (rank : HRank)
   compact_layout : layout.Compact
 
   /-- Tensor-shaped view of this flat index type. -/
-  tensorEquiv : I ≃ FinIndex shape
+  tensorEquiv : I ≃ FinTIndex shape
 
   /-- The `IndexType` flat position is the dense tensor offset for the configured axis order. -/
   layout_eval_tensorEquiv_eq_toFin (i : I) :
-    layout.eval (tensorEquiv i).1 = (toFin i).1
+    layout.eval (tensorEquiv i).1 = ((toFin i).1 : Int)
 
 
 /-- `I` is tensor index type of canonical rank `rank`. -/
@@ -35,20 +36,20 @@ variable {I : Type u} {n : Nat} {rank} {shape : Shape rank}
     [TensorIndexType I n rank shape]
 
 /-- Convert a flat index type to its tensor-shaped index. -/
-def toFinIndex (i : I) : FinIndex shape := tensorEquiv i
+def toFinTIndex (i : I) : FinTIndex shape := tensorEquiv i
 
 /-- Convert a tensor-shaped index back to the flat index type. -/
-def fromFinIndex (idx : FinIndex shape) : I := tensorEquiv.symm idx
+def fromFinTIndex (idx : FinTIndex shape) : I := tensorEquiv.symm idx
 
 @[simp]
-theorem fromFinIndex_toFinIndex (i : I) :
-    fromFinIndex (toFinIndex i) = i := by
-  simp [fromFinIndex, toFinIndex]
+theorem fromFinTIndex_toFinTIndex (i : I) :
+    fromFinTIndex (toFinTIndex i) = i := by
+  simp [fromFinTIndex, toFinTIndex]
 
 @[simp]
-theorem toFinIndex_fromFinIndex (idx : FinIndex shape) :
-    toFinIndex (fromFinIndex (I := I) idx) = idx := by
-  simp [fromFinIndex, toFinIndex]
+theorem toFinTIndex_fromFinTIndex (idx : FinTIndex shape) :
+    toFinTIndex (fromFinTIndex (I := I) idx) = idx := by
+  simp [fromFinTIndex, toFinTIndex]
 
 end API
 
@@ -57,9 +58,28 @@ instance {I nI} [IndexType I nI] : TensorIndexTypeOfRank I nI .leaf (.leaf nI) w
   size_eq_shape_size := by rfl
   layout := .ofFin nI
   compact_layout := Layout.compact_ofFin
-  tensorEquiv := (IndexType.equivFin (I := I)).trans ((FinIndex.equivFin (.leaf nI)).symm)
+  tensorEquiv := (IndexType.equivFin (I := I)).trans ((FinTIndex.equivFin (.leaf nI)).symm)
   layout_eval_tensorEquiv_eq_toFin := by
-    intro i; simp [Layout.ofFin, FinIndex.equivFin, FinIndex.leafEquiv, IndexType.equivFin]
+    intro i; simp [Layout.ofFin, FinTIndex.equivFin, FinTIndex.leafEquiv, IndexType.equivFin]
+
+instance {r} {shape : Shape r} : TensorIndexTypeOfRank (FinTIndex shape) shape.size r shape where
+  toIdx i := ((FinTIndex.equivFin shape) i).toIdx
+  fromIdx i := (FinTIndex.equivFin shape).symm i.toFin
+  left_inv := by intro h; sorry
+  right_inv := by intro h; sorry
+  toFin i := (FinTIndex.equivFin shape) i
+  fromFin i := (FinTIndex.equivFin shape).symm i
+  left_inv' := by exact Equiv.leftInverse_symm (FinTIndex.equivFin shape)
+  right_inv' := by exact Equiv.rightInverse_symm (FinTIndex.equivFin shape)
+  size_eq_shape_size := by simp
+  layout := Layout.rowMajor shape
+  compact_layout := Layout.compact_rowMajor
+  tensorEquiv := Equiv.refl _
+  layout_eval_tensorEquiv_eq_toFin := by
+    intros; simp
+    unfold Layout.eval Layout.rowMajor
+    rw[FinTIndex.offset_rowMajorEquiv_eq_equivFin]
+    simp only [zero_add]
 
 /-- Default h-rank of `Fin n` is `.leaf` -/
 instance : TensorIndexType (Fin n) n .leaf (.leaf n) where
@@ -74,10 +94,11 @@ instance {I : Type u} {J : Type v} {nI nJ : Nat}
     simp [Shape.size, size_eq_shape_size (I:=I) (rank := p), size_eq_shape_size (I:=J) (rank := q)]
   layout := (layout (I := I) (rank := p)).rowMajorProd (layout (I := J) (rank := q))
   compact_layout := by simp [compact_layout (I := I), compact_layout (I := J)]
-  tensorEquiv := (Equiv.prodCongr tensorEquiv tensorEquiv).trans FinIndex.prodEquiv.symm
+  tensorEquiv := (Equiv.prodCongr tensorEquiv tensorEquiv).trans (FinTIndex.prodEquiv _ _).symm
   layout_eval_tensorEquiv_eq_toFin := by
     intro (i,j)
-    simp [FinIndex.prodEquiv,layout_eval_tensorEquiv_eq_toFin, ← size_eq_shape_size (I := J), toFin]
+    simp [FinTIndex.prodEquiv,layout_eval_tensorEquiv_eq_toFin,
+          ← size_eq_shape_size (I := J), toFin]
 
 instance {I : Type u} {J : Type v} {nI nJ : Nat}
     {p q : HRank} {shapeI : Shape p} {shapeJ : Shape q}

@@ -109,6 +109,17 @@ theorem map_prod {α : Type u} {β : Type v} (f : α → β)
     map f (.prod fst snd) = .prod (map f fst) (map f snd) := rfl
 
 @[simp]
+theorem map_map {α : Type u} {β : Type v} {γ : Type w}
+    (g : β → γ) (f : α → β) {p : Profile} (x : HTuple α p) :
+    map g (map f x) = map (fun a => g (f a)) x := by
+  induction p with
+  | leaf =>
+      cases x with | leaf value => rfl
+  | prod p q hp hq =>
+      cases x with | prod fst snd =>
+      simp [hp, hq]
+
+@[simp]
 theorem map₂_leaf {α : Type u} {β : Type v} {γ : Type w} (f : α → β → γ) (a : α) (b : β) :
     map₂ f (.leaf a) (.leaf b) = .leaf (f a b) := rfl
 
@@ -221,6 +232,19 @@ theorem get_prod_left {α : Type u} {p q : Profile} (fst : HTuple α p) (snd : H
 theorem get_prod_right {α : Type u} {p q : Profile} (fst : HTuple α p) (snd : HTuple α q)
     (i : Index q) :
     get (.prod fst snd) (.right i) = snd.get i := rfl
+
+@[simp]
+theorem get_map {α : Type u} {β : Type v} (f : α → β) {p : Profile}
+    (x : HTuple α p) (i : Index p) :
+    (map f x).get i = f (x.get i) := by
+  induction p with
+  | leaf =>
+      cases x with | leaf value =>
+      cases i
+      rfl
+  | prod p q hp hq =>
+      cases x with | prod fst snd =>
+      cases i <;> simp [hp, hq]
 
 @[simp]
 theorem set_leaf {α : Type u} (old value : α) : set (.leaf old) .leaf value = .leaf value := rfl
