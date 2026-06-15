@@ -1,4 +1,4 @@
-import NumLean.Data.TensorIndex.Hierarchical
+import NumLean.Data.TensorIndex.Layout
 import NumLean.Data.HTuple.Algebra
 
 open scoped BigOperators
@@ -244,51 +244,6 @@ def colMajorOffset {p : HRank} (idx : TIndex Nat p) (shape : Shape p) : Nat :=
 end TIndex
 
 namespace FinIndex
-
-private def leafEquiv (dim : Nat) : FinIndex (.leaf dim) ≃ Fin dim where
-  toFun idx := match idx with | ⟨HTuple.leaf i, h⟩ => ⟨i, h⟩
-  invFun i := ⟨HTuple.leaf i.1, i.2⟩
-  left_inv := by
-    intro idx
-    cases idx with
-    | mk val h =>
-    cases val with
-    | leaf i => rfl
-  right_inv := by intro i; rfl
-
-private def prodEquiv {p q : HRank} {shape₀ : Shape p} {shape₁ : Shape q} :
-    FinIndex (.prod shape₀ shape₁) ≃ FinIndex shape₀ × FinIndex shape₁ where
-  toFun idx :=
-    match idx with
-    | ⟨.prod idx₀ idx₁, h⟩ => (⟨idx₀, h.1⟩, ⟨idx₁, h.2⟩)
-  invFun idx := ⟨.prod idx.1.val idx.2.val, ⟨idx.1.isLt, idx.2.isLt⟩⟩
-  left_inv := by
-    intro idx
-    cases idx with
-    | mk val h =>
-    cases val with
-    | prod idx₀ idx₁ => rfl
-  right_inv := by
-    intro idx
-    cases idx with
-    | mk left right => rfl
-
-noncomputable instance {p : HRank} {shape : Shape p} : Fintype (FinIndex shape) := by
-  induction shape with
-  | leaf dim =>
-      exact Fintype.ofEquiv (Fin dim) (leafEquiv dim).symm
-  | prod shape₀ shape₁ _ _ =>
-      exact Fintype.ofEquiv (FinIndex shape₀ × FinIndex shape₁) prodEquiv.symm
-
-theorem card_eq_shape_size {p : HRank} (shape : Shape p) :
-    Fintype.card (FinIndex shape) = shape.size := by
-  induction shape with
-  | leaf dim =>
-      simpa [Shape.size] using Fintype.card_congr (leafEquiv dim)
-  | prod shape₀ shape₁ h₀ h₁ =>
-      rw [Shape.size_prod]
-      have hcard := Fintype.card_congr (prodEquiv (shape₀ := shape₀) (shape₁ := shape₁))
-      simpa [Fintype.card_prod, h₀, h₁] using hcard
 
 /-- Offset computed with the dense stride for a chosen axis order. -/
 def offsetForOrder {p : HRank} {shape : Shape p} (idx : FinIndex shape)
@@ -551,14 +506,14 @@ theorem denseLayoutForOrder_compact {p : HRank} (shape : Shape p) (order : AxisO
     constructor
     · have hnonneg : (0 : Int) ≤ Int.ofNat ((idx : TIndex Nat p).offset (shape.denseStrideForOrder order)) := by
         exact Int.natCast_nonneg _
-      simp [layout, denseLayoutForOrder, denseIntStrideForOrder, hoff]
+      simpa [layout, denseLayoutForOrder, denseIntStrideForOrder, Layout.eval, hoff] using hnonneg
     · have hltInt : (((idx : TIndex Nat p).offset (shape.denseStrideForOrder order) : Nat) : Int) <
           (shape.size : Int) := by
         exact_mod_cast hlt
-      simpa [layout, denseLayoutForOrder, denseIntStrideForOrder, hoff] using hltInt
+      simpa [layout, denseLayoutForOrder, denseIntStrideForOrder, Layout.eval, hoff] using hltInt
   refine ⟨bounded, ?_⟩
   let f : FinIndex shape → Fin shape.size := fun idx =>
-    (⟨(idx.1.offset layout.stride).toNat, by
+    (⟨(layout.eval idx.1).toNat, by
       have := bounded idx
       simp_all only [Int.toNat_lt]⟩ : Fin shape.size)
   have hcard : Fintype.card (FinIndex shape) = Fintype.card (Fin shape.size) := by
@@ -569,7 +524,7 @@ theorem denseLayoutForOrder_compact {p : HRank} (shape : Shape p) (order : AxisO
     have hval := congrArg Fin.val h
     have hoff := TIndex.offset_map_natCast (idx : TIndex Nat p) (shape.denseStrideForOrder order)
     have hoff' := TIndex.offset_map_natCast (idx' : TIndex Nat p) (shape.denseStrideForOrder order)
-    simp [f, layout, denseLayoutForOrder, denseIntStrideForOrder, hoff, hoff'] at hval
+    simp [f, layout, denseLayoutForOrder, denseIntStrideForOrder, Layout.eval, hoff, hoff'] at hval
     exact hval
   exact (Fintype.bijective_iff_injective_and_card f).2 ⟨hinj, hcard⟩
 
@@ -578,6 +533,18 @@ theorem colMajorLayout_compact {p : HRank} (shape : Shape p) :
     Layout.Compact shape.colMajorLayout := by
   simpa [colMajorLayout, denseLayoutForOrder, denseIntStrideForOrder, colMajorStride] using
     denseLayoutForOrder_compact shape (AxisOrder.colMajor p)
+
+/-- The row-major dense layout is compact. -/
+theorem rowMajorLayout_compact {p : HRank} (shape : Shape p) :
+    Layout.Compact shape.rowMajorLayout := by
+  simpa [rowMajorLayout, denseLayoutForOrder, denseIntStrideForOrder, rowMajorStride] using
+    denseLayoutForOrder_compact shape (AxisOrder.rowMajor p)
+
+@[simp]
+theorem leafLayout_eval (n i : Nat) :
+    (Layout.eval ({ offset := 0, stride := HTuple.leaf (1 : Int) } : Layout (HTuple.leaf n) Int)
+      (HTuple.leaf i)) = i := by
+  simp [Layout.eval, TIndex.offset, HTuple.inner, HTuple.innerWith]
 
 end Shape
 
