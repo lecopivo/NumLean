@@ -109,12 +109,15 @@ def rowMajorProd {p q : HRank} {shape₀ : Shape p} {shape₁ : Shape q}
   stride := (shape₁.size • layout₀.stride).prod layout₁.stride
 
 @[simp]
-theorem rowMajorProd_eval {p q : HRank} {shape₀ : Shape p} {shape₁ : Shape q}
+theorem rowMajorProd_eval
+    {I} {D} [AddCommGroup D] [Semiring I] [Module I D]
+    {p q : HRank} {shape₀ : Shape p} {shape₁ : Shape q}
     (layout₀ : Layout shape₀ D) (layout₁ : Layout shape₁ D)
-    (idx₀ : TIndex Nat p) (idx₁ : TIndex Nat q) :
+    (idx₀ : TIndex I p) (idx₁ : TIndex I q) :
     (layout₀.rowMajorProd layout₁).eval (idx₀.prod idx₁) =
       layout₁.eval idx₁ + shape₁.size • layout₀.eval idx₀ := by
-  sorry
+  simp [rowMajorProd, eval, TIndex.offset_smul]
+  module
 
 @[simp]
 theorem injecitve_rowMajorProd {p q : HRank} {shape₀ : Shape p} {shape₁ : Shape q}

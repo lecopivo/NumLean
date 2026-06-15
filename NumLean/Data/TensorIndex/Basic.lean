@@ -85,6 +85,12 @@ theorem offset_prod {I : Type u} {D : Type v} [Zero D] [Add D] [SMul I D]
     i.offset stride + j.offset stride' := by
   simp [TIndex.offset, HTuple.inner, HTuple.innerWith]
 
+theorem offset_smul {I : Type u} {D : Type v} [AddCommGroup D] [Semigroup I] [SemigroupAction I D]
+    (p : HRank) (shape : Shape p) (idx : TIndex I p) (stride : Stride D shape) (n : Nat) :
+    idx.offset (n • stride) =
+    n • idx.offset stride := by
+  sorry
+
 end TIndex
 
 /-- A bounded hierarchical tensor index, analogous to `Fin n`. -/
