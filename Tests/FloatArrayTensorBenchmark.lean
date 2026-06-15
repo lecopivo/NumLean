@@ -1,4 +1,4 @@
-import NumLean.Data.TensorIndex.FinTIndexIterator
+import NumLean.Data.TensorIndex.FinTIndexFold
 
 open NumLean TensorIndex
 
@@ -42,7 +42,7 @@ def timeRun (name : String) (runs : Nat) (body : Nat → IO Float) : IO Unit := 
   let stop ← IO.monoMsNow
   let elapsed := stop - start
   let perRun := if runs == 0 then 0.0 else Float.ofNat elapsed / Float.ofNat runs
-  IO.println s!"{name}: total={elapsed}ms per-run={perRun}ms checksum={guard}"
+  IO.println s!"{name}\t{elapsed}ms\t{perRun}ms/run\t{guard}"
 
 @[inline] def fset (xs : FloatArray) (i : Nat) (x : Float) : FloatArray :=
   if h : i < xs.size then xs.set i x h else xs
@@ -95,27 +95,17 @@ def matmulRowMajorIter (n token : Nat) (a b : FloatArray)
   let shape : Shape (.prod .leaf .leaf) := .prod (.leaf n) (.leaf n)
   let mut c := FloatArray.mk (Array.replicate (n * n) 0.0)
   let bias := Float.ofNat (token % 7) * 0.000001
-  for ⟨linear, idx, _hidx⟩ in FinTIndex.rowMajorFinIter shape do
+  for ⟨_linear, idx, _hidx⟩ in FinTIndex.rowMajorFinIter shape do
     let ⟨.prod (.leaf i) (.leaf j), hbounds⟩ := idx
-    let row := i.toNat
-    let col := j.toNat
+    let row := i
+    let col := j
     let mut acc := bias
     for hk : k in 0...n do
       have hkLt : k < n := by
         simp only [Membership.mem] at hk
         omega
-      have hi : row < n := by
-        change i.toNat < n
-        rw [Int.toNat_lt_of_ne_zero]
-        · exact hbounds.1.2
-        · have hpos : (0 : Int) < n := lt_of_le_of_lt hbounds.1.1 hbounds.1.2
-          omega
-      have hj : col < n := by
-        change j.toNat < n
-        rw [Int.toNat_lt_of_ne_zero]
-        · exact hbounds.2.2
-        · have hpos : (0 : Int) < n := lt_of_le_of_lt hbounds.2.1 hbounds.2.2
-          omega
+      have hi : row < n := hbounds.1
+      have hj : col < n := hbounds.2
       have haIdx : row * n + k < a.size := by
         rw [ha]
         nlinarith
@@ -123,7 +113,8 @@ def matmulRowMajorIter (n token : Nat) (a b : FloatArray)
         rw [hb]
         nlinarith
       acc := acc + a.get (row * n + k) haIdx * b.get (k * n + col) hbIdx
-    c := fset c linear.1 acc
+    let out := row * n + col
+    c := fset c out acc
   return c
 
 def matmulStandaloneLoop (n token : Nat) (a b : FloatArray)
@@ -131,28 +122,18 @@ def matmulStandaloneLoop (n token : Nat) (a b : FloatArray)
   let shape : Shape (.prod .leaf .leaf) := .prod (.leaf n) (.leaf n)
   let bias := Float.ofNat (token % 7) * 0.000001
   return FinTIndex.RowMajorLoop.foldIdx shape (FloatArray.mk (Array.replicate (n * n) 0.0))
-    (fun linear idx c =>
+    (fun _linear idx c =>
       let ⟨.prod (.leaf i) (.leaf j), hbounds⟩ := idx
-      let row := i.toNat
-      let col := j.toNat
+      let row := i
+      let col := j
       let acc := Id.run do
         let mut acc := bias
         for hk : k in 0...n do
           have hkLt : k < n := by
             simp only [Membership.mem] at hk
             omega
-          have hi : row < n := by
-            change i.toNat < n
-            rw [Int.toNat_lt_of_ne_zero]
-            · exact hbounds.1.2
-            · have hpos : (0 : Int) < n := lt_of_le_of_lt hbounds.1.1 hbounds.1.2
-              omega
-          have hj : col < n := by
-            change j.toNat < n
-            rw [Int.toNat_lt_of_ne_zero]
-            · exact hbounds.2.2
-            · have hpos : (0 : Int) < n := lt_of_le_of_lt hbounds.2.1 hbounds.2.2
-              omega
+          have hi : row < n := hbounds.1
+          have hj : col < n := hbounds.2
           have haIdx : row * n + k < a.size := by
             rw [ha]
             nlinarith
@@ -161,7 +142,8 @@ def matmulStandaloneLoop (n token : Nat) (a b : FloatArray)
             nlinarith
           acc := acc + a.get (row * n + k) haIdx * b.get (k * n + col) hbIdx
         return acc
-      fset c linear.1 acc)
+      let out := row * n + col
+      fset c out acc)
 
 def inner3Direct (d0 d1 d2 token : Nat) (a b : FloatArray)
     (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float := Id.run do
@@ -193,15 +175,19 @@ def inner3RowMajorIter (d0 d1 d2 token : Nat) (a b : FloatArray)
   let shape : Shape (.prod (.prod .leaf .leaf) .leaf) :=
     .prod (.prod (.leaf d0) (.leaf d1)) (.leaf d2)
   let mut acc := Float.ofNat (token % 7) * 0.000001
-  for ⟨linear, idx, _hidx⟩ in FinTIndex.rowMajorFinIter shape do
-    let ⟨.prod (.prod (.leaf _i) (.leaf _j)) (.leaf _k), _hbounds⟩ := idx
-    have hlinear : linear.1 < a.size := by
+  for ⟨_linear, idx, _hidx⟩ in FinTIndex.rowMajorFinIter shape do
+    let ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), hbounds⟩ := idx
+    have hi : i < d0 := hbounds.1.1
+    have hj : j < d1 := hbounds.1.2
+    have hk : k < d2 := hbounds.2
+    let flat := (i * d1 + j) * d2 + k
+    have hflat : flat < a.size := by
       rw [ha]
-      exact linear.2
-    have hlinearB : linear.1 < b.size := by
+      exact flat3_lt hi hj hk
+    have hflatB : flat < b.size := by
       rw [hb]
-      exact linear.2
-    acc := acc + a.get linear.1 hlinear * b.get linear.1 hlinearB
+      exact flat3_lt hi hj hk
+    acc := acc + a.get flat hflat * b.get flat hflatB
   return acc
 
 def inner3StandaloneLoop (d0 d1 d2 token : Nat) (a b : FloatArray)
@@ -209,14 +195,19 @@ def inner3StandaloneLoop (d0 d1 d2 token : Nat) (a b : FloatArray)
   let shape : Shape (.prod (.prod .leaf .leaf) .leaf) :=
     .prod (.prod (.leaf d0) (.leaf d1)) (.leaf d2)
   FinTIndex.RowMajorLoop.foldIdx shape (Float.ofNat (token % 7) * 0.000001)
-    (fun linear _idx acc =>
-      have hlinear : linear.1 < a.size := by
+    (fun _linear idx acc =>
+      let ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), hbounds⟩ := idx
+      have hi : i < d0 := hbounds.1.1
+      have hj : j < d1 := hbounds.1.2
+      have hk : k < d2 := hbounds.2
+      let flat := (i * d1 + j) * d2 + k
+      have hflat : flat < a.size := by
         rw [ha]
-        exact linear.2
-      have hlinearB : linear.1 < b.size := by
+        exact flat3_lt hi hj hk
+      have hflatB : flat < b.size := by
         rw [hb]
-        exact linear.2
-      acc + a.get linear.1 hlinear * b.get linear.1 hlinearB)
+        exact flat3_lt hi hj hk
+      acc + a.get flat hflat * b.get flat hflatB)
 
 def inner3CoordDirect (d0 d1 d2 token : Nat) (a b : FloatArray)
     (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float := Id.run do
@@ -251,39 +242,22 @@ def inner3CoordRowMajorIter (d0 d1 d2 token : Nat) (a b : FloatArray)
   let shape : Shape (.prod (.prod .leaf .leaf) .leaf) :=
     .prod (.prod (.leaf d0) (.leaf d1)) (.leaf d2)
   let mut acc := Float.ofNat (token % 7) * 0.000001
-  for ⟨linear, idx, _hidx⟩ in FinTIndex.rowMajorFinIter shape do
+  for ⟨_linear, idx, _hidx⟩ in FinTIndex.rowMajorFinIter shape do
     let ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), hbounds⟩ := idx
-    let i := i.toNat
-    let j := j.toNat
-    let k := k.toNat
-    have hi : i < d0 := by
-      change _root_.Int.toNat _ < d0
-      rw [Int.toNat_lt_of_ne_zero]
-      · exact hbounds.1.1.2
-      · have hpos : (0 : Int) < d0 := lt_of_le_of_lt hbounds.1.1.1 hbounds.1.1.2
-        omega
-    have hj : j < d1 := by
-      change _root_.Int.toNat _ < d1
-      rw [Int.toNat_lt_of_ne_zero]
-      · exact hbounds.1.2.2
-      · have hpos : (0 : Int) < d1 := lt_of_le_of_lt hbounds.1.2.1 hbounds.1.2.2
-        omega
-    have hk : k < d2 := by
-      change _root_.Int.toNat _ < d2
-      rw [Int.toNat_lt_of_ne_zero]
-      · exact hbounds.2.2
-      · have hpos : (0 : Int) < d2 := lt_of_le_of_lt hbounds.2.1 hbounds.2.2
-        omega
+    have hi : i < d0 := hbounds.1.1
+    have hj : j < d1 := hbounds.1.2
+    have hk : k < d2 := hbounds.2
+    let ai := (i * d1 + j) * d2 + k
     let bi := (i * d1 + (d1 - 1 - j)) * d2 + k
-    have hlinear : linear.1 < a.size := by
+    have hai : ai < a.size := by
       rw [ha]
-      exact linear.2
+      exact flat3_lt hi hj hk
     have hjFlip : d1 - 1 - j < d1 := by
       omega
     have hbi : bi < b.size := by
       rw [hb]
       exact flat3_lt hi hjFlip hk
-    acc := acc + a.get linear.1 hlinear * b.get bi hbi
+    acc := acc + a.get ai hai * b.get bi hbi
   return acc
 
 def inner3CoordStandaloneLoop (d0 d1 d2 token : Nat) (a b : FloatArray)
@@ -291,81 +265,108 @@ def inner3CoordStandaloneLoop (d0 d1 d2 token : Nat) (a b : FloatArray)
   let shape : Shape (.prod (.prod .leaf .leaf) .leaf) :=
     .prod (.prod (.leaf d0) (.leaf d1)) (.leaf d2)
   FinTIndex.RowMajorLoop.foldIdx shape (Float.ofNat (token % 7) * 0.000001)
-    (fun linear idx acc =>
+    (fun _linear idx acc =>
       let ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), hbounds⟩ := idx
-      let i := i.toNat
-      let j := j.toNat
-      let k := k.toNat
-      have hi : i < d0 := by
-        change _root_.Int.toNat _ < d0
-        rw [Int.toNat_lt_of_ne_zero]
-        · exact hbounds.1.1.2
-        · have hpos : (0 : Int) < d0 := lt_of_le_of_lt hbounds.1.1.1 hbounds.1.1.2
-          omega
-      have hj : j < d1 := by
-        change _root_.Int.toNat _ < d1
-        rw [Int.toNat_lt_of_ne_zero]
-        · exact hbounds.1.2.2
-        · have hpos : (0 : Int) < d1 := lt_of_le_of_lt hbounds.1.2.1 hbounds.1.2.2
-          omega
-      have hk : k < d2 := by
-        change _root_.Int.toNat _ < d2
-        rw [Int.toNat_lt_of_ne_zero]
-        · exact hbounds.2.2
-        · have hpos : (0 : Int) < d2 := lt_of_le_of_lt hbounds.2.1 hbounds.2.2
-          omega
+      have hi : i < d0 := hbounds.1.1
+      have hj : j < d1 := hbounds.1.2
+      have hk : k < d2 := hbounds.2
+      let ai := (i * d1 + j) * d2 + k
       let bi := (i * d1 + (d1 - 1 - j)) * d2 + k
-      have hlinear : linear.1 < a.size := by
+      have hai : ai < a.size := by
         rw [ha]
-        exact linear.2
+        exact flat3_lt hi hj hk
       have hjFlip : d1 - 1 - j < d1 := by
         omega
       have hbi : bi < b.size := by
         rw [hb]
         exact flat3_lt hi hjFlip hk
-      acc + a.get linear.1 hlinear * b.get bi hbi)
+      acc + a.get ai hai * b.get bi hbi)
+
+def inner3CoordStandaloneLoopRecursive (d0 d1 d2 token : Nat) (a b : FloatArray)
+    (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float :=
+  let shape : Shape (.prod (.prod .leaf .leaf) .leaf) :=
+    .prod (.prod (.leaf d0) (.leaf d1)) (.leaf d2)
+  FinTIndex.RowMajorLoop.foldIdxRecursive shape (Float.ofNat (token % 7) * 0.000001)
+    (fun _linear idx acc =>
+      let ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), hbounds⟩ := idx
+      have hi : i < d0 := hbounds.1.1
+      have hj : j < d1 := hbounds.1.2
+      have hk : k < d2 := hbounds.2
+      let ai := (i * d1 + j) * d2 + k
+      let bi := (i * d1 + (d1 - 1 - j)) * d2 + k
+      have hai : ai < a.size := by
+        rw [ha]
+        exact flat3_lt hi hj hk
+      have hjFlip : d1 - 1 - j < d1 := by
+        omega
+      have hbi : bi < b.size := by
+        rw [hb]
+        exact flat3_lt hi hjFlip hk
+      acc + a.get ai hai * b.get bi hbi)
 
 def inner3CoordNatStandaloneLoop (d0 d1 d2 token : Nat) (a b : FloatArray)
     (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float :=
   let shape : Shape (.prod (.prod .leaf .leaf) .leaf) :=
     .prod (.prod (.leaf d0) (.leaf d1)) (.leaf d2)
   FinTIndex.RowMajorLoop.foldNatIdx shape (Float.ofNat (token % 7) * 0.000001)
-    (fun linear idx hbounds acc =>
+    (fun _linear idx hbounds acc =>
       match idx with
       | .prod (.prod (.leaf i) (.leaf j)) (.leaf k) =>
-          let bi := (i * d1 + (d1 - 1 - j)) * d2 + k
-          have hlinear : linear.1 < a.size := by
-            rw [ha]
-            exact linear.2
           have hi : i < d0 := hbounds.1.1
           have hj : j < d1 := hbounds.1.2
           have hk : k < d2 := hbounds.2
+          let ai := (i * d1 + j) * d2 + k
+          let bi := (i * d1 + (d1 - 1 - j)) * d2 + k
+          have hai : ai < a.size := by
+            rw [ha]
+            exact flat3_lt hi hj hk
           have hjFlip : d1 - 1 - j < d1 := by omega
           have hbi : bi < b.size := by
             rw [hb]
             exact flat3_lt hi hjFlip hk
-          acc + a.get linear.1 hlinear * b.get bi hbi)
+          acc + a.get ai hai * b.get bi hbi)
 
-def inner3CoordNatFinStandaloneLoop (d0 d1 d2 token : Nat) (a b : FloatArray)
+def inner3CoordNatStandaloneLoopRecursive (d0 d1 d2 token : Nat) (a b : FloatArray)
     (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float :=
   let shape : Shape (.prod (.prod .leaf .leaf) .leaf) :=
     .prod (.prod (.leaf d0) (.leaf d1)) (.leaf d2)
-  FinTIndex.RowMajorLoop.foldNatFinIdx shape (Float.ofNat (token % 7) * 0.000001)
-    (fun linear idx acc =>
+  FinTIndex.RowMajorLoop.foldNatIdxRecursive shape (Float.ofNat (token % 7) * 0.000001)
+    (fun _linear idx hbounds acc =>
       match idx with
-      | ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), hbounds⟩ =>
-          let bi := (i * d1 + (d1 - 1 - j)) * d2 + k
-          have hlinear : linear.1 < a.size := by
-            rw [ha]
-            exact linear.2
+      | .prod (.prod (.leaf i) (.leaf j)) (.leaf k) =>
           have hi : i < d0 := hbounds.1.1
           have hj : j < d1 := hbounds.1.2
           have hk : k < d2 := hbounds.2
+          let ai := (i * d1 + j) * d2 + k
+          let bi := (i * d1 + (d1 - 1 - j)) * d2 + k
+          have hai : ai < a.size := by
+            rw [ha]
+            exact flat3_lt hi hj hk
           have hjFlip : d1 - 1 - j < d1 := by omega
           have hbi : bi < b.size := by
             rw [hb]
             exact flat3_lt hi hjFlip hk
-          acc + a.get linear.1 hlinear * b.get bi hbi)
+          acc + a.get ai hai * b.get bi hbi)
+
+def inner3CoordIntFinStandaloneLoop (d0 d1 d2 token : Nat) (a b : FloatArray)
+    (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float :=
+  let shape : Shape (.prod (.prod .leaf .leaf) .leaf) :=
+    .prod (.prod (.leaf d0) (.leaf d1)) (.leaf d2)
+  FinTIndex.RowMajorLoop.foldIntFinIdx shape (Float.ofNat (token % 7) * 0.000001)
+    (fun _linear idx acc =>
+      match idx with
+      | ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), _hbounds⟩ =>
+          let aiInt := (i * (d1 : Int) + j) * (d2 : Int) + k
+          let biInt := (i * (d1 : Int) + ((d1 : Int) - 1 - j)) * (d2 : Int) + k
+          let ai := aiInt.toNat
+          let bi := biInt.toNat
+          have hai : ai < a.size := by
+            rw [ha]
+            sorry
+          have hbi : bi < b.size := by
+            rw [hb]
+            sorry
+          acc + a.get ai hai * b.get bi hbi)
 
 def matmulDirectChecksum (a b : FloatArray)
     (ha : a.size = matrixSize * matrixSize) (hb : b.size = matrixSize * matrixSize)
@@ -418,22 +419,35 @@ def inner3CoordStandaloneLoopChecksum (a b : FloatArray)
     (token : Nat) : Float :=
   inner3CoordStandaloneLoop rank3CoordDim0 rank3CoordDim1 rank3CoordDim2 token a b ha hb
 
+def inner3CoordStandaloneLoopRecursiveChecksum (a b : FloatArray)
+    (ha : a.size = rank3CoordDim0 * rank3CoordDim1 * rank3CoordDim2)
+    (hb : b.size = rank3CoordDim0 * rank3CoordDim1 * rank3CoordDim2)
+    (token : Nat) : Float :=
+  inner3CoordStandaloneLoopRecursive rank3CoordDim0 rank3CoordDim1 rank3CoordDim2 token a b ha hb
+
 def inner3CoordNatStandaloneLoopChecksum (a b : FloatArray)
     (ha : a.size = rank3CoordDim0 * rank3CoordDim1 * rank3CoordDim2)
     (hb : b.size = rank3CoordDim0 * rank3CoordDim1 * rank3CoordDim2)
     (token : Nat) : Float :=
   inner3CoordNatStandaloneLoop rank3CoordDim0 rank3CoordDim1 rank3CoordDim2 token a b ha hb
 
-def inner3CoordNatFinStandaloneLoopChecksum (a b : FloatArray)
+def inner3CoordNatStandaloneLoopRecursiveChecksum (a b : FloatArray)
     (ha : a.size = rank3CoordDim0 * rank3CoordDim1 * rank3CoordDim2)
     (hb : b.size = rank3CoordDim0 * rank3CoordDim1 * rank3CoordDim2)
     (token : Nat) : Float :=
-  inner3CoordNatFinStandaloneLoop rank3CoordDim0 rank3CoordDim1 rank3CoordDim2 token a b ha hb
+  inner3CoordNatStandaloneLoopRecursive rank3CoordDim0 rank3CoordDim1 rank3CoordDim2 token a b ha hb
+
+def inner3CoordIntFinStandaloneLoopChecksum (a b : FloatArray)
+    (ha : a.size = rank3CoordDim0 * rank3CoordDim1 * rank3CoordDim2)
+    (hb : b.size = rank3CoordDim0 * rank3CoordDim1 * rank3CoordDim2)
+    (token : Nat) : Float :=
+  inner3CoordIntFinStandaloneLoop rank3CoordDim0 rank3CoordDim1 rank3CoordDim2 token a b ha hb
 
 def run : IO Unit := do
   IO.println s!"FloatArray iterator benchmark payload: matmul={matrixSize}x{matrixSize}, dense-inner3={rank3Dim0}x{rank3Dim1}x{rank3Dim2}, coord-inner3={rank3CoordDim0}x{rank3CoordDim1}x{rank3CoordDim2}"
   IO.println "Comparisons are direct nested dimension loops vs rowMajorFinIter aggregate loops."
   IO.println "Inputs and per-run scalars depend on runtime IO.monoMsNow tokens to avoid compile-time folding."
+  IO.println "name\ttotal\tper-run\tchecksum"
   let salt ← IO.monoMsNow
   let matA := makeFloatArray (matrixSize * matrixSize) (salt + 1)
   let matB := makeFloatArray (matrixSize * matrixSize) (salt + 2)
@@ -461,8 +475,10 @@ def run : IO Unit := do
   timeRun "dense inner3 rowMajorFinIter" 64 (fun token => pure (inner3RowMajorIterChecksum tensorA tensorB htensorA htensorB token))
   timeRun "coord inner3 direct nested loops" 64 (fun token => pure (inner3CoordDirectChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
   timeRun "coord inner3 nat standalone RowMajorLoop" 64 (fun token => pure (inner3CoordNatStandaloneLoopChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
-  timeRun "coord inner3 NatFinTIndex RowMajorLoop" 64 (fun token => pure (inner3CoordNatFinStandaloneLoopChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
+  timeRun "coord inner3 nat recursive RowMajorLoop" 64 (fun token => pure (inner3CoordNatStandaloneLoopRecursiveChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
+  timeRun "coord inner3 IntFinTIndex RowMajorLoop" 64 (fun token => pure (inner3CoordIntFinStandaloneLoopChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
   timeRun "coord inner3 standalone RowMajorLoop" 64 (fun token => pure (inner3CoordStandaloneLoopChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
+  timeRun "coord inner3 recursive RowMajorLoop" 64 (fun token => pure (inner3CoordStandaloneLoopRecursiveChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
   timeRun "coord inner3 rowMajorFinIter" 64 (fun token => pure (inner3CoordRowMajorIterChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
 
 end Tests.FloatArrayTensorBenchmark

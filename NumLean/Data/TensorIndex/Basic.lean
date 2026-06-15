@@ -30,19 +30,25 @@ end Shape
 
 namespace TIndex
 
-/-- An integer hierarchical coordinate is in bounds for a positive hierarchical shape. -/
-@[inline] def InBounds {p : HRank} (shape : Shape p) (idx : TIndex Int p) : Prop :=
+/-- A natural hierarchical coordinate is in bounds for a hierarchical shape. -/
+@[inline] def InBounds {p : HRank} (shape : Shape p) (idx : TIndex Nat p) : Prop :=
   match shape, idx with
-  | .leaf dim, .leaf i => 0 ≤ i ∧ i < dim
+  | .leaf dim, .leaf i => i < dim
   | .prod shape₀ shape₁, .prod idx₀ idx₁ => InBounds shape₀ idx₀ ∧ InBounds shape₁ idx₁
 
-theorem size_pos_of_inBounds {p : HRank} {shape : Shape p} {idx : TIndex Int p}
-    (h : InBounds shape idx) : 0 < shape.size := by
+/-- An integer hierarchical coordinate is in bounds for a positive hierarchical shape. -/
+@[inline] def InBoundsInt {p : HRank} (shape : Shape p) (idx : TIndex Int p) : Prop :=
+  match shape, idx with
+  | .leaf dim, .leaf i => 0 ≤ i ∧ i < dim
+  | .prod shape₀ shape₁, .prod idx₀ idx₁ => InBoundsInt shape₀ idx₀ ∧ InBoundsInt shape₁ idx₁
+
+theorem size_pos_of_inBoundsInt {p : HRank} {shape : Shape p} {idx : TIndex Int p}
+    (h : InBoundsInt shape idx) : 0 < shape.size := by
   induction p with
   | leaf =>
       cases shape with | leaf dim =>
       cases idx with | leaf i =>
-      simp [InBounds] at h
+      simp [InBoundsInt] at h
       by_contra hdim
       have hdim0 : dim = 0 := Nat.eq_zero_of_not_pos hdim
       have hdim0Int : (dim : Int) = 0 := by exact_mod_cast hdim0
@@ -52,8 +58,8 @@ theorem size_pos_of_inBounds {p : HRank} {shape : Shape p} {idx : TIndex Int p}
       cases idx with | prod idx₀ idx₁ =>
       exact Nat.mul_pos (hp h.1) (hq h.2)
 
-theorem inBounds_get {p : HRank} {shape : Shape p} {idx : TIndex Int p}
-    (h : InBounds shape idx) (axis : HTuple.Index p) : idx.get axis < shape.get axis := by
+theorem inBoundsInt_get {p : HRank} {shape : Shape p} {idx : TIndex Int p}
+    (h : InBoundsInt shape idx) (axis : HTuple.Index p) : idx.get axis < shape.get axis := by
   induction p with
   | leaf =>
       cases shape with | leaf dim =>
@@ -68,8 +74,23 @@ theorem inBounds_get {p : HRank} {shape : Shape p} {idx : TIndex Int p}
       | left axis => exact hp h₀ axis
       | right axis => exact hq h₁ axis
 
-theorem inBounds_of_get {p : HRank} {shape : Shape p} {idx : TIndex Int p}
+theorem inBoundsInt_of_get {p : HRank} {shape : Shape p} {idx : TIndex Int p}
     (h : ∀ axis : HTuple.Index p, 0 ≤ idx.get axis ∧ idx.get axis < shape.get axis) :
+    InBoundsInt shape idx := by
+  induction p with
+  | leaf =>
+      cases shape with | leaf dim =>
+      cases idx with | leaf i =>
+      exact h HTuple.Index.leaf
+  | prod p q hp hq =>
+      cases shape with | prod shape₀ shape₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      constructor
+      · exact hp (fun axis => h (.left axis))
+      · exact hq (fun axis => h (.right axis))
+
+theorem inBounds_of_get {p : HRank} {shape : Shape p} {idx : TIndex Nat p}
+    (h : ∀ axis : HTuple.Index p, idx.get axis < shape.get axis) :
     InBounds shape idx := by
   induction p with
   | leaf =>
@@ -170,9 +191,9 @@ theorem map_offset_basisTuple {R : Type u} {D : Type v} [Semiring R] [AddCommMon
 
 end TIndex
 
-/-- A bounded integer hierarchical tensor index, analogous to `Fin n`. -/
+/-- A bounded natural hierarchical tensor index, analogous to `Fin n`. -/
 structure FinTIndex {p : HRank} (shape : Shape p) where
-  val : TIndex Int p
+  val : TIndex Nat p
   isLt : TIndex.InBounds shape val
 
 attribute [inline] FinTIndex.val
@@ -188,7 +209,7 @@ theorem ext {p : HRank} {shape : Shape p} {idx idx' : FinTIndex shape}
   subst h
   rfl
 
-instance {p : HRank} {shape : Shape p} : CoeOut (FinTIndex shape) (TIndex Int p) where
+instance {p : HRank} {shape : Shape p} : CoeOut (FinTIndex shape) (TIndex Nat p) where
   coe idx := idx.val
 
 /-- Bounded indices of a leaf shape are ordinary finite indices. -/
@@ -196,10 +217,9 @@ instance {p : HRank} {shape : Shape p} : CoeOut (FinTIndex shape) (TIndex Int p)
 def leafEquiv (dim : Nat) : FinTIndex (.leaf dim) ≃ Fin dim where
   toFun idx := match idx with
     | ⟨HTuple.leaf i, h⟩ =>
-        ⟨i.toNat, by
-          simp [TIndex.InBounds] at h
-          omega⟩
-  invFun i := ⟨HTuple.leaf i.1, ⟨Int.natCast_nonneg _, by exact_mod_cast i.2⟩⟩
+        ⟨i, by
+          simpa [TIndex.InBounds] using h⟩
+  invFun i := ⟨HTuple.leaf i.1, by simp [TIndex.InBounds, i.2]⟩
   left_inv := by
     intro idx
     cases idx with
@@ -207,8 +227,7 @@ def leafEquiv (dim : Nat) : FinTIndex (.leaf dim) ≃ Fin dim where
       cases val with
       | leaf i =>
           apply FinTIndex.ext
-          simp [TIndex.InBounds] at h
-          exact congrArg HTuple.leaf (Int.toNat_of_nonneg h.1)
+          rfl
   right_inv := by intro i; rfl
 
 /-- Bounded indices of a product shape are pairs of bounded indices. -/
@@ -245,7 +264,7 @@ theorem offset_rowMajorEquiv_eq_equivFin {r} {shape : Shape r} (idx : FinTIndex 
   case leaf =>
     have ⟨.leaf idx, hidx⟩ := idx
     set_option backward.isDefEq.respectTransparency false in
-    simp [TIndex.rowMajorStride, equivFin, leafEquiv, hidx.1]
+    simp [TIndex.rowMajorStride, equivFin, leafEquiv]
   case prod shape₁ shape₂ h₁ h₂ =>
     have ⟨.prod idx₁ idx₂, hidx⟩ := idx
     set_option backward.isDefEq.respectTransparency false in

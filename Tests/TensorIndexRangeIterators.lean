@@ -11,7 +11,7 @@ abbrev MatrixShape (rows cols : Nat) : Shape (.prod .leaf .leaf) :=
 
 def matrixCoord {rows cols : Nat} (idx : FinTIndex (MatrixShape rows cols)) : Nat × Nat :=
   match idx.val with
-  | .prod (.leaf row) (.leaf col) => (row.toNat, col.toNat)
+  | .prod (.leaf row) (.leaf col) => (row, col)
 
 /-- Coordinates visited by nested Std range iterators over a rectangular matrix tile.
 

@@ -1,4 +1,4 @@
-import NumLean.Data.TensorIndex.Basic
+import NumLean.Data.TensorIndex.IntFinTIndex
 -- import NumLean.Data.TensorIndex.AxisOrder
 import NumLean.Data.HTuple.Algebra
 import Mathlib.Logic.Equiv.Fin.Basic
@@ -45,26 +45,36 @@ theorem prod_eval {I : Type u} {D : Type v} [Zero D] [Add D] [SMul I D]
     (i : TIndex I p) (j : TIndex I q) :
     (Layout.mk (shape := shape.prod shape') offset (stride.prod stride')).eval (i.prod j)
     =
-    offset + (i.offset stride + j.offset stride') := by simp [eval]
+    offset + (i.offset stride + j.offset stride') := rfl
 
 /-- The layout has no collisions on its bounded coordinate domain. -/
-def Injective {D : Type u} [Zero D] [Add D] [SMul Int D]
+def Injective {D : Type u} [Zero D] [Add D] [SMul Nat D]
     {p : HRank} {shape : Shape p} (layout : Layout shape D) : Prop :=
   Function.Injective fun idx : FinTIndex shape => layout.eval idx.val
 
-def InBounds
+def InBoundsInt
     {p q : HRank} {shape : Shape p} (layout : Layout shape (TIndex Int q)) (shape' : Shape q) : Prop :=
+  ∀ idx : FinTIndex shape, TIndex.InBoundsInt shape' (layout.eval idx.val)
+
+def InBounds
+    {p q : HRank} {shape : Shape p} (layout : Layout shape (TIndex Nat q)) (shape' : Shape q) : Prop :=
   ∀ idx : FinTIndex shape, TIndex.InBounds shape' (layout.eval idx.val)
 
 def evalToFinTIndex {p q : HRank} {shape : Shape p} {shape' : Shape q}
-    (layout : Layout shape (TIndex Int q))
+    (layout : Layout shape (TIndex Nat q))
     (inBounds : layout.InBounds shape') :
     FinTIndex shape → FinTIndex shape' :=
   fun idx => { val := layout.eval idx.val, isLt := inBounds idx }
 
+def evalToIntFinTIndex {p q : HRank} {shape : Shape p} {shape' : Shape q}
+    (layout : Layout shape (TIndex Int q))
+    (inBounds : layout.InBoundsInt shape') :
+    FinTIndex shape → IntFinTIndex shape' :=
+  fun idx => { val := layout.eval idx.val, isLt := inBounds idx }
+
 /-- A layout only produces values in the half-open interval `[lo, hi)` on bounded coordinates. -/
 @[grind =]
-def BoundedBy {D : Type u} [Zero D] [Add D] [SMul Int D] [LE D] [LT D]
+def BoundedBy {D : Type u} [Zero D] [Add D] [SMul Nat D] [LE D] [LT D]
     {p : HRank} {shape : Shape p} (layout : Layout shape D) (lo hi : D) : Prop :=
   ∀ idx : FinTIndex shape, lo ≤ layout.eval idx.val ∧ layout.eval idx.val < hi
 
@@ -98,8 +108,9 @@ theorem compact_ofFin {n} : (ofFin n).Compact := by
     | mk val h =>
     cases val with
     | leaf i =>
-      simp [layout, ofFin, eval, TIndex.offset, HTuple.inner, HTuple.innerWith] at h ⊢
-      exact h
+      constructor
+      · simp [layout, ofFin, eval, TIndex.offset, HTuple.inner, HTuple.innerWith]
+      · simpa [layout, ofFin, eval, TIndex.offset, HTuple.inner, HTuple.innerWith] using h
   refine ⟨bounded, ?_⟩
   convert (FinTIndex.leafEquiv n).bijective using 1
   ext idx
@@ -177,7 +188,7 @@ theorem compose_identityCoord
 -- /-- A bijective bounded coordinate-valued layout forces source and target domains to have the same size. -/
 -- theorem domain_size_eq_of_bijective {p q : HRank} {targetShape : Shape p} {shape : Shape q}
 --     (layout : Layout shape (TIndex Int p))
---     (inBounds : ∀ idx : FinTIndex shape, TIndex.InBounds targetShape (layout.eval idx.val))
+--     (inBounds : ∀ idx : FinTIndex shape, TIndex.InBoundsInt targetShape (layout.eval idx.val))
 --     (hbij : Function.Bijective (layout.evalToFinTIndex inBounds)) :
 --     shape.size = targetShape.size := by
 --   have hcard := Fintype.card_congr

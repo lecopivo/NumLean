@@ -14,8 +14,8 @@ structure SplitMap {p p₁ p₂ : HRank}
   left : Layout shape₁ (TIndex Int p)
   right : Layout shape₂ (TIndex Int p)
   inBounds : ∀ idx : FinTIndex (HTuple.prod shape₁ shape₂),
-    TIndex.InBounds shape ((left.concat right).eval idx.val)
-  bijective : Function.Bijective ((left.concat right).evalToFinTIndex inBounds)
+    TIndex.InBoundsInt shape ((left.concat right).eval idx.val)
+  bijective : Function.Bijective ((left.concat right).evalToIntFinTIndex inBounds)
 
 namespace SplitMap
 

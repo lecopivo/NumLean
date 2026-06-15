@@ -6,7 +6,7 @@ namespace NumLean
 namespace TensorIndex
 
 structure FinTIndexMap {r r'} (shape : Shape r) (shape' : Shape r')
-  extends Layout shape (TIndex Int r') where
+  extends Layout shape (TIndex Nat r') where
     in_bounds : toLayout.InBounds shape'
 
 open TensorIndexType in
