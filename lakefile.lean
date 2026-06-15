@@ -37,7 +37,14 @@ lean_exe floatArrayTensorOpsTest where
   root := `Tests.FloatArrayTensorOps
   supportInterpreter := true
 
+lean_exe floatArrayTensorBenchmark where
+  root := `Tests.FloatArrayTensorBenchmark
+  supportInterpreter := true
+  moreLinkLibs := #[libNumLeanNative]
+
 lean_lib Tests.Float32ArrayEval where
   precompileModules := true
 
 lean_lib Tests.TensorIndexRangeIterators where
+
+lean_lib Tests.TensorIndexIteratorCompiler where

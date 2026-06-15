@@ -17,13 +17,13 @@ namespace AxisOrder
 /-- The axis order induced by the left-to-right order of `HTuple.Index`.
 
 For a matrix-shaped profile `(row, col)`, this is column-major/colexicographic order. -/
-def colMajor (p : HRank) : AxisOrder p :=
+@[inline] def colMajor (p : HRank) : AxisOrder p :=
   (HTuple.Index.equivFin p).symm
 
 /-- The reversed left-to-right axis order.
 
 For a matrix-shaped profile `(row, col)`, this is row-major order. -/
-def rowMajor (p : HRank) : AxisOrder p :=
+@[inline] def rowMajor (p : HRank) : AxisOrder p :=
   (⟨Fin.rev, Fin.rev, Fin.rev_rev, Fin.rev_rev⟩ : Fin p.size ≃ Fin p.size).trans
     (HTuple.Index.equivFin p).symm
 
@@ -32,7 +32,7 @@ end AxisOrder
 namespace Shape
 
 /-- Dimension of a shape at a leaf axis, as a natural number. -/
-def dim {p : HRank} (shape : Shape p) (axis : HTuple.Index p) : Nat :=
+@[inline] def dim {p : HRank} (shape : Shape p) (axis : HTuple.Index p) : Nat :=
   shape.get axis
 
 end Shape

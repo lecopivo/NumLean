@@ -16,7 +16,7 @@ inductive Profile where
 namespace Profile
 
 /-- Number of leaves in a profile. -/
-def size : Profile → Nat
+@[inline] def size : Profile → Nat
   | .leaf => 1
   | .prod left right => left.size + right.size
 
@@ -60,12 +60,12 @@ instance {P : Type u} {Q : Type v} {α : Type w} {p q : Profile}
     | (x, y) => HTuple.prod (toHTuple x) (toHTuple y)
 
 /-- Map a function over every leaf of a hierarchical tuple. -/
-def map {α : Type u} {β : Type v} (f : α → β) : {p : Profile} → HTuple α p → HTuple β p
+@[inline] def map {α : Type u} {β : Type v} (f : α → β) : {p : Profile} → HTuple α p → HTuple β p
   | .leaf, .leaf value => .leaf (f value)
   | .prod _ _, .prod fst snd => .prod (map f fst) (map f snd)
 
 /-- Combine two hierarchical tuples leafwise. -/
-def map₂ {α : Type u} {β : Type v} {γ : Type w} (f : α → β → γ) :
+@[inline] def map₂ {α : Type u} {β : Type v} {γ : Type w} (f : α → β → γ) :
     {p : Profile} → HTuple α p → HTuple β p → HTuple γ p
   | .leaf, .leaf a, .leaf b => .leaf (f a b)
   | .prod _ _, .prod a₀ a₁, .prod b₀ b₁ => .prod (map₂ f a₀ b₀) (map₂ f a₁ b₁)
@@ -73,29 +73,29 @@ def map₂ {α : Type u} {β : Type v} {γ : Type w} (f : α → β → γ) :
 abbrev zipWith := @map₂
 
 /-- Fold a hierarchical tuple using one operation for leaves and one for products. -/
-def fold {α : Type u} {β : Type v} (leaf : α → β) (prod : β → β → β) :
+@[inline] def fold {α : Type u} {β : Type v} (leaf : α → β) (prod : β → β → β) :
     {p : Profile} → HTuple α p → β
   | .leaf, .leaf value => leaf value
   | .prod _ _, .prod fst snd => prod (fold leaf prod fst) (fold leaf prod snd)
 
 /-- Fold a hierarchical tuple into an additive monoid-like target. -/
-def foldMap {α : Type u} {β : Type v} [Zero β] [Add β] (f : α → β) {p : Profile}
+@[inline] def foldMap {α : Type u} {β : Type v} [Zero β] [Add β] (f : α → β) {p : Profile}
     (x : HTuple α p) : β :=
   x.fold f (· + ·)
 
 /-- Sum a leafwise operation over two hierarchical tuples of the same profile. -/
-def innerWith {α : Type u} {β : Type v} {γ : Type w} [Zero γ] [Add γ]
+@[inline] def innerWith {α : Type u} {β : Type v} {γ : Type w} [Zero γ] [Add γ]
     (f : α → β → γ) : {p : Profile} → HTuple α p → HTuple β p → γ
   | .leaf, .leaf a, .leaf b => f a b
   | .prod _ _, .prod x₀ x₁, .prod y₀ y₁ => innerWith f x₀ y₀ + innerWith f x₁ y₁
 
 /-- Natural semimodule inner product over matching hierarchical tuples. -/
-def inner {α : Type u} {β : Type v} [Zero β] [Add β] [SMul α β] {p : Profile}
+@[inline] def inner {α : Type u} {β : Type v} [Zero β] [Add β] [SMul α β] {p : Profile}
     (idx : HTuple α p) (stride : HTuple β p) : β :=
   innerWith (fun n d => n • d) idx stride
 
 /-- The leaf values of a hierarchical tuple in left-to-right order. -/
-def toList {α : Type u} : {p : Profile} → HTuple α p → List α
+@[inline] def toList {α : Type u} : {p : Profile} → HTuple α p → List α
   | .leaf, .leaf value => [value]
   | .prod _ _, .prod fst snd => fst.toList ++ snd.toList
 
@@ -145,7 +145,7 @@ inductive Index : Profile → Type where
 namespace Index
 
 /-- Convert a hierarchical tuple leaf selector to a flat `Fin p.size`. -/
-def toFin : {p : Profile} → Index p → Fin p.size
+@[inline] def toFin : {p : Profile} → Index p → Fin p.size
   | .leaf, .leaf => ⟨0, by simp [Profile.size]⟩
   | .prod _ _, .left i => ⟨i.toFin, by
       exact Nat.lt_of_lt_of_le i.toFin.isLt (Nat.le_add_right _ _)⟩
@@ -153,7 +153,7 @@ def toFin : {p : Profile} → Index p → Fin p.size
       exact Nat.add_lt_add_left i.toFin.isLt l.size⟩
 
 /-- Convert a flat leaf index to a hierarchical tuple leaf selector. -/
-def ofFin : (p : Profile) → Fin p.size → Index p
+@[inline] def ofFin : (p : Profile) → Fin p.size → Index p
   | .leaf, _ => .leaf
   | .prod l r, i =>
       if h : i.1 < l.size then
@@ -191,7 +191,7 @@ theorem ofFin_toFin : ∀ {p : Profile} (i : Index p), ofFin p i.toFin = i
       simp [toFin, ofFin, hnot, ofFin_toFin]
 
 /-- Equivalence between hierarchical leaf selectors and flat finite indices. -/
-def equivFin (p : Profile) : Index p ≃ Fin p.size where
+@[inline] def equivFin (p : Profile) : Index p ≃ Fin p.size where
   toFun := toFin
   invFun := ofFin p
   left_inv := ofFin_toFin
@@ -200,24 +200,24 @@ def equivFin (p : Profile) : Index p ≃ Fin p.size where
 end Index
 
 /-- Build a hierarchical tuple by giving a value for each leaf index. -/
-def ofFn {α : Type u} : {p : Profile} → (Index p → α) → HTuple α p
+@[inline] def ofFn {α : Type u} : {p : Profile} → (Index p → α) → HTuple α p
   | .leaf, f => .leaf (f .leaf)
   | .prod _ _, f => .prod (ofFn fun i => f (.left i)) (ofFn fun i => f (.right i))
 
 /-- Read a leaf selected by `HTuple.Index`. -/
-def get {α : Type u} : {p : Profile} → HTuple α p → Index p → α
+@[inline] def get {α : Type u} : {p : Profile} → HTuple α p → Index p → α
   | .leaf, .leaf value, .leaf => value
   | .prod _ _, .prod fst _, .left i => fst.get i
   | .prod _ _, .prod _ snd, .right i => snd.get i
 
 /-- Replace a leaf selected by `HTuple.Index`. -/
-def set {α : Type u} : {p : Profile} → HTuple α p → Index p → α → HTuple α p
+@[inline] def set {α : Type u} : {p : Profile} → HTuple α p → Index p → α → HTuple α p
   | .leaf, .leaf _, .leaf, value => .leaf value
   | .prod _ _, .prod fst snd, .left i, value => .prod (fst.set i value) snd
   | .prod _ _, .prod fst snd, .right i, value => .prod fst (snd.set i value)
 
 /-- Modify a leaf selected by `HTuple.Index`. -/
-def modify {α : Type u} {p : Profile} (x : HTuple α p) (i : Index p) (f : α → α) : HTuple α p :=
+@[inline] def modify {α : Type u} {p : Profile} (x : HTuple α p) (i : Index p) (f : α → α) : HTuple α p :=
   x.set i (f (x.get i))
 
 @[simp]

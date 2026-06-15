@@ -42,7 +42,7 @@ abbrev OrderedBounds {p : HRank} (shape : Shape p) (order : AxisOrder p)
   ∀ i : Fin p.size, coord[i] < shape.dim (order i)
 
 /-- Interpret an axis-ordered dense coordinate vector as a hierarchical integer coordinate. -/
-def ofOrderedCoord {p : HRank} (_shape : Shape p) (order : AxisOrder p)
+@[inline] def ofOrderedCoord {p : HRank} (_shape : Shape p) (order : AxisOrder p)
     (coord : Vector Nat p.size) : TIndex Int p :=
   HTuple.ofFn fun axis => (coord[order.symm axis] : Int)
 
@@ -57,13 +57,13 @@ theorem ofOrderedCoord_inBounds {p : HRank} {shape : Shape p} {order : AxisOrder
     simpa [ofOrderedCoord, Shape.dim] using haxis
 
 /-- Build a bounded hierarchical index from a valid axis-ordered dense coordinate vector. -/
-def ofOrderedCoordFin {p : HRank} (shape : Shape p) (order : AxisOrder p)
+@[inline] def ofOrderedCoordFin {p : HRank} (shape : Shape p) (order : AxisOrder p)
     (coord : Vector Nat p.size) (h : OrderedBounds shape order coord) : FinTIndex shape where
   val := ofOrderedCoord shape order coord
   isLt := ofOrderedCoord_inBounds h
 
 /-- Helper for advancing an axis-ordered dense coordinate by one step. -/
-def advanceOrderedCoord.go {p : HRank} (shape : Shape p) (order : AxisOrder p)
+@[inline] def advanceOrderedCoord.go {p : HRank} (shape : Shape p) (order : AxisOrder p)
     (coord : Vector Nat p.size) (pos fuel : Nat) : Option (Vector Nat p.size) :=
   match fuel with
   | 0 => none
@@ -86,7 +86,7 @@ def advanceOrderedCoord.go {p : HRank} (shape : Shape p) (order : AxisOrder p)
 /-- Advance an axis-ordered dense coordinate by one step, carrying from the fastest axis upward.
 
 This allocates only the next coordinate vector; it never materializes the full index domain. -/
-def advanceOrderedCoord {p : HRank} (shape : Shape p) (order : AxisOrder p)
+@[inline] def advanceOrderedCoord {p : HRank} (shape : Shape p) (order : AxisOrder p)
     (coord : Vector Nat p.size) : Option (Vector Nat p.size) :=
   advanceOrderedCoord.go shape order coord 0 (p.size + 1)
 
@@ -216,6 +216,8 @@ structure RowMajorItem {p : HRank} (shape : Shape p) where
   idx : FinTIndex shape
   toFin_eq : equivFin shape idx = linearIdx
 
+attribute [inline] RowMajorItem.linearIdx RowMajorItem.idx
+
 /-- Runtime state for streaming over `FinTIndex shape` in canonical row-major order.
 
 `shape` is a parameter of the state type, not a stored field. The stored state is only the current
@@ -229,7 +231,7 @@ structure IterState {p : HRank} (shape : Shape p) where
 
 namespace IterState
 
-def mkItem {p : HRank} {shape : Shape p} (counter : Nat) (hcounter : counter < shape.size)
+@[inline] def mkItem {p : HRank} {shape : Shape p} (counter : Nat) (hcounter : counter < shape.size)
     (coord : Vector Nat p.size) (hcoord : OrderedBounds shape (AxisOrder.rowMajor p) coord) :
     RowMajorItem shape where
   linearIdx := ⟨counter, hcounter⟩
@@ -237,10 +239,10 @@ def mkItem {p : HRank} {shape : Shape p} (counter : Nat) (hcounter : counter < s
   toFin_eq := by
     sorry
 
-def setFastCoord {p : HRank} (coord : Vector Nat p.size) (value : Nat) : Vector Nat p.size :=
+@[inline] def setFastCoord {p : HRank} (coord : Vector Nat p.size) (value : Nat) : Vector Nat p.size :=
   Vector.ofFn fun i : Fin p.size => if i.1 = 0 then value else coord[i]
 
-def resetFastCoord {p : HRank} (coord : Vector Nat p.size) : Vector Nat p.size :=
+@[inline] def resetFastCoord {p : HRank} (coord : Vector Nat p.size) : Vector Nat p.size :=
   setFastCoord coord 0
 
 theorem setFastCoord_bounds {p : HRank} {shape : Shape p} {coord : Vector Nat p.size}
@@ -264,7 +266,7 @@ theorem resetFastCoord_bounds {p : HRank} {shape : Shape p} {coord : Vector Nat 
     Nat.lt_of_le_of_lt (Nat.zero_le _) (hcoord ⟨0, HTuple.Profile.size_pos p⟩)
   exact hpositive
 
-def initial {p : HRank} (shape : Shape p) : IterState shape :=
+@[inline] def initial {p : HRank} (shape : Shape p) : IterState shape :=
   let zero : Vector Nat p.size := Vector.ofFn fun _ => 0
   if hsize : 0 < shape.size then
     { current? := some zero
@@ -281,10 +283,10 @@ def initial {p : HRank} (shape : Shape p) : IterState shape :=
       counter_le := Nat.zero_le _
       ready := by intro h; omega }
 
-def remaining {p : HRank} {shape : Shape p} (state : IterState shape) : Nat :=
+@[inline] def remaining {p : HRank} {shape : Shape p} (state : IterState shape) : Nat :=
   shape.size - state.counter
 
-def next {p : HRank} {shape : Shape p}
+@[inline] def next {p : HRank} {shape : Shape p}
     (counter : Nat) (hcounter : counter < shape.size) (coord : Vector Nat p.size)
     (hcoord : OrderedBounds shape (AxisOrder.rowMajor p) coord) :
     IterState shape :=
@@ -316,9 +318,7 @@ instance instIterator {p : HRank} {shape : Shape p} :
   IsPlausibleStep it
     | .yield it' out => ∃ coord h hcounter,
         it.internalState.current? = some coord ∧
-        out = { linearIdx := ⟨it.internalState.counter, hcounter⟩
-                idx := ofOrderedCoordFin shape (AxisOrder.rowMajor p) coord h
-                toFin_eq := by sorry } ∧
+        out = mkItem it.internalState.counter hcounter coord h ∧
         it' = ⟨next (shape := shape) it.internalState.counter hcounter coord h⟩
     | .skip _ => False
     | .done => it.internalState.counter = shape.size ∨ it.internalState.current? = none ∨
@@ -342,9 +342,7 @@ instance instIterator {p : HRank} {shape : Shape p} :
             exact hbounds'
           .yield
             ⟨next (shape := shape) it.internalState.counter hcounter coord hbounds⟩
-            { linearIdx := ⟨it.internalState.counter, hcounter⟩
-              idx := ofOrderedCoordFin shape (AxisOrder.rowMajor p) coord hbounds
-              toFin_eq := by sorry }
+            (mkItem it.internalState.counter hcounter coord hbounds)
             (by exact ⟨coord, hbounds, hcounter, rfl, rfl, rfl⟩)
 
 private def instFinitenessRelation {p : HRank} {shape : Shape p} :
@@ -382,7 +380,7 @@ instance instProductive {p : HRank} {shape : Shape p} :
 
 The structural loop owns the flat `counter`; the tensor index is built directly from the recursive
 shape traversal. -/
-private def emitRowMajorItem {p : HRank} {shape : Shape p}
+@[inline, specialize] private def emitRowMajorItem {p : HRank} {shape : Shape p}
     {m : Type u → Type v} [Monad m]
     {γ : Type u} {Pl : RowMajorItem shape → γ → ForInStep γ → Prop}
     (it : IterM (α := IterState shape) Id (RowMajorItem shape))
@@ -409,7 +407,7 @@ private def emitRowMajorItem {p : HRank} {shape : Shape p}
 Leaf shapes use a counted loop. Product shapes run the left shape outside and the right shape
 inside, which is exactly canonical row-major order. This is the optimized `IteratorLoop` path; the
 ordinary `Iterator.step` can still use vector state for compatibility. -/
-private partial def consumeShapeRowMajor {p : HRank} {shape : Shape p}
+@[inline, specialize] private partial def consumeShapeRowMajor {p : HRank} {shape : Shape p}
     {m : Type u → Type v} [Monad m]
     {γ : Type u} {Pl : RowMajorItem shape → γ → ForInStep γ → Prop}
     (it : IterM (α := IterState shape) Id (RowMajorItem shape))
@@ -445,7 +443,7 @@ private partial def consumeShapeRowMajor {p : HRank} {shape : Shape p}
           counter acc
       consumeShapeRowMajor it f start shape₁ emitLeft counter acc
 
-private def consumeFromIteratorState {p : HRank} {shape : Shape p}
+@[inline, specialize] private def consumeFromIteratorState {p : HRank} {shape : Shape p}
     {m : Type u → Type v} [Monad m]
     {γ : Type u} {Pl : RowMajorItem shape → γ → ForInStep γ → Prop}
     (it : IterM (α := IterState shape) Id (RowMajorItem shape))
@@ -480,12 +478,12 @@ instance instLawfulIteratorLoop {p : HRank} {shape : Shape p}
 end IterState
 
 /-- Stream row-major bounded indices together with their canonical flat `Fin` offset and proof. -/
-def rowMajorFinIter {p : HRank} (shape : Shape p) :
+@[inline] def rowMajorFinIter {p : HRank} (shape : Shape p) :
     Iter (α := IterState shape) (RowMajorItem shape) :=
   ⟨IterState.initial shape⟩
 
 /-- Stream bounded indices in row-major order. -/
-def rowMajorIter {p : HRank} (shape : Shape p) :=
+@[inline] def rowMajorIter {p : HRank} (shape : Shape p) :=
   (rowMajorFinIter shape).map RowMajorItem.idx
 
 end FinTIndex

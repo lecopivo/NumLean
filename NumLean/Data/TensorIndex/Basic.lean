@@ -15,7 +15,7 @@ abbrev Stride {p : HRank} (D : Type u) (_shape : Shape p) := HTuple D p
 namespace Shape
 
 /-- Number of coordinates in a hierarchical shape. -/
-def size {p : HRank} : Shape p → Nat
+@[inline] def size {p : HRank} : Shape p → Nat
   | .leaf dim => dim
   | .prod shape₀ shape₁ => size shape₀ * size shape₁
 
@@ -31,7 +31,7 @@ end Shape
 namespace TIndex
 
 /-- An integer hierarchical coordinate is in bounds for a positive hierarchical shape. -/
-def InBounds {p : HRank} (shape : Shape p) (idx : TIndex Int p) : Prop :=
+@[inline] def InBounds {p : HRank} (shape : Shape p) (idx : TIndex Int p) : Prop :=
   match shape, idx with
   | .leaf dim, .leaf i => 0 ≤ i ∧ i < dim
   | .prod shape₀ shape₁, .prod idx₀ idx₁ => InBounds shape₀ idx₀ ∧ InBounds shape₁ idx₁
@@ -84,11 +84,11 @@ theorem inBounds_of_get {p : HRank} {shape : Shape p} {idx : TIndex Int p}
       · exact hq (fun axis => h (.right axis))
 
 /-- Evaluate a hierarchical coordinate against a generalized stride. -/
-def offset {α : Type u} {D : Type v} [Zero D] [Add D] [SMul α D]
+@[inline] def offset {α : Type u} {D : Type v} [Zero D] [Add D] [SMul α D]
     {p : HRank} (idx : TIndex α p) {shape : Shape p} (stride : Stride D shape) : D :=
   HTuple.inner idx stride
 
-def rowMajorStride {r} (shape : Shape r) : Stride Int shape :=
+@[inline] def rowMajorStride {r} (shape : Shape r) : Stride Int shape :=
   match shape with
   | .leaf _ => .leaf 1
   | .prod shape₁ shape₂ =>
@@ -175,6 +175,8 @@ structure FinTIndex {p : HRank} (shape : Shape p) where
   val : TIndex Int p
   isLt : TIndex.InBounds shape val
 
+attribute [inline] FinTIndex.val
+
 namespace FinTIndex
 
 /-- Bounded hierarchical indices are equal when their underlying coordinates are equal. -/
@@ -190,7 +192,7 @@ instance {p : HRank} {shape : Shape p} : CoeOut (FinTIndex shape) (TIndex Int p)
   coe idx := idx.val
 
 /-- Bounded indices of a leaf shape are ordinary finite indices. -/
-@[simps]
+@[inline, simps]
 def leafEquiv (dim : Nat) : FinTIndex (.leaf dim) ≃ Fin dim where
   toFun idx := match idx with
     | ⟨HTuple.leaf i, h⟩ =>
@@ -210,7 +212,7 @@ def leafEquiv (dim : Nat) : FinTIndex (.leaf dim) ≃ Fin dim where
   right_inv := by intro i; rfl
 
 /-- Bounded indices of a product shape are pairs of bounded indices. -/
-@[simps]
+@[inline, simps]
 def prodEquiv {p q : HRank} (shape₀ : Shape p) (shape₁ : Shape q) :
     FinTIndex (HTuple.prod shape₀ shape₁) ≃ FinTIndex shape₀ × FinTIndex shape₁ where
   toFun idx :=
@@ -229,7 +231,7 @@ def prodEquiv {p q : HRank} (shape₀ : Shape p) (shape₁ : Shape q) :
     | mk left right => rfl
 
 /-- Canonical dense row-major equivalence between bounded hierarchical indices and flat offsets. -/
-def equivFin : {p : HRank} → (shape : Shape p) → FinTIndex shape ≃ Fin shape.size
+@[inline] def equivFin : {p : HRank} → (shape : Shape p) → FinTIndex shape ≃ Fin shape.size
   | .leaf, .leaf dim => leafEquiv dim
   | .prod _ _, .prod shape₀ shape₁ =>
       let f := prodEquiv shape₀ shape₁
