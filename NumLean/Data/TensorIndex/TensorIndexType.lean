@@ -66,10 +66,10 @@ instance : TensorIndexType (Fin n) n .leaf (.leaf n) where
 
 open TensorIndexTypeOfRank
 
-instance instProd {I : Type u} {J : Type v} {nI nJ : Nat}
+instance {I : Type u} {J : Type v} {nI nJ : Nat}
     {p q : HRank} {shapeI : Shape p} {shapeJ : Shape q}
-    [TensorIndexType I nI p shapeI] [TensorIndexType J nJ q shapeJ] :
-    TensorIndexType (I × J) (nI * nJ) (.prod p q) (HTuple.prod shapeI shapeJ) where
+    [TensorIndexTypeOfRank I nI p shapeI] [TensorIndexTypeOfRank J nJ q shapeJ] :
+    TensorIndexTypeOfRank (I × J) (nI * nJ) (.prod p q) (HTuple.prod shapeI shapeJ) where
   size_eq_shape_size := by
     simp [Shape.size, size_eq_shape_size (I:=I) (rank := p), size_eq_shape_size (I:=J) (rank := q)]
   layout := (layout (I := I) (rank := p)).rowMajorProd (layout (I := J) (rank := q))
@@ -78,6 +78,11 @@ instance instProd {I : Type u} {J : Type v} {nI nJ : Nat}
   layout_eval_tensorEquiv_eq_toFin := by
     intro (i,j)
     simp [FinIndex.prodEquiv,layout_eval_tensorEquiv_eq_toFin, ← size_eq_shape_size (I := J), toFin]
+
+instance {I : Type u} {J : Type v} {nI nJ : Nat}
+    {p q : HRank} {shapeI : Shape p} {shapeJ : Shape q}
+    [TensorIndexType I nI p shapeI] [TensorIndexType J nJ q shapeJ] :
+    TensorIndexType (I × J) (nI * nJ) (.prod p q) (HTuple.prod shapeI shapeJ) where
 
 end TensorIndexType
 
