@@ -1,4 +1,5 @@
 import NumLean.Data.TensorIndex.FinTIndex
+import NumLean.Data.TensorIndex.NatFinTIndex
 import Init.Data.Nat.Lemmas
 import Std.Data.Iterators.Producers.Repeat
 
@@ -417,7 +418,7 @@ ordinary `Iterator.step` can still use vector state for compatibility. -/
       (emit : Nat → FinTIndex shape' → γ → m (Nat × ForInStep γ)) →
       Nat → γ → m (Nat × ForInStep γ)
   | .leaf, .leaf n, emit, counter, acc =>
-      let rec loop (i counter : Nat) (acc : γ) : m (Nat × ForInStep γ) := do
+      let rec @[specialize] loop (i counter : Nat) (acc : γ) : m (Nat × ForInStep γ) := do
         if hi : i < n then
           let idx : FinTIndex (.leaf n) :=
             { val := .leaf i
@@ -443,7 +444,55 @@ ordinary `Iterator.step` can still use vector state for compatibility. -/
           counter acc
       consumeShapeRowMajor it f start shape₁ emitLeft counter acc
 
+private class RowMajorConsumer (p : HRank) where
+  consume {pOut : HRank} {shapeOut : Shape pOut} {m : Type u → Type v} [Monad m]
+      {γ : Type u} {Pl : RowMajorItem shapeOut → γ → ForInStep γ → Prop}
+      (it : IterM (α := IterState shapeOut) Id (RowMajorItem shapeOut))
+      (f : (b : RowMajorItem shapeOut) → it.IsPlausibleIndirectOutput b →
+        (c : γ) → m (Subtype (Pl b c)))
+      (start : Nat) (shape : Shape p)
+      (emit : Nat → FinTIndex shape → γ → m (Nat × ForInStep γ)) :
+      Nat → γ → m (Nat × ForInStep γ)
+
+attribute [inline, specialize] RowMajorConsumer.consume
+
+@[inline] private instance : RowMajorConsumer .leaf where
+  consume {pOut} {shapeOut} {m} [Monad m] {γ} {Pl} _it _f _start shape emit counter acc :=
+    match shape with
+    | .leaf n =>
+        let rec @[specialize] loop (i counter : Nat) (acc : γ) : m (Nat × ForInStep γ) := do
+          if hi : i < n then
+            let idx : FinTIndex (.leaf n) :=
+              { val := .leaf i
+                isLt := by
+                  simp [TIndex.InBounds]
+                  omega }
+            let (counter', step) ← emit counter idx acc
+            match step with
+            | .done acc' => pure (counter', .done acc')
+            | .yield acc' => loop (i + 1) counter' acc'
+          else
+            pure (counter, .yield acc)
+        loop 0 counter acc
+
+@[inline] private instance {p q : HRank} [RowMajorConsumer p] [RowMajorConsumer q] :
+    RowMajorConsumer (.prod p q) where
+  consume {_pOut} {_shapeOut} {m} [Monad m] {γ} {_Pl} it f start shape emit counter acc :=
+    match shape with
+    | .prod shape₁ shape₂ =>
+        let emitLeft (counter : Nat) (idx₁ : FinTIndex shape₁) (acc : γ) :
+            m (Nat × ForInStep γ) :=
+          RowMajorConsumer.consume (p := q) it f start shape₂
+            (fun counter idx₂ acc =>
+              let idx : FinTIndex (.prod shape₁ shape₂) :=
+                { val := .prod idx₁.val idx₂.val
+                  isLt := ⟨idx₁.isLt, idx₂.isLt⟩ }
+              emit counter idx acc)
+            counter acc
+        RowMajorConsumer.consume (p := p) it f start shape₁ emitLeft counter acc
+
 @[inline, specialize] private def consumeFromIteratorState {p : HRank} {shape : Shape p}
+    [RowMajorConsumer p]
     {m : Type u → Type v} [Monad m]
     {γ : Type u} {Pl : RowMajorItem shape → γ → ForInStep γ → Prop}
     (it : IterM (α := IterState shape) Id (RowMajorItem shape))
@@ -456,19 +505,21 @@ ordinary `Iterator.step` can still use vector state for compatibility. -/
     match it.internalState.current? with
     | none => pure init
     | some _ =>
-        let (_, step) ← consumeShapeRowMajor it f it.internalState.counter shape
+        let (_, step) ← RowMajorConsumer.consume (p := p) it f it.internalState.counter shape
           (emitRowMajorItem it f it.internalState.counter) 0 init
         match step with
         | .done acc => pure acc
         | .yield acc => pure acc
 
 instance instIteratorLoop {p : HRank} {shape : Shape p}
+    [RowMajorConsumer p]
     {m : Type u → Type v} [Monad m] :
     IteratorLoop (IterState shape) Id m where
   forIn _lift _γ _Pl it init f :=
     consumeFromIteratorState it f init
 
 instance instLawfulIteratorLoop {p : HRank} {shape : Shape p}
+    [RowMajorConsumer p]
     {m : Type u → Type v} [Monad m] :
     LawfulIteratorLoop (IterState shape) Id m := by
   constructor
@@ -476,6 +527,212 @@ instance instLawfulIteratorLoop {p : HRank} {shape : Shape p}
   sorry
 
 end IterState
+
+namespace RowMajorLoop
+
+abbrev NatInBounds {p : HRank} (shape : Shape p) (idx : TIndex Nat p) : Prop :=
+  TIndex.NatInBounds shape idx
+
+private class Folder (p : HRank) where
+  fold {γ : Type u} (shape : Shape p)
+    (emit : Nat → FinTIndex shape → γ → Nat × γ) : Nat → γ → Nat × γ
+
+attribute [inline, specialize] Folder.fold
+
+private class NatFolder (p : HRank) where
+  fold {γ : Type u} (shape : Shape p)
+    (emit : (counter : Nat) → (idx : TIndex Nat p) → NatInBounds shape idx → γ → Nat × γ) :
+      Nat → γ → Nat × γ
+
+attribute [inline, specialize] NatFolder.fold
+
+@[inline] private instance : Folder .leaf where
+  fold {γ} shape emit counter acc :=
+    match shape with
+    | .leaf n =>
+        let rec @[specialize] loop (i counter : Nat) (acc : γ) : Nat × γ :=
+          if hi : i < n then
+            let idx : FinTIndex (.leaf n) :=
+              { val := .leaf i
+                isLt := by
+                  simp [TIndex.InBounds]
+                  omega }
+            let (counter', acc') := emit counter idx acc
+            loop (i + 1) counter' acc'
+          else
+            (counter, acc)
+        loop 0 counter acc
+
+@[inline] private instance : NatFolder .leaf where
+  fold {γ} shape emit counter acc :=
+    match shape with
+    | .leaf n =>
+        let rec @[specialize] loop (i counter : Nat) (acc : γ) : Nat × γ :=
+          if hi : i < n then
+            let (counter', acc') := emit counter (.leaf i) hi acc
+            loop (i + 1) counter' acc'
+          else
+            (counter, acc)
+        loop 0 counter acc
+
+@[inline] private instance {p q : HRank} [Folder p] [Folder q] : Folder (.prod p q) where
+  fold {γ} shape emit counter acc :=
+    match shape with
+    | .prod shape₁ shape₂ =>
+        let emitLeft (counter : Nat) (idx₁ : FinTIndex shape₁) (acc : γ) : Nat × γ :=
+          Folder.fold (p := q) shape₂
+            (fun counter idx₂ acc =>
+              let idx : FinTIndex (.prod shape₁ shape₂) :=
+                { val := .prod idx₁.val idx₂.val
+                  isLt := ⟨idx₁.isLt, idx₂.isLt⟩ }
+              emit counter idx acc)
+            counter acc
+        Folder.fold (p := p) shape₁ emitLeft counter acc
+
+@[inline] private instance {p q : HRank} [NatFolder p] [NatFolder q] : NatFolder (.prod p q) where
+  fold {γ} shape emit counter acc :=
+    match shape with
+    | .prod shape₁ shape₂ =>
+        let emitLeft (counter : Nat) (idx₁ : TIndex Nat p) (hidx₁ : NatInBounds shape₁ idx₁)
+            (acc : γ) : Nat × γ :=
+          NatFolder.fold (p := q) shape₂
+            (fun counter idx₂ hidx₂ acc => emit counter (.prod idx₁ idx₂) ⟨hidx₁, hidx₂⟩ acc)
+            counter acc
+        NatFolder.fold (p := p) shape₁ emitLeft counter acc
+
+@[inline, specialize] private partial def foldShape {pOut : HRank} {shapeOut : Shape pOut}
+    {m : Type u → Type v} [Monad m] {γ : Type u}
+    (f : RowMajorItem shapeOut → γ → m γ) : {p : HRank} → (shape : Shape p) →
+      (emit : Nat → FinTIndex shape → γ → m (Nat × γ)) → Nat → γ → m (Nat × γ)
+  | .leaf, .leaf n, emit, counter, acc =>
+      let rec @[specialize] loop (i counter : Nat) (acc : γ) : m (Nat × γ) := do
+        if hi : i < n then
+          let idx : FinTIndex (.leaf n) :=
+            { val := .leaf i
+              isLt := by
+                simp [TIndex.InBounds]
+                omega }
+          let (counter', acc') ← emit counter idx acc
+          loop (i + 1) counter' acc'
+        else
+          pure (counter, acc)
+      loop 0 counter acc
+  | .prod _ _, .prod shape₁ shape₂, emit, counter, acc =>
+      let emitLeft (counter : Nat) (idx₁ : FinTIndex shape₁) (acc : γ) :
+          m (Nat × γ) :=
+        foldShape f shape₂
+          (fun counter idx₂ acc =>
+            let idx : FinTIndex (.prod shape₁ shape₂) :=
+              { val := .prod idx₁.val idx₂.val
+                isLt := ⟨idx₁.isLt, idx₂.isLt⟩ }
+            emit counter idx acc)
+          counter acc
+      foldShape f shape₁ emitLeft counter acc
+
+@[inline, specialize] private partial def foldShapeId {pOut : HRank} {shapeOut : Shape pOut}
+    {γ : Type u} (f : RowMajorItem shapeOut → γ → γ) : {p : HRank} → (shape : Shape p) →
+      (emit : Nat → FinTIndex shape → γ → Nat × γ) → Nat → γ → Nat × γ
+  | .leaf, .leaf n, emit, counter, acc =>
+      let rec @[specialize] loop (i counter : Nat) (acc : γ) : Nat × γ :=
+        if hi : i < n then
+          let idx : FinTIndex (.leaf n) :=
+            { val := .leaf i
+              isLt := by
+                simp [TIndex.InBounds]
+                omega }
+          let (counter', acc') := emit counter idx acc
+          loop (i + 1) counter' acc'
+        else
+          (counter, acc)
+      loop 0 counter acc
+  | .prod _ _, .prod shape₁ shape₂, emit, counter, acc =>
+      let emitLeft (counter : Nat) (idx₁ : FinTIndex shape₁) (acc : γ) : Nat × γ :=
+        foldShapeId f shape₂
+          (fun counter idx₂ acc =>
+            let idx : FinTIndex (.prod shape₁ shape₂) :=
+              { val := .prod idx₁.val idx₂.val
+                isLt := ⟨idx₁.isLt, idx₂.isLt⟩ }
+            emit counter idx acc)
+          counter acc
+      foldShapeId f shape₁ emitLeft counter acc
+
+/-- Standalone row-major fold over bounded tensor indices.
+
+This bypasses the `Iterator`/`IteratorLoop` abstraction and directly runs the structural row-major
+loop. It is intended as the low-overhead baseline for tensor loops that need both the flat and
+structured index. -/
+@[inline, specialize] def foldM {p : HRank} (shape : Shape p)
+    {m : Type u → Type v} [Monad m] {γ : Type u} (init : γ)
+    (f : RowMajorItem shape → γ → m γ) : m γ := do
+  let (_, acc) ← foldShape f shape
+    (fun counter idx acc => do
+      have hcounter : counter < shape.size := by
+        -- The structural traversal emits exactly `shape.size` items.
+        sorry
+      let item : RowMajorItem shape :=
+        { linearIdx := ⟨counter, hcounter⟩
+          idx := idx
+          toFin_eq := by sorry }
+      let acc' ← f item acc
+      pure (counter + 1, acc'))
+    0 init
+  pure acc
+
+/-- Pure `Id` specialization of `foldM`. -/
+@[inline, specialize] def fold {p : HRank} (shape : Shape p) {γ : Type u} (init : γ)
+    (f : RowMajorItem shape → γ → γ) : γ :=
+  let (_, acc) := foldShapeId f shape
+    (fun counter idx acc =>
+      have hcounter : counter < shape.size := by
+        -- The structural traversal emits exactly `shape.size` items.
+        sorry
+      let item : RowMajorItem shape :=
+        { linearIdx := ⟨counter, hcounter⟩
+          idx := idx
+          toFin_eq := by sorry }
+      (counter + 1, f item acc))
+    0 init
+  acc
+
+/-- Lower-level pure row-major fold that passes the flat and structured indices separately.
+
+This avoids allocating a `RowMajorItem` wrapper in the standalone loop path. -/
+@[inline, specialize] def foldIdx {p : HRank} [Folder p] (shape : Shape p) {γ : Type u} (init : γ)
+    (f : (linear : Fin shape.size) → FinTIndex shape → γ → γ) : γ :=
+  let (_, acc) := Folder.fold (p := p) shape
+    (fun counter idx acc =>
+      have hcounter : counter < shape.size := by
+        -- The structural traversal emits exactly `shape.size` items.
+        sorry
+      (counter + 1, f ⟨counter, hcounter⟩ idx acc))
+    0 init
+  acc
+
+/-- Lower-level pure row-major fold that passes a flat natural offset and natural structured index.
+
+This is useful for performance-sensitive code that wants structured coordinates but does not need the
+proof-carrying `FinTIndex` wrapper or integer-coordinate representation. -/
+@[inline, specialize] def foldNatIdx {p : HRank} [NatFolder p] (shape : Shape p)
+    {γ : Type u} (init : γ)
+    (f : (linear : Fin shape.size) → (idx : TIndex Nat p) → NatInBounds shape idx → γ → γ) : γ :=
+  let (_, acc) := NatFolder.fold (p := p) shape
+    (fun counter idx hidx acc =>
+      have hcounter : counter < shape.size := by
+        -- The structural traversal emits exactly `shape.size` items.
+        sorry
+      (counter + 1, f ⟨counter, hcounter⟩ idx hidx acc)) 0 init
+  acc
+
+/-- Lower-level pure row-major fold that passes a bounded natural-coordinate tensor index.
+
+This is the proof-carrying wrapper variant of `foldNatIdx`; the bounds proof should erase at runtime. -/
+@[inline, specialize] def foldNatFinIdx {p : HRank} [NatFolder p] (shape : Shape p)
+    {γ : Type u} (init : γ)
+    (f : (linear : Fin shape.size) → NatFinTIndex shape → γ → γ) : γ :=
+  foldNatIdx shape init (fun linear idx hidx acc =>
+    f linear { val := idx, isLt := hidx } acc)
+
+end RowMajorLoop
 
 /-- Stream row-major bounded indices together with their canonical flat `Fin` offset and proof. -/
 @[inline] def rowMajorFinIter {p : HRank} (shape : Shape p) :

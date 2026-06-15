@@ -60,12 +60,12 @@ instance {P : Type u} {Q : Type v} {α : Type w} {p q : Profile}
     | (x, y) => HTuple.prod (toHTuple x) (toHTuple y)
 
 /-- Map a function over every leaf of a hierarchical tuple. -/
-@[inline] def map {α : Type u} {β : Type v} (f : α → β) : {p : Profile} → HTuple α p → HTuple β p
+@[inline, specialize] def map {α : Type u} {β : Type v} (f : α → β) : {p : Profile} → HTuple α p → HTuple β p
   | .leaf, .leaf value => .leaf (f value)
   | .prod _ _, .prod fst snd => .prod (map f fst) (map f snd)
 
 /-- Combine two hierarchical tuples leafwise. -/
-@[inline] def map₂ {α : Type u} {β : Type v} {γ : Type w} (f : α → β → γ) :
+@[inline, specialize] def map₂ {α : Type u} {β : Type v} {γ : Type w} (f : α → β → γ) :
     {p : Profile} → HTuple α p → HTuple β p → HTuple γ p
   | .leaf, .leaf a, .leaf b => .leaf (f a b)
   | .prod _ _, .prod a₀ a₁, .prod b₀ b₁ => .prod (map₂ f a₀ b₀) (map₂ f a₁ b₁)
@@ -73,24 +73,24 @@ instance {P : Type u} {Q : Type v} {α : Type w} {p q : Profile}
 abbrev zipWith := @map₂
 
 /-- Fold a hierarchical tuple using one operation for leaves and one for products. -/
-@[inline] def fold {α : Type u} {β : Type v} (leaf : α → β) (prod : β → β → β) :
+@[inline, specialize] def fold {α : Type u} {β : Type v} (leaf : α → β) (prod : β → β → β) :
     {p : Profile} → HTuple α p → β
   | .leaf, .leaf value => leaf value
   | .prod _ _, .prod fst snd => prod (fold leaf prod fst) (fold leaf prod snd)
 
 /-- Fold a hierarchical tuple into an additive monoid-like target. -/
-@[inline] def foldMap {α : Type u} {β : Type v} [Zero β] [Add β] (f : α → β) {p : Profile}
+@[inline, specialize] def foldMap {α : Type u} {β : Type v} [Zero β] [Add β] (f : α → β) {p : Profile}
     (x : HTuple α p) : β :=
   x.fold f (· + ·)
 
 /-- Sum a leafwise operation over two hierarchical tuples of the same profile. -/
-@[inline] def innerWith {α : Type u} {β : Type v} {γ : Type w} [Zero γ] [Add γ]
+@[inline, specialize] def innerWith {α : Type u} {β : Type v} {γ : Type w} [Zero γ] [Add γ]
     (f : α → β → γ) : {p : Profile} → HTuple α p → HTuple β p → γ
   | .leaf, .leaf a, .leaf b => f a b
   | .prod _ _, .prod x₀ x₁, .prod y₀ y₁ => innerWith f x₀ y₀ + innerWith f x₁ y₁
 
 /-- Natural semimodule inner product over matching hierarchical tuples. -/
-@[inline] def inner {α : Type u} {β : Type v} [Zero β] [Add β] [SMul α β] {p : Profile}
+@[inline, specialize] def inner {α : Type u} {β : Type v} [Zero β] [Add β] [SMul α β] {p : Profile}
     (idx : HTuple α p) (stride : HTuple β p) : β :=
   innerWith (fun n d => n • d) idx stride
 
@@ -200,7 +200,7 @@ theorem ofFin_toFin : ∀ {p : Profile} (i : Index p), ofFin p i.toFin = i
 end Index
 
 /-- Build a hierarchical tuple by giving a value for each leaf index. -/
-@[inline] def ofFn {α : Type u} : {p : Profile} → (Index p → α) → HTuple α p
+@[inline, specialize] def ofFn {α : Type u} : {p : Profile} → (Index p → α) → HTuple α p
   | .leaf, f => .leaf (f .leaf)
   | .prod _ _, f => .prod (ofFn fun i => f (.left i)) (ofFn fun i => f (.right i))
 
@@ -217,7 +217,7 @@ end Index
   | .prod _ _, .prod fst snd, .right i, value => .prod fst (snd.set i value)
 
 /-- Modify a leaf selected by `HTuple.Index`. -/
-@[inline] def modify {α : Type u} {p : Profile} (x : HTuple α p) (i : Index p) (f : α → α) : HTuple α p :=
+@[inline, specialize] def modify {α : Type u} {p : Profile} (x : HTuple α p) (i : Index p) (f : α → α) : HTuple α p :=
   x.set i (f (x.get i))
 
 @[simp]
