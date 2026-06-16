@@ -236,6 +236,7 @@ theorem enum_valid_zero_shape {p : Profile} {shape : TensorIndex.Shape p}
       out.1 = linearIndex (0 : HTuple Nat p) shape out.2 := by
   exact ⟨valid_zero_shape_iff_inBounds.mp h.1, h.2⟩
 
+
 end Range
 
 end HTuple
