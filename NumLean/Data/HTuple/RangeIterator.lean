@@ -7,7 +7,7 @@ namespace HTuple
 
 namespace Range
 
-open Std Std.PRange
+open Std Std.PRange Std.Iterators
 
 /-- Pointwise membership for half-open hierarchical tuple ranges. -/
 @[inline] def Valid {α : Type u} [LE α] [LT α] : {p : Profile} →
@@ -20,58 +20,83 @@ instance instMembershipRcoHTuple {α : Type u} [LE α] [LT α] {p : Profile} :
     Membership (HTuple α p) (Std.Rco (HTuple α p)) where
   mem r idx := Valid r.lower r.upper idx
 
-/-- Implementation helper for structural tuple range loops. -/
+/-- Leaf loop for generic half-open scalar ranges.
+
+This deliberately reuses Lean core's `IteratorLoop` for `Rxo.Iterator α`.  In particular, Nat and
+Int get the optimized scalar range loops from core instead of reimplementing them here. -/
+@[always_inline, inline, specialize] def forInLeafStep {α : Type u} [LE α] [LT α]
+    [DecidableLT α] [UpwardEnumerable α] [LawfulUpwardEnumerable α]
+    [LawfulUpwardEnumerableLE α] [LawfulUpwardEnumerableLT α]
+    [Rxo.IsAlwaysFinite α] [Finite (Rxo.Iterator α) Id]
+    {m : Type v → Type w} [Monad m] [IteratorLoop (Rxo.Iterator α) Id m] {β : Type v}
+    (lo hi : α) (init : β)
+    (f : (idx : α) → idx ∈ (lo...hi) → β → m (ForInStep β)) : m (ForInStep β) :=
+  haveI := Std.Iter.instForIn' (α := Rxo.Iterator α) (β := α) (n := m)
+  ForIn'.forIn' (m := m) (ρ := Iter (α := Rxo.Iterator α) α) (α := α)
+    (Std.Rco.Internal.iter (lo...hi)) (ForInStep.yield init)
+    fun idx hidx stepAcc =>
+      match stepAcc with
+      | .done acc => pure (ForInStep.done (ForInStep.done acc))
+      | .yield acc => do
+          have hmem : idx ∈ (lo...hi) := by
+            simpa using (Std.Rco.Internal.isPlausibleIndirectOutput_iter_iff (r := (lo...hi)) (a := idx)).mp hidx
+          let step ← f idx hmem acc
+          match step with
+          | .done acc => pure (ForInStep.done (ForInStep.done acc))
+          | .yield acc => pure (ForInStep.yield (ForInStep.yield acc))
+
+/-- Implementation helper for structural tuple range loops.
+
+The worker returns `ForInStep`, so `break` propagates through products without storing loop-control
+state in the accumulator.  Type-class recursion specializes the loop nest for a fixed profile. -/
 class ForInProfile (p : Profile) where
-  forInRange {α : Type u} [LE α] [LT α] [DecidableLT α]
+  forInRangeStep {α : Type u} [LE α] [LT α] [DecidableLT α]
       [UpwardEnumerable α] [LawfulUpwardEnumerable α] [LawfulUpwardEnumerableLE α]
-      [LawfulUpwardEnumerableLT α] [Rxo.IsAlwaysFinite α]
-      {m : Type v → Type w} [Monad m] {β : Type v}
+      [LawfulUpwardEnumerableLT α] [Rxo.IsAlwaysFinite α] [Finite (Rxo.Iterator α) Id]
+      {m : Type v → Type w} [Monad m] [IteratorLoop (Rxo.Iterator α) Id m] {β : Type v}
       (r : Std.Rco (HTuple α p)) (init : β)
-      (f : (idx : HTuple α p) → idx ∈ r → β → m (ForInStep β)) : m β
+      (f : (idx : HTuple α p) → idx ∈ r → β → m (ForInStep β)) : m (ForInStep β)
 
-attribute [inline, specialize] ForInProfile.forInRange
+attribute [always_inline, inline, specialize] ForInProfile.forInRangeStep
 
-@[inline] instance : ForInProfile .leaf where
-  forInRange r init f :=
+@[always_inline, inline] instance : ForInProfile .leaf where
+  forInRangeStep r init f :=
     match r with
     | ⟨.leaf lo, .leaf hi⟩ =>
-        ForIn'.forIn' (m := _) (ρ := Std.Rco _) (α := _) (lo...hi) init
-          fun idx hidx acc => f (.leaf idx) hidx acc
+        forInLeafStep lo hi init fun idx hidx acc => f (.leaf idx) hidx acc
 
-@[inline] instance {p q : Profile} [ForInProfile p] [ForInProfile q] :
+@[always_inline, inline] instance {p q : Profile} [ForInProfile p] [ForInProfile q] :
     ForInProfile (.prod p q) where
-  forInRange r init f :=
+  forInRangeStep r init f :=
     match r with
-    | ⟨.prod lo₀ lo₁, .prod hi₀ hi₁⟩ => do
+    | ⟨.prod lo₀ lo₁, .prod hi₀ hi₁⟩ =>
         let r₀ : Std.Rco (HTuple _ p) := lo₀...hi₀
         let r₁ : Std.Rco (HTuple _ q) := lo₁...hi₁
-        let step ← ForInProfile.forInRange r₀ (ForInStep.yield init) fun idx₀ hidx₀ stepAcc =>
-          match stepAcc with
-          | .done acc => pure (ForInStep.done (ForInStep.done acc))
-          | .yield acc => do
-              let inner ← ForInProfile.forInRange r₁ (ForInStep.yield acc) fun idx₁ hidx₁ stepAcc =>
-                match stepAcc with
-                | .done acc => pure (ForInStep.done (ForInStep.done acc))
-                | .yield acc => do
-                    let step ← f (.prod idx₀ idx₁) ⟨hidx₀, hidx₁⟩ acc
-                    match step with
-                    | .done acc => pure (ForInStep.done (ForInStep.done acc))
-                    | .yield acc => pure (ForInStep.yield (ForInStep.yield acc))
-              match inner with
-              | .done acc => pure (ForInStep.done (ForInStep.done acc))
-              | .yield acc => pure (ForInStep.yield (ForInStep.yield acc))
-        match step with
-        | .done acc => pure acc
-        | .yield acc => pure acc
+        ForInProfile.forInRangeStep r₀ init fun idx₀ hidx₀ acc =>
+          ForInProfile.forInRangeStep r₁ acc fun idx₁ hidx₁ acc =>
+            f (.prod idx₀ idx₁) ⟨hidx₀, hidx₁⟩ acc
 
+@[always_inline, inline, specialize] def forInRange {α : Type u} [LE α] [LT α] [DecidableLT α]
+    [UpwardEnumerable α] [LawfulUpwardEnumerable α] [LawfulUpwardEnumerableLE α]
+    [LawfulUpwardEnumerableLT α] [Rxo.IsAlwaysFinite α] [Finite (Rxo.Iterator α) Id]
+    {p : Profile} [ForInProfile p]
+    {m : Type v → Type w} [Monad m] [IteratorLoop (Rxo.Iterator α) Id m] {β : Type v}
+    (r : Std.Rco (HTuple α p)) (init : β)
+    (f : (idx : HTuple α p) → idx ∈ r → β → m (ForInStep β)) : m β := do
+  let step ← ForInProfile.forInRangeStep r init f
+  match step with
+  | .done acc => pure acc
+  | .yield acc => pure acc
+
+@[always_inline, inline]
 instance instForIn'RcoHTuple {α : Type u} [LE α] [LT α] [DecidableLT α]
     [UpwardEnumerable α] [LawfulUpwardEnumerable α] [LawfulUpwardEnumerableLE α]
-    [LawfulUpwardEnumerableLT α] [Rxo.IsAlwaysFinite α]
+    [LawfulUpwardEnumerableLT α] [Rxo.IsAlwaysFinite α] [Finite (Rxo.Iterator α) Id]
     {p : Profile} [ForInProfile p]
-    {m : Type v → Type w} [Monad m] :
+    {m : Type v → Type w} [Monad m] [IteratorLoop (Rxo.Iterator α) Id m] :
     ForIn' m (Std.Rco (HTuple α p)) (HTuple α p) inferInstance where
   forIn' r init f :=
-    ForInProfile.forInRange r init f
+    forInRange r init f
 
 /-- Cardinality of a half-open natural tuple range. -/
 @[inline] def card : {p : Profile} → HTuple Nat p → HTuple Nat p → Nat

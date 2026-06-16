@@ -159,6 +159,25 @@ def inner3HTupleRange (d0 d1 d2 token : Nat) (a b : FloatArray)
     acc := acc + a.get flat hflat * b.get flat hflatB
   return acc
 
+def inner3HTupleEnumRange (d0 d1 d2 token : Nat) (a b : FloatArray)
+    (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float := Id.run do
+  let shape : Shape _ := h(d0, d1, d2)
+  let mut acc := Float.ofNat (token % 7) * 0.000001
+  for h : (linIdx, h(i,j,k)) in (0...shape).enum do
+    have hbounds := HTuple.Range.valid_zero_shape_iff_inBounds.mp h.1
+    have hi : i < d0 := hbounds.1
+    have hj : j < d1 := hbounds.2.1
+    have hk : k < d2 := hbounds.2.2
+    let flat := (i * d1 + j) * d2 + k
+    have hflat : flat < a.size := by
+      rw [ha]
+      exact flat3_lt hi hj hk
+    have hflatB : flat < b.size := by
+      rw [hb]
+      exact flat3_lt hi hj hk
+    acc := acc + a.get flat hflat * b.get flat hflatB
+  return acc
+
 def matmulDirectChecksum (a b : FloatArray)
     (ha : a.size = matrixSize * matrixSize) (hb : b.size = matrixSize * matrixSize)
     (token : Nat) : Float :=
@@ -180,6 +199,12 @@ def inner3HTupleRangeChecksum (a b : FloatArray)
     (hb : b.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
     (token : Nat) : Float :=
   inner3HTupleRange rank3Dim0 rank3Dim1 rank3Dim2 token a b ha hb
+
+def inner3HTupleEnumRangeChecksum (a b : FloatArray)
+    (ha : a.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (hb : b.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (token : Nat) : Float :=
+  inner3HTupleEnumRange rank3Dim0 rank3Dim1 rank3Dim2 token a b ha hb
 
 def run : IO Unit := do
   IO.println s!"FloatArray iterator benchmark payload: matmul={matrixSize}x{matrixSize}, dense-inner3={rank3Dim0}x{rank3Dim1}x{rank3Dim2}"
@@ -203,6 +228,7 @@ def run : IO Unit := do
   timeRun "matmul HTuple range" 2 (fun token => pure (matmulHTupleRangeChecksum matA matB hmatA hmatB token))
   timeRun "dense inner3 direct nested loops" 64 (fun token => pure (inner3DirectChecksum tensorA tensorB htensorA htensorB token))
   timeRun "dense inner3 HTuple range" 64 (fun token => pure (inner3HTupleRangeChecksum tensorA tensorB htensorA htensorB token))
+  timeRun "dense inner3 HTuple enum range" 64 (fun token => pure (inner3HTupleRangeChecksum tensorA tensorB htensorA htensorB token))
 
 end Tests.FloatArrayTensorBenchmark
 
