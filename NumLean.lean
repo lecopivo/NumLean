@@ -36,11 +36,13 @@ import NumLean.Data.TensorIndex.FinTIndex
 import NumLean.Data.TensorIndex.FinTIndexFold
 import NumLean.Data.TensorIndex.FinTIndexIterator
 import NumLean.Data.TensorIndex.FinTIndexLemmas
+import NumLean.Data.TensorIndex.FinTIndexLoop
 import NumLean.Data.TensorIndex.FinTIndexMap
 import NumLean.Data.TensorIndex.IntFinTIndex
 import NumLean.Data.TensorIndex.Layout
 import NumLean.Data.TensorIndex.Linear
 import NumLean.Data.TensorIndex.SplitMap
+import NumLean.Data.TensorIndex.TensorIndexMap
 import NumLean.Data.TensorIndex.TensorIndexType
 import NumLean.Data.TensorIndex.TensorSliceMap
 import NumLean.Doodle

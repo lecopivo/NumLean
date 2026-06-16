@@ -1,4 +1,4 @@
-import NumLean.Data.TensorIndex.FinTIndexIterator
+import NumLean.Data.TensorIndex.FinTIndexLoop
 import NumLean.Data.TensorIndex.TensorIndexType
 import Init.Data.Iterators.Lemmas.Consumers.Loop
 
@@ -14,8 +14,8 @@ open scoped BigOperators
 
 def mkIndices {r} (shape : Shape r) : Array (FinTIndex shape) := Id.run do
   let mut a : Array (FinTIndex shape) := #[]
-  for i in rowMajorIter shape do
-    a := a.push i
+  for h : (_linear, i) in rowMajorIter shape do
+    a := a.push { val := i, isLt := h.idx_inBounds }
   return a
 
 theorem mkIndices_size {r : HRank} (shape : Shape r) :
@@ -24,8 +24,9 @@ theorem mkIndices_size {r : HRank} (shape : Shape r) :
 
 def tensorMap {α r} (shape : Shape r) (data : Vector α shape.size) (f : FinTIndex shape → α → α) := Id.run do
   let mut data := data
-  for i in rowMajorIter shape do
-    data := data.set (toFin i) (f i data[toFin i])
+  for h : (_linear, i) in rowMajorIter shape do
+    let idx : FinTIndex shape := { val := i, isLt := h.idx_inBounds }
+    data := data.set (toFin idx) (f idx data[toFin idx])
   return data
 
 theorem tensorMap_eq_map (shape : Shape r) (data : Vector α shape.size) (f : FinTIndex shape → α → α) :

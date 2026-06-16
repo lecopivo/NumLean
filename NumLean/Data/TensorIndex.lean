@@ -1,7 +1,8 @@
 import NumLean.Data.TensorIndex.Basic
 import NumLean.Data.TensorIndex.IntFinTIndex
-import NumLean.Data.TensorIndex.FinTIndexFold
 import NumLean.Data.TensorIndex.FinTIndexIterator
+import NumLean.Data.TensorIndex.FinTIndexLoop
+import NumLean.Data.TensorIndex.FinTIndexFold
 import NumLean.Data.TensorIndex.Compatibility
 import NumLean.Data.TensorIndex.Layout
 import NumLean.Data.TensorIndex.Linear

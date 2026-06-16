@@ -40,7 +40,6 @@ def mkFinRange (start count : Nat) (h : start + count ≤ nI) : TensorIndexMap (
           FinTIndex.equivFin, IndexType.equivFin, toFin]
 
 
-
 end TensorIndexMap
 
 end NumLean

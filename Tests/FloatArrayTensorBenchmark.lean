@@ -1,4 +1,5 @@
 import NumLean.Data.TensorIndex.FinTIndexFold
+import NumLean.Data.TensorIndex.FinTIndexLoop
 
 open NumLean TensorIndex
 
@@ -95,8 +96,9 @@ def matmulRowMajorIter (n token : Nat) (a b : FloatArray)
   let shape : Shape (.prod .leaf .leaf) := .prod (.leaf n) (.leaf n)
   let mut c := FloatArray.mk (Array.replicate (n * n) 0.0)
   let bias := Float.ofNat (token % 7) * 0.000001
-  for ⟨_linear, idx, _hidx⟩ in FinTIndex.rowMajorFinIter shape do
-    let ⟨.prod (.leaf i) (.leaf j), hbounds⟩ := idx
+  for h : (_linear, idx) in FinTIndex.rowMajorIter shape do
+    let idxFin : FinTIndex shape := { val := idx, isLt := h.idx_inBounds }
+    let ⟨.prod (.leaf i) (.leaf j), hbounds⟩ := idxFin
     let row := i
     let col := j
     let mut acc := bias
@@ -175,8 +177,9 @@ def inner3RowMajorIter (d0 d1 d2 token : Nat) (a b : FloatArray)
   let shape : Shape (.prod (.prod .leaf .leaf) .leaf) :=
     .prod (.prod (.leaf d0) (.leaf d1)) (.leaf d2)
   let mut acc := Float.ofNat (token % 7) * 0.000001
-  for ⟨_linear, idx, _hidx⟩ in FinTIndex.rowMajorFinIter shape do
-    let ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), hbounds⟩ := idx
+  for h : (_linear, idx) in FinTIndex.rowMajorIter shape do
+    let idxFin : FinTIndex shape := { val := idx, isLt := h.idx_inBounds }
+    let ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), hbounds⟩ := idxFin
     have hi : i < d0 := hbounds.1.1
     have hj : j < d1 := hbounds.1.2
     have hk : k < d2 := hbounds.2
@@ -242,8 +245,9 @@ def inner3CoordRowMajorIter (d0 d1 d2 token : Nat) (a b : FloatArray)
   let shape : Shape (.prod (.prod .leaf .leaf) .leaf) :=
     .prod (.prod (.leaf d0) (.leaf d1)) (.leaf d2)
   let mut acc := Float.ofNat (token % 7) * 0.000001
-  for ⟨_linear, idx, _hidx⟩ in FinTIndex.rowMajorFinIter shape do
-    let ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), hbounds⟩ := idx
+  for h : (_linear, idx) in FinTIndex.rowMajorIter shape do
+    let idxFin : FinTIndex shape := { val := idx, isLt := h.idx_inBounds }
+    let ⟨.prod (.prod (.leaf i) (.leaf j)) (.leaf k), hbounds⟩ := idxFin
     have hi : i < d0 := hbounds.1.1
     have hj : j < d1 := hbounds.1.2
     have hk : k < d2 := hbounds.2
@@ -445,7 +449,7 @@ def inner3CoordIntFinStandaloneLoopChecksum (a b : FloatArray)
 
 def run : IO Unit := do
   IO.println s!"FloatArray iterator benchmark payload: matmul={matrixSize}x{matrixSize}, dense-inner3={rank3Dim0}x{rank3Dim1}x{rank3Dim2}, coord-inner3={rank3CoordDim0}x{rank3CoordDim1}x{rank3CoordDim2}"
-  IO.println "Comparisons are direct nested dimension loops vs rowMajorFinIter aggregate loops."
+  IO.println "Comparisons are direct nested dimension loops vs rowMajorIter aggregate loops."
   IO.println "Inputs and per-run scalars depend on runtime IO.monoMsNow tokens to avoid compile-time folding."
   IO.println "name\ttotal\tper-run\tchecksum"
   let salt ← IO.monoMsNow
@@ -469,17 +473,17 @@ def run : IO Unit := do
     simpa [coordTensorB] using makeFloatArray_size (rank3CoordDim0 * rank3CoordDim1 * rank3CoordDim2) (salt + 6)
   timeRun "matmul direct nested loops" 2 (fun token => pure (matmulDirectChecksum matA matB hmatA hmatB token))
   timeRun "matmul standalone RowMajorLoop" 2 (fun token => pure (matmulStandaloneLoopChecksum matA matB hmatA hmatB token))
-  timeRun "matmul rowMajorFinIter" 2 (fun token => pure (matmulRowMajorIterChecksum matA matB hmatA hmatB token))
+  timeRun "matmul rowMajorIter" 2 (fun token => pure (matmulRowMajorIterChecksum matA matB hmatA hmatB token))
   timeRun "dense inner3 direct nested loops" 64 (fun token => pure (inner3DirectChecksum tensorA tensorB htensorA htensorB token))
   timeRun "dense inner3 standalone RowMajorLoop" 64 (fun token => pure (inner3StandaloneLoopChecksum tensorA tensorB htensorA htensorB token))
-  timeRun "dense inner3 rowMajorFinIter" 64 (fun token => pure (inner3RowMajorIterChecksum tensorA tensorB htensorA htensorB token))
+  timeRun "dense inner3 rowMajorIter" 64 (fun token => pure (inner3RowMajorIterChecksum tensorA tensorB htensorA htensorB token))
   timeRun "coord inner3 direct nested loops" 64 (fun token => pure (inner3CoordDirectChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
   timeRun "coord inner3 nat standalone RowMajorLoop" 64 (fun token => pure (inner3CoordNatStandaloneLoopChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
   timeRun "coord inner3 nat recursive RowMajorLoop" 64 (fun token => pure (inner3CoordNatStandaloneLoopRecursiveChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
   timeRun "coord inner3 IntFinTIndex RowMajorLoop" 64 (fun token => pure (inner3CoordIntFinStandaloneLoopChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
   timeRun "coord inner3 standalone RowMajorLoop" 64 (fun token => pure (inner3CoordStandaloneLoopChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
   timeRun "coord inner3 recursive RowMajorLoop" 64 (fun token => pure (inner3CoordStandaloneLoopRecursiveChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
-  timeRun "coord inner3 rowMajorFinIter" 64 (fun token => pure (inner3CoordRowMajorIterChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
+  timeRun "coord inner3 rowMajorIter" 64 (fun token => pure (inner3CoordRowMajorIterChecksum coordTensorA coordTensorB hcoordTensorA hcoordTensorB token))
 
 end Tests.FloatArrayTensorBenchmark
 

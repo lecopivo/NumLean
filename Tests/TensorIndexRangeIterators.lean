@@ -1,6 +1,6 @@
 import Std.Data.Iterators.Producers.Range
 import Std.Data.Iterators.Consumers
-import NumLean.Data.TensorIndex.FinTIndexIterator
+import NumLean.Data.TensorIndex.FinTIndexLoop
 
 open NumLean TensorIndex
 
@@ -9,8 +9,8 @@ namespace Tests
 abbrev MatrixShape (rows cols : Nat) : Shape (.prod .leaf .leaf) :=
   HTuple.prod (HTuple.leaf rows) (HTuple.leaf cols)
 
-def matrixCoord {rows cols : Nat} (idx : FinTIndex (MatrixShape rows cols)) : Nat × Nat :=
-  match idx.val with
+def matrixCoord (idx : TIndex Nat (.prod .leaf .leaf)) : Nat × Nat :=
+  match idx with
   | .prod (.leaf row) (.leaf col) => (row, col)
 
 /-- Coordinates visited by nested Std range iterators over a rectangular matrix tile.
@@ -29,7 +29,7 @@ def matrixTileCoordsByRanges (rowLo rowHi colLo colHi : Nat) : Array (Nat × Nat
 The range API defines the tile bounds; `FinTIndex.rowMajorIter` supplies the matrix index stream. -/
 def matrixTileCoordsByFinTIndex (rows cols rowLo rowHi colLo colHi : Nat) : Array (Nat × Nat) := Id.run do
   let mut out := #[]
-  for idx in FinTIndex.rowMajorIter (MatrixShape rows cols) do
+  for (_linear, idx) in FinTIndex.rowMajorIter (MatrixShape rows cols) do
     let (row, col) := matrixCoord idx
     if rowLo ≤ row ∧ row < rowHi ∧ colLo ≤ col ∧ col < colHi then
       out := out.push (row, col)
@@ -39,7 +39,7 @@ def matrixTileCoordsByFinTIndex (rows cols rowLo rowHi colLo colHi : Nat) : Arra
 def matrixTileSumByFinTIndex (matrix : Nat → Nat → Nat)
     (rows cols rowLo rowHi colLo colHi : Nat) : Nat := Id.run do
   let mut acc := 0
-  for idx in FinTIndex.rowMajorIter (MatrixShape rows cols) do
+  for (_linear, idx) in FinTIndex.rowMajorIter (MatrixShape rows cols) do
     let (row, col) := matrixCoord idx
     if rowLo ≤ row ∧ row < rowHi ∧ colLo ≤ col ∧ col < colHi then
       acc := acc + matrix row col
@@ -63,6 +63,15 @@ example : matrixTileCoordsByFinTIndex 4 5 0 4 1 1 = #[] := by
   native_decide
 
 example : matrixTileSumByFinTIndex sampleMatrix 4 5 2 2 0 4 = 0 := by
+  native_decide
+
+example :
+    Id.run (do
+      let mut ok := true
+      for h : (linearIdx, idx) in FinTIndex.rowMajorIter (MatrixShape 2 3) do
+        let finIdx : FinTIndex (MatrixShape 2 3) := { val := idx, isLt := h.idx_inBounds }
+        ok := ok && ((IndexType.toFin finIdx).1 == linearIdx)
+      return ok) = true := by
   native_decide
 
 end Tests

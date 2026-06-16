@@ -59,6 +59,25 @@ instance {P : Type u} {Q : Type v} {α : Type w} {p q : Profile}
   toHTuple
     | (x, y) => HTuple.prod (toHTuple x) (toHTuple y)
 
+/-- Build a right-associated product term for `h(...)` before converting it to an `HTuple`. -/
+private partial def mkHTupleNotationInput : List (Lean.TSyntax `term) → Lean.MacroM (Lean.TSyntax `term)
+  | [] => Lean.Macro.throwError "expected at least one element"
+  | [x] => pure x
+  | x :: xs => do
+      let rest ← mkHTupleNotationInput xs
+      `(Prod.mk $x $rest)
+
+/-- Tuple notation for homogeneous hierarchical tuples.
+
+The arguments are first grouped as a right-associated product and then converted by `ToHTuple`.
+Non-product values become leaves, while product values are decomposed recursively. -/
+syntax "h(" term,+ ")" : term
+
+macro_rules
+  | `(h($elems,*)) => do
+      let input ← mkHTupleNotationInput elems.getElems.toList
+      `(show HTuple _ _ from HTuple.toHTuple $(input))
+
 /-- Map a function over every leaf of a hierarchical tuple. -/
 @[inline, specialize] def map {α : Type u} {β : Type v} (f : α → β) : {p : Profile} → HTuple α p → HTuple β p
   | .leaf, .leaf value => .leaf (f value)
@@ -156,12 +175,12 @@ namespace Index
 @[inline] def ofFin : (p : Profile) → Fin p.size → Index p
   | .leaf, _ => .leaf
   | .prod l r, i =>
-      if h : i.1 < l.size then
-        .left (ofFin l ⟨i.1, h⟩)
+      if hlt : i.1 < l.size then
+        .left (ofFin l ⟨i.1, hlt⟩)
       else
         .right (ofFin r ⟨i.1 - l.size, by
           have hi : i.1 < l.size + r.size := by simpa [Profile.size] using i.2
-          have hle : l.size ≤ i.1 := Nat.le_of_not_gt h
+          have hle : l.size ≤ i.1 := Nat.le_of_not_gt hlt
           omega⟩)
 
 theorem toFin_ofFin : ∀ {p : Profile} (i : Fin p.size), (ofFin p i).toFin = i
@@ -169,18 +188,22 @@ theorem toFin_ofFin : ∀ {p : Profile} (i : Fin p.size), (ofFin p i).toFin = i
       apply Fin.ext
       simp [ofFin, toFin]
   | .prod l r, i => by
-      by_cases h : i.1 < l.size
-      · simp [ofFin, h, toFin, toFin_ofFin]
+      by_cases hlt : i.1 < l.size
+      · simp [ofFin, hlt, toFin, toFin_ofFin]
       · apply Fin.ext
-        have hle : l.size ≤ i.1 := Nat.le_of_not_gt h
-        have hlt : i.1 - l.size < r.size := by
+        have hle : l.size ≤ i.1 := Nat.le_of_not_gt hlt
+        have hright : i.1 - l.size < r.size := by
           have hi : i.1 < l.size + r.size := by simpa [Profile.size] using i.2
           omega
-        have hrec : (ofFin r ⟨i.1 - l.size, hlt⟩).toFin = ⟨i.1 - l.size, hlt⟩ :=
-          toFin_ofFin (p := r) ⟨i.1 - l.size, hlt⟩
-        have hval : (ofFin r ⟨i.1 - l.size, hlt⟩).toFin.1 = i.1 - l.size :=
+        have hrec : (ofFin r ⟨i.1 - l.size, hright⟩).toFin = ⟨i.1 - l.size, hright⟩ :=
+          toFin_ofFin (p := r) ⟨i.1 - l.size, hright⟩
+        have hval : (ofFin r ⟨i.1 - l.size, hright⟩).toFin.1 = i.1 - l.size :=
           congrArg Fin.val hrec
-        simp [ofFin, h, toFin, hval, Nat.add_sub_of_le hle]
+        rw [ofFin]
+        simp only [dif_neg hlt]
+        change l.size + (ofFin r ⟨i.1 - l.size, hright⟩).toFin.1 = i.1
+        rw [hval]
+        exact Nat.add_sub_of_le hle
 
 theorem ofFin_toFin : ∀ {p : Profile} (i : Index p), ofFin p i.toFin = i
   | .leaf, .leaf => rfl

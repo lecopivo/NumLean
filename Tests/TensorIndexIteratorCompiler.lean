@@ -1,4 +1,4 @@
-import NumLean.Data.TensorIndex.FinTIndexIterator
+import NumLean.Data.TensorIndex.FinTIndexLoop
 
 open NumLean TensorIndex
 
@@ -26,8 +26,8 @@ abbrev NestedShape : Shape (.prod (.prod .leaf .leaf) (.prod .leaf .leaf)) :=
 
 @[inline] def iterRank1Sum : Nat := Id.run do
   let mut acc := 0
-  for item in FinTIndex.rowMajorFinIter Rank1Shape do
-    acc := acc + item.linearIdx.1
+  for (linearIdx, _idx) in FinTIndex.rowMajorIter Rank1Shape do
+    acc := acc + linearIdx
   return acc
 
 @[inline] def refRank2Sum : Nat := Id.run do
@@ -41,8 +41,8 @@ abbrev NestedShape : Shape (.prod (.prod .leaf .leaf) (.prod .leaf .leaf)) :=
 
 @[inline] def iterRank2Sum : Nat := Id.run do
   let mut acc := 0
-  for item in FinTIndex.rowMajorFinIter Rank2Shape do
-    acc := acc + item.linearIdx.1
+  for (linearIdx, _idx) in FinTIndex.rowMajorIter Rank2Shape do
+    acc := acc + linearIdx
   return acc
 
 @[inline] def refRank3Sum : Nat := Id.run do
@@ -57,8 +57,8 @@ abbrev NestedShape : Shape (.prod (.prod .leaf .leaf) (.prod .leaf .leaf)) :=
 
 @[inline] def iterRank3Sum : Nat := Id.run do
   let mut acc := 0
-  for item in FinTIndex.rowMajorFinIter Rank3Shape do
-    acc := acc + item.linearIdx.1
+  for (linearIdx, _idx) in FinTIndex.rowMajorIter Rank3Shape do
+    acc := acc + linearIdx
   return acc
 
 @[inline] def refNestedSum : Nat := Id.run do
@@ -74,8 +74,8 @@ abbrev NestedShape : Shape (.prod (.prod .leaf .leaf) (.prod .leaf .leaf)) :=
 
 @[inline] def iterNestedSum : Nat := Id.run do
   let mut acc := 0
-  for item in FinTIndex.rowMajorFinIter NestedShape do
-    acc := acc + item.linearIdx.1
+  for (linearIdx, _idx) in FinTIndex.rowMajorIter NestedShape do
+    acc := acc + linearIdx
   return acc
 
 example : iterRank1Sum = refRank1Sum := by native_decide
