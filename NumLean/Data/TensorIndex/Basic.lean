@@ -109,7 +109,7 @@ theorem inBounds_of_get {p : HRank} {shape : Shape p} {idx : TIndex Nat p}
     {p : HRank} (idx : TIndex α p) {shape : Shape p} (stride : Stride D shape) : D :=
   HTuple.inner idx stride
 
-@[inline] def rowMajorStride {r} (shape : Shape r) : Stride Int shape :=
+@[inline] def rowMajorStride {r} (shape : Shape r) : Stride Nat shape :=
   match shape with
   | .leaf _ => .leaf 1
   | .prod shape₁ shape₂ =>
@@ -134,11 +134,60 @@ theorem offset_prod {I : Type u} {D : Type v} [Zero D] [Add D] [SMul I D]
     i.offset stride + j.offset stride' := by
   simp [TIndex.offset, HTuple.inner, HTuple.innerWith]
 
-theorem offset_smul {I : Type u} {D : Type v} [AddCommGroup D] [Semiring I] [Module I D]
+theorem offset_smul {I : Type u} {D : Type v} [AddCommMonoid D] [Semiring I] [Module I D]
     (p : HRank) (shape : Shape p) (idx : TIndex I p) (stride : Stride D shape) (n : Nat) :
     idx.offset (n • stride) =
     n • idx.offset stride := by
   exact HTuple.inner_smul_right idx stride n
+
+@[simp]
+theorem offset_zero_right {I : Type u} {D : Type v} [Semiring I] [AddCommMonoid D] [Module I D]
+    {p : HRank} {shape : Shape p} (idx : TIndex I p) :
+    idx.offset (shape := shape) (0 : Stride D shape) = 0 := by
+  induction p with
+  | leaf =>
+      cases shape with | leaf dim =>
+      cases idx with | leaf i =>
+      exact smul_zero i
+  | prod p q hp hq =>
+      cases shape with | prod shape₀ shape₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      change TIndex.offset (shape := shape₀) idx₀ (0 : Stride D shape₀) +
+        TIndex.offset (shape := shape₁) idx₁ (0 : Stride D shape₁) = 0
+      rw [hp, hq, zero_add]
+
+theorem offset_add_right {I : Type u} {D : Type v} [Semiring I] [AddCommMonoid D] [Module I D]
+    {p : HRank} {shape : Shape p} (idx : TIndex I p) (stride stride' : Stride D shape) :
+    idx.offset (stride + stride') = idx.offset stride + idx.offset stride' := by
+  induction p with
+  | leaf =>
+      cases shape with | leaf dim =>
+      cases idx with | leaf i =>
+      cases stride with | leaf s =>
+      cases stride' with | leaf s' =>
+      simp [TIndex.offset, HTuple.inner, HTuple.innerWith, smul_add]
+  | prod p q hp hq =>
+      cases shape with | prod shape₀ shape₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      cases stride with | prod stride₀ stride₁ =>
+      cases stride' with | prod stride₀' stride₁' =>
+      change TIndex.offset (shape := shape₀) idx₀ (stride₀ + stride₀') +
+          TIndex.offset (shape := shape₁) idx₁ (stride₁ + stride₁') =
+        (TIndex.offset (shape := shape₀) idx₀ stride₀ +
+          TIndex.offset (shape := shape₁) idx₁ stride₁) +
+        (TIndex.offset (shape := shape₀) idx₀ stride₀' +
+          TIndex.offset (shape := shape₁) idx₁ stride₁')
+      rw [hp, hq]
+      ac_rfl
+
+theorem offset_nsmul {I : Type u} {D : Type v} [AddCommMonoid D] [Semiring I] [Module I D]
+    (p : HRank) (shape : Shape p) (idx : TIndex I p) (stride : Stride D shape) (n : Nat) :
+    idx.offset (n • stride) =
+    n • idx.offset stride := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+      rw [succ_nsmul, offset_add_right, ih, succ_nsmul]
 
 @[simp]
 theorem offset_zero_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
@@ -268,7 +317,7 @@ theorem offset_rowMajorEquiv_eq_equivFin {r} {shape : Shape r} (idx : FinTIndex 
   case prod shape₁ shape₂ h₁ h₂ =>
     have ⟨.prod idx₁ idx₂, hidx⟩ := idx
     set_option backward.isDefEq.respectTransparency false in
-    simp [TIndex.rowMajorStride, equivFin, ← h₁, ← h₂, - nsmul_eq_mul, TIndex.offset_smul]
+    simp [TIndex.rowMajorStride, equivFin, ← h₁, ← h₂, - nsmul_eq_mul, TIndex.offset_nsmul]
     rw[add_comm]
 
 

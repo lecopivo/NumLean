@@ -5,6 +5,7 @@ namespace NumLean
 
 namespace TensorIndex
 
+#exit
 /-- Multiply every stride by a scalar. -/
 def scaleStrides {rank : Nat} (c : Nat) (strides : Vector Nat rank) : Vector Nat rank :=
   Vector.ofFn fun i => c * strides[i]

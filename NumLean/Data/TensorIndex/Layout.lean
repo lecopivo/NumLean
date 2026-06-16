@@ -79,18 +79,18 @@ def BoundedBy {D : Type u} [Zero D] [Add D] [SMul Nat D] [LE D] [LT D]
   ∀ idx : FinTIndex shape, lo ≤ layout.eval idx.val ∧ layout.eval idx.val < hi
 
 def evalToFin {p : HRank} {shape : Shape p} {n : Nat}
-    (layout : Layout shape Int)
+    (layout : Layout shape Nat)
     (inBounds : layout.BoundedBy 0 n) :
     FinTIndex shape → Fin n :=
-  fun idx => { val := (layout.eval idx.val).toNat, isLt := by have := inBounds idx; grind }
+  fun idx => { val := layout.eval idx.val, isLt := by have := inBounds idx; grind }
 
 open Function in
 /-- An integer-offset layout is compact when it bijects bounded coordinates with dense offsets. -/
-structure Compact {p : HRank} {shape : Shape p} (layout : Layout shape Int) : Prop where
+structure Compact {p : HRank} {shape : Shape p} (layout : Layout shape Nat) : Prop where
   bounded : layout.BoundedBy 0 shape.size
   bijective : Bijective (layout.evalToFin bounded)
 
-def ofFin (n : Nat) : Layout (.leaf n) Int where
+def ofFin (n : Nat) : Layout (.leaf n) Nat where
   offset := 0
   stride := .leaf 1
 
@@ -185,22 +185,6 @@ theorem compose_identityCoord
   | mk offset stride =>
       simp [compose, identityCoord, eval]
 
--- /-- A bijective bounded coordinate-valued layout forces source and target domains to have the same size. -/
--- theorem domain_size_eq_of_bijective {p q : HRank} {targetShape : Shape p} {shape : Shape q}
---     (layout : Layout shape (TIndex Int p))
---     (inBounds : ∀ idx : FinTIndex shape, TIndex.InBoundsInt targetShape (layout.eval idx.val))
---     (hbij : Function.Bijective (layout.evalToFinTIndex inBounds)) :
---     shape.size = targetShape.size := by
---   have hcard := Fintype.card_congr
---     { toFun := layout.evalToFinTIndex inBounds
---       invFun := fun idx => Classical.choose (hbij.2 idx)
---       left_inv := by
---         intro idx
---         exact hbij.1 (Classical.choose_spec (hbij.2 (layout.evalToFinTIndex inBounds idx)))
---       right_inv := by
---         intro idx
---         exact Classical.choose_spec (hbij.2 idx) }
---   simpa [FinTIndex.card_eq_shape_size] using hcard
 
 /-- Row-major product of two integer-offset layouts.
 
@@ -224,83 +208,14 @@ theorem rowMajorProd_eval
 
 @[simp]
 theorem compact_rowMajorProd {p q : HRank} {shape₀ : Shape p} {shape₁ : Shape q}
-    (layout₀ : Layout shape₀ Int) (layout₁ : Layout shape₁ Int)
+    (layout₀ : Layout shape₀ Nat) (layout₁ : Layout shape₁ Nat)
     (hlayout₀ : layout₀.Compact) (hlayout₁ : layout₁.Compact) :
     (layout₀.rowMajorProd layout₁).Compact := by
   sorry
-  -- let layout := layout₀.rowMajorProd layout₁
-  -- have bounded : layout.BoundedBy 0 (Shape.size (HTuple.prod shape₀ shape₁)) := by
-  --   intro idx
-  --   cases idx with
-  --   | mk val hval =>
-  --   cases val with
-  --   | prod idx₀ idx₁ =>
-  --   let left : FinTIndex shape₀ := ⟨idx₀, hval.1⟩
-  --   let right : FinTIndex shape₁ := ⟨idx₁, hval.2⟩
-  --   have hleft := hlayout₀.bounded left
-  --   have hright := hlayout₁.bounded right
-  --   constructor
-  --   · simp [layout]
-  --     nlinarith [mul_nonneg (Int.natCast_nonneg shape₁.size) hleft.1, hright.1]
-  --   · simp [layout]
-  --     have hsize₁pos : 0 < (shape₁.size : Int) := by
-  --       exact_mod_cast TIndex.size_pos_of_inBounds right.isLt
-  --     have hmul : (shape₁.size : Int) * layout₀.eval left.val <
-  --         (shape₁.size : Int) * shape₀.size :=
-  --       mul_lt_mul_of_pos_left hleft.2 hsize₁pos
-  --     nlinarith [hright.1, hright.2]
-  -- refine ⟨bounded, ?_⟩
-  -- let f : FinTIndex (HTuple.prod shape₀ shape₁) → Fin (Shape.size (HTuple.prod shape₀ shape₁)) := fun idx =>
-  --   ⟨(layout.eval idx.val).toNat, by have := bounded idx; simp_all only [Int.toNat_lt]⟩
-  -- let f₀ : FinTIndex shape₀ → Fin shape₀.size := fun idx =>
-  --   ⟨(layout₀.eval idx.val).toNat, by have := hlayout₀.bounded idx; simp_all only [Int.toNat_lt]⟩
-  -- let f₁ : FinTIndex shape₁ → Fin shape₁.size := fun idx =>
-  --   ⟨(layout₁.eval idx.val).toNat, by have := hlayout₁.bounded idx; simp_all only [Int.toNat_lt]⟩
-  -- let e₀ : FinTIndex shape₀ ≃ Fin shape₀.size :=
-  --   { toFun := f₀
-  --     invFun := fun offset => Classical.choose (hlayout₀.bijective.2 offset)
-  --     left_inv := by
-  --       intro idx
-  --       exact hlayout₀.bijective.1 (Classical.choose_spec (hlayout₀.bijective.2 (f₀ idx)))
-  --     right_inv := by
-  --       intro offset
-  --       exact Classical.choose_spec (hlayout₀.bijective.2 offset) }
-  -- let e₁ : FinTIndex shape₁ ≃ Fin shape₁.size :=
-  --   { toFun := f₁
-  --     invFun := fun offset => Classical.choose (hlayout₁.bijective.2 offset)
-  --     left_inv := by
-  --       intro idx
-  --       exact hlayout₁.bijective.1 (Classical.choose_spec (hlayout₁.bijective.2 (f₁ idx)))
-  --     right_inv := by
-  --       intro offset
-  --       exact Classical.choose_spec (hlayout₁.bijective.2 offset) }
-  -- have hbij : Function.Bijective fun idx : FinTIndex (HTuple.prod shape₀ shape₁) =>
-  --     (FinTIndex.prodEquiv.trans ((Equiv.prodCongr e₀ e₁).trans finProdFinEquiv)) idx :=
-  --   (FinTIndex.prodEquiv.trans ((Equiv.prodCongr e₀ e₁).trans finProdFinEquiv)).bijective
-  -- convert hbij using 1
-  -- ext idx
-  -- cases idx with
-  -- | mk val hval =>
-  -- cases val with
-  -- | prod idx₀ idx₁ =>
-  -- let left : FinTIndex shape₀ := ⟨idx₀, hval.1⟩
-  -- let right : FinTIndex shape₁ := ⟨idx₁, hval.2⟩
-  -- simp [evalToFin, f₀, f₁, e₀, e₁, FinTIndex.prodEquiv, finProdFinEquiv]
-  -- have hleft_nonneg : 0 ≤ layout₀.eval idx₀ := by
-  --   simpa [left] using (hlayout₀.bounded left).1
-  -- have hright_nonneg : 0 ≤ layout₁.eval idx₁ := by
-  --   simpa [right] using (hlayout₁.bounded right).1
-  -- have hmul_nonneg : 0 ≤ (shape₁.size : Int) * layout₀.eval idx₀ :=
-  --   mul_nonneg (Int.natCast_nonneg shape₁.size) hleft_nonneg
-  -- have hsum_nonneg : 0 ≤ layout₁.eval idx₁ + (shape₁.size : Int) * layout₀.eval idx₀ := by
-  --   nlinarith
-  -- apply Nat.cast_injective (R := Int)
-  -- rw [Int.toNat_of_nonneg hsum_nonneg, Nat.cast_add, Nat.cast_mul,
-  --   Int.toNat_of_nonneg hright_nonneg, Int.toNat_of_nonneg hleft_nonneg]
 
 
 /-- Row-major dense stride for a hierarchical shape. -/
-def rowMajor {p : HRank} (shape : Shape p) : Layout shape Int :=
+def rowMajor {p : HRank} (shape : Shape p) : Layout shape Nat :=
   { offset := 0
     stride := TIndex.rowMajorStride shape }
 
@@ -313,12 +228,12 @@ theorem rowMajorProd_rowMajor {p q : HRank} {shape₀ : Shape p} {shape₁ : Sha
     rowMajor (shape₀.prod shape₁) := rfl
 
 @[simp]
-theorem rowMajor_eval_leaf [SMul I Int] (i : I) :
+theorem rowMajor_eval_leaf [SMul I Nat] (i : I) :
     (rowMajor (.leaf n)).eval (.leaf i) = i • 1 := by
   simp [rowMajor, TIndex.rowMajorStride]
 
 @[simp]
-theorem rowMajor_eval_prod {I : Type u} [Semiring I] [Module I Int] {r₁ r₂}
+theorem rowMajor_eval_prod {I : Type u} [Semiring I] [Module I Nat] {r₁ r₂}
     {shape₁ : Shape r₁} {shape₂ : Shape r₂}
     (idx₁ : TIndex I r₁) (idx₂ : TIndex I r₂) :
     (rowMajor (.prod shape₁ shape₂)).eval (.prod idx₁ idx₂) =

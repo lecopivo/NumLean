@@ -10,6 +10,9 @@ namespace TensorIndex
 
 namespace Shape
 
+-- old file that might be useful at some point
+#exit
+
 private def prodIndexEquiv (p q : HRank) : (HTuple.Index p ⊕ HTuple.Index q) ≃ HTuple.Index (.prod p q) where
   toFun
     | .inl i => .left i

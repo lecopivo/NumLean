@@ -1,4 +1,5 @@
 import NumLean.Data.TensorIndex
+import NumLean.Data.TensorIndex.FinTIndexMap
 
 namespace NumLean
 
@@ -6,40 +7,41 @@ namespace Array
 
 variable {K : Type u}
 
+open TensorIndex FinTIndex
+
 /-- Fill a strided tensor-shaped slice with one value. -/
-def fillTensorSlice {rank : Nat} (counts : Vector Nat rank)
-    (dst : Array K) (dstOff : Nat) (dstStrides : Vector Nat rank) (x : K) : Array K :=
+def fillTensorSlice {r} (shape : Shape r)
+    (dst : Array K) (dstLayout : Layout shape Nat) (x : K) : Array K :=
   Id.run do
     let mut dst := dst
-    for jt in TensorIndex.range counts do
-      let di := dstOff + jt.offset dstStrides
+    for jt in rowMajorIter shape do
+      let di := dstLayout.eval jt.1
       if h : di < dst.size then
         dst := dst.set di x h
     return dst
 
 /-- Copy one strided tensor-shaped slice into another. -/
-def copyTensorSlice {rank : Nat} (counts : Vector Nat rank)
-    (src : Array K) (srcOff : Nat) (srcStrides : Vector Nat rank)
-    (dst : Array K) (dstOff : Nat) (dstStrides : Vector Nat rank) : Array K :=
+def copyTensorSlice {r} (shape : Shape r)
+    (src : Array K) (srcLayout : Layout shape Nat)
+    (dst : Array K) (dstLayout : Layout shape Nat) : Array K :=
   Id.run do
     let mut dst := dst
-    for jt in TensorIndex.range counts do
-      let si := srcOff + jt.offset srcStrides
-      let di := dstOff + jt.offset dstStrides
+    for jt in rowMajorIter shape do
+      let si := srcLayout.eval jt.1
+      let di := dstLayout.eval jt.1
       if hs : si < src.size then
         if hd : di < dst.size then
           dst := dst.set di src[si] hd
     return dst
 
 /-- Extract a strided tensor-shaped slice into a dense row-major array. -/
-def extractTensorSlice [Inhabited K] {rank : Nat} (counts : Vector Nat rank)
-    (src : Array K) (srcOff : Nat) (srcStrides : Vector Nat rank) : Array K :=
+def extractTensorSlice [Inhabited K] {r} (shape : Shape r)
+    (src : Array K) (srcLayout : Layout shape Nat) : Array K :=
   Id.run do
-    let mut out := Array.replicate (TensorIndex.numel counts) default
-    let denseStrides := TensorIndex.rowMajorStrides counts
-    for jt in TensorIndex.range counts do
-      let si := srcOff + jt.offset srcStrides
-      let oi := jt.offset denseStrides
+    let mut out := Array.replicate shape.size default
+    for jt in rowMajorIter shape do
+      let si := srcLayout.eval jt.1
+      let oi := (equivFin shape jt).1
       if hs : si < src.size then
         if ho : oi < out.size then
           out := out.set oi src[si] ho

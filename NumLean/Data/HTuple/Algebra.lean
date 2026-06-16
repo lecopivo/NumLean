@@ -369,7 +369,7 @@ instance instCommSemiring [CommSemiring α] {p : Profile} : CommSemiring (HTuple
     simp [mul_comm]
 
 /-- Scaling the right argument of an inner product scales the resulting inner product. -/
-theorem inner_smul_right {I : Type u} {D : Type v} [AddCommGroup D] [Semiring I] [Module I D]
+theorem inner_smul_right {I : Type u} {D : Type v} [AddCommMonoid D] [Semiring I] [Module I D]
     {p : Profile} (idx : HTuple I p) (stride : HTuple D p) (n : Nat) :
     HTuple.inner idx (n • stride) = n • HTuple.inner idx stride := by
   induction p with

@@ -73,19 +73,6 @@ def prodEquiv {p q : HRank} (shape₀ : Shape p) (shape₁ : Shape q) :
       let h := finProdFinEquiv
       f.trans (g.trans h)
 
-theorem offset_rowMajorEquiv_eq_equivFin {r} {shape : Shape r} (idx : IntFinTIndex shape) :
-    idx.val.offset (TIndex.rowMajorStride shape) = (equivFin shape idx) := by
-  induction shape
-  case leaf =>
-    have ⟨.leaf idx, hidx⟩ := idx
-    set_option backward.isDefEq.respectTransparency false in
-    simp [TIndex.rowMajorStride, equivFin, leafEquiv, hidx.1]
-  case prod shape₁ shape₂ h₁ h₂ =>
-    have ⟨.prod idx₁ idx₂, hidx⟩ := idx
-    set_option backward.isDefEq.respectTransparency false in
-    simp [TIndex.rowMajorStride, equivFin, ← h₁, ← h₂, - nsmul_eq_mul, TIndex.offset_smul]
-    rw [add_comm]
-
 end IntFinTIndex
 
 end TensorIndex

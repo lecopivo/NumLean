@@ -24,7 +24,7 @@ class TensorArrayOps (Ks : Type u) (K : outParam (Type v)) [ArrayOps Ks K] where
 namespace TensorArrayOps
 
 variable {Ks : Type u} {K : Type v} [ArrayOps Ks K] [TensorArrayOps Ks K]
-
+#exit
 /-- Lawfulness of tensor array operations against the reference `Array` implementation.
 
 The specs are stated under the assumptions that the logical tensor slice has injective strides and

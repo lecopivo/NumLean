@@ -1,3 +1,5 @@
 import Tests.Float32ArrayEval
+import Tests.FloatArrayTensorBenchmark
 import Tests.FloatArrayTensorOps
+import Tests.TensorIndexIteratorCompiler
 import Tests.TensorIndexRangeIterators

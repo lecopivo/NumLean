@@ -11,7 +11,7 @@ class TensorIndexTypeOfRank (I : Type u) (n : outParam Nat) (rank : HRank)
 
   size_eq_shape_size : n = shape.size
 
-  layout : Layout shape Int
+  layout : Layout shape Nat
   compact_layout : layout.Compact
 
   /-- Tensor-shaped view of this flat index type. -/
@@ -19,7 +19,7 @@ class TensorIndexTypeOfRank (I : Type u) (n : outParam Nat) (rank : HRank)
 
   /-- The `IndexType` flat position is the dense tensor offset for the configured axis order. -/
   layout_eval_tensorEquiv_eq_toFin (i : I) :
-    layout.eval (tensorEquiv i).1 = ((toFin i).1 : Int)
+    layout.eval (tensorEquiv i).1 = (toFin i).1
 
 
 /-- `I` is tensor index type of canonical rank `rank`. -/
@@ -97,8 +97,11 @@ instance {I : Type u} {J : Type v} {nI nJ : Nat}
   tensorEquiv := (Equiv.prodCongr tensorEquiv tensorEquiv).trans (FinTIndex.prodEquiv _ _).symm
   layout_eval_tensorEquiv_eq_toFin := by
     intro (i,j)
-    simp [FinTIndex.prodEquiv,layout_eval_tensorEquiv_eq_toFin,
-          ← size_eq_shape_size (I := J), toFin]
+    have hi := layout_eval_tensorEquiv_eq_toFin (I := I) (rank := p) i
+    have hj := layout_eval_tensorEquiv_eq_toFin (I := J) (rank := q) j
+    have hsizeJ := size_eq_shape_size (I := J) (rank := q)
+    simp [Layout.rowMajorProd, toFin, ← hi, ← hj, - nsmul_eq_mul, TIndex.offset_smul, ←hsizeJ,
+          Layout.eval, Nat.mul_add, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc]
 
 instance {I : Type u} {J : Type v} {nI nJ : Nat}
     {p q : HRank} {shapeI : Shape p} {shapeJ : Shape q}

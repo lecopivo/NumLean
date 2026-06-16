@@ -9,18 +9,6 @@ structure FinTIndexMap {r r'} (shape : Shape r) (shape' : Shape r')
   extends Layout shape (TIndex Nat r') where
     in_bounds : toLayout.InBounds shape'
 
-open TensorIndexType in
-structure TensorIndexMap (J : Type u) (I : Type v)
-  {shapeJ : Shape rankJ} [TensorIndexType J nJ rankJ shapeJ] [IndexType I nI]
-  where
-    map : J → I
-
-    layout : Layout shapeJ Int
-    bounded : layout.BoundedBy 0 nI
-
-    fromFin_eval_toFinTIndex : ∀ j : J,
-      fromFin (layout.evalToFin bounded (toFinTIndex j)) = map j
-
 namespace FinTIndexMap
 
 variable {r r'} {shape : Shape r} {shape' : Shape r'}
