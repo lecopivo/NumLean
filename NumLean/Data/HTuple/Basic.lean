@@ -59,24 +59,79 @@ instance {P : Type u} {Q : Type v} {α : Type w} {p q : Profile}
   toHTuple
     | (x, y) => HTuple.prod (toHTuple x) (toHTuple y)
 
-/-- Build a right-associated product term for `h(...)` before converting it to an `HTuple`. -/
-private partial def mkHTupleNotationInput : List (Lean.TSyntax `term) → Lean.MacroM (Lean.TSyntax `term)
-  | [] => Lean.Macro.throwError "expected at least one element"
-  | [x] => pure x
-  | x :: xs => do
-      let rest ← mkHTupleNotationInput xs
-      `(Prod.mk $x $rest)
+
+declare_syntax_cat htuple_stx (behavior := both)
+syntax term : htuple_stx
+syntax (priority := high) htuple_stx ", " htuple_stx,* : htuple_stx
+syntax (priority := high) "(" htuple_stx ")" : htuple_stx
 
 /-- Tuple notation for homogeneous hierarchical tuples.
 
-The arguments are first grouped as a right-associated product and then converted by `ToHTuple`.
-Non-product values become leaves, while product values are decomposed recursively. -/
-syntax "h(" term,+ ")" : term
+Each argument becomes a leaf, comma-separated arguments become right-associated products, and
+syntactic nested tuples are decomposed recursively. -/
+syntax "h(" htuple_stx ")" : term
+
+open Lean Syntax
+macro_rules
+  | `(htuple_stx| ( $x:htuple_stx ) ) =>
+    `(htuple_stx| $x:htuple_stx )
+
+  | `(htuple_stx| $x:term )     => `(HTuple.leaf $x)
+
+  | `(htuple_stx| $x:htuple_stx , $y:htuple_stx, $ys:htuple_stx,* ) =>
+    `(htuple_stx| $x:htuple_stx , ($y:htuple_stx, $ys:htuple_stx,*) )
+
+  | `(htuple_stx| $x:htuple_stx , $y:htuple_stx ) => `(HTuple.prod h($x:htuple_stx) h($y:htuple_stx))
+
+  | `(term| h( $x:htuple_stx )) => do
+    let x ← `(htuple_stx| ( $x:htuple_stx ))
+    match ← Macro.expandMacro? x.raw with
+    | some x => return x
+    | none => Macro.throwUnsupported
+
+@[app_unexpander HTuple.leaf] def unexpandHTupleLeaf : Lean.PrettyPrinter.Unexpander
+  | `($(_) $x:term) => `(h($x:term))
+  | _ => throw ()
+
+@[app_unexpander HTuple.prod] def unexpandHTupleProd : Lean.PrettyPrinter.Unexpander
+  | `($(_) h($x:term) h($y:htuple_stx) ) => `(h($x:term, $y))
+  | `($(_) h($x:htuple_stx) h($y:htuple_stx) ) => `(h(($x), $y))
+  | _ => throw ()
+
+
+declare_syntax_cat htuple_profile_stx (behavior := both)
+syntax "•" : htuple_profile_stx
+syntax (priority := high) htuple_profile_stx ", " htuple_profile_stx,* : htuple_profile_stx
+syntax (priority := high) "(" htuple_profile_stx ")" : htuple_profile_stx
+
+open Lean Syntax
+syntax:max "hp(" htuple_profile_stx ")" : term
 
 macro_rules
-  | `(h($elems,*)) => do
-      let input ← mkHTupleNotationInput elems.getElems.toList
-      `(show HTuple _ _ from HTuple.toHTuple $(input))
+  | `(htuple_profile_stx| ( $x:htuple_profile_stx ) ) =>
+    `(htuple_profile_stx| $x:htuple_profile_stx )
+
+  | `(htuple_profile_stx| • ) => `(HTuple.Profile.leaf)
+
+  | `(htuple_profile_stx| $x:htuple_profile_stx , $y:htuple_profile_stx, $ys:htuple_profile_stx,* ) =>
+    `(htuple_profile_stx| $x:htuple_profile_stx , ($y:htuple_profile_stx, $ys:htuple_profile_stx,*) )
+
+  | `(htuple_profile_stx| $x:htuple_profile_stx , $y:htuple_profile_stx ) =>
+    `(HTuple.Profile.prod hp($x:htuple_profile_stx) hp($y:htuple_profile_stx))
+
+  | `(term| hp( $x:htuple_profile_stx )) => do
+    let x ← `(htuple_profile_stx| ( $x:htuple_profile_stx ))
+    match ← Macro.expandMacro? x.raw with
+    | some x => return x
+    | none => Macro.throwUnsupported
+
+@[app_unexpander Profile.leaf] def unexpandHTupleProfileLeaf : Lean.PrettyPrinter.Unexpander
+  | `($(_)) => `(hp(•))
+
+@[app_unexpander Profile.prod] def unexpandHTupleProfileProd : Lean.PrettyPrinter.Unexpander
+  | `($(_) hp(•) hp($y:htuple_profile_stx)) => `(hp(•, $y))
+  | `($(_) hp($x:htuple_profile_stx) hp($y:htuple_profile_stx)) => `(hp(($x), $y))
+  | _ => throw ()
 
 /-- Map a function over every leaf of a hierarchical tuple. -/
 @[inline, specialize] def map {α : Type u} {β : Type v} (f : α → β) : {p : Profile} → HTuple α p → HTuple β p

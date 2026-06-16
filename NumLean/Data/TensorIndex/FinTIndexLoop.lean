@@ -453,6 +453,22 @@ decreasing_by
     | .done acc => pure acc
     | .yield acc => pure acc
 
+@[inline, specialize] private def consumeFromIteratorStateFast {p : HRank} {shape : Shape p}
+    [NatConsumer p]
+    {m : Type u → Type v} [Monad m]
+    {γ : Type u} {Pl : Nat × TIndex Nat p → γ → ForInStep γ → Prop}
+    (it : IterM (α := RowMajorIterator shape) Id (Nat × TIndex Nat p))
+    (f : (b : Nat × TIndex Nat p) → it.IsPlausibleIndirectOutput b →
+      (c : γ) → m (Subtype (Pl b c)))
+    (init : γ) : m γ := do
+  if _hdone : shape.size ≤ it.internalState.pos then
+    pure init
+  else
+    let step ← NatConsumer.consume (p := p) it f shape (emitRowMajorOutput it f) init
+    match step with
+    | .done acc => pure acc
+    | .yield acc => pure acc
+
 private theorem listStepLoop_eq_default_of_zero {p : HRank} {shape : Shape p}
     {m : Type u → Type v} [Monad m] [LawfulMonad m]
     (lift : (γ' : Type) → (δ : Type u) → (γ' → m δ) → Id γ' → m δ)
@@ -619,6 +635,7 @@ decreasing_by
   omega
 
 @[inline, specialize] private def structuralLoop {p : HRank} {shape : Shape p}
+    [NatConsumer p]
     {m : Type u → Type v} [Monad m]
     {γ : Type u} {Pl : Nat × TIndex Nat p → γ → ForInStep γ → Prop}
     (it : IterM (α := RowMajorIterator shape) Id (Nat × TIndex Nat p))
@@ -626,7 +643,7 @@ decreasing_by
     (f : (b : Nat × TIndex Nat p) → it.IsPlausibleIndirectOutput b →
       (c : γ) → m (Subtype (Pl b c))) : m γ :=
   if _hzero : it.internalState.pos = 0 then
-    consumeFromIteratorState it f init
+    consumeFromIteratorStateFast it f init
   else
     loopFromPos it init f
 
@@ -690,28 +707,8 @@ private theorem loopFromPos_eq_default {p : HRank} {shape : Shape p}
       Shrink.inflate_deflate]
     simp [*]
 
-private theorem structuralLoop_eq_default {p : HRank} {shape : Shape p}
-    {m : Type u → Type v} [Monad m] [LawfulMonad m]
-    (lift : (γ' : Type) → (δ : Type u) → (γ' → m δ) → Id γ' → m δ)
-    [Std.Internal.LawfulMonadLiftBindFunction lift]
-    (γ : Type u)
-    (it : IterM (α := RowMajorIterator shape) Id (Nat × TIndex Nat p))
-    (init : γ)
-    (Pl : Nat × TIndex Nat p → γ → ForInStep γ → Prop)
-    (wf : IteratorLoop.WellFounded (RowMajorIterator shape) Id Pl)
-    (f : (b : Nat × TIndex Nat p) → it.IsPlausibleIndirectOutput b →
-      (c : γ) → m (Subtype (Pl b c))) :
-    structuralLoop it init f =
-      IterM.DefaultConsumers.forIn' lift γ Pl it init _ (fun _ => id) f := by
-  rw [structuralLoop]
-  by_cases hzero : it.internalState.pos = 0
-  · simp only [hzero, ↓reduceDIte]
-    exact consumeFromIteratorState_eq_default_of_zero lift γ it hzero init Pl wf f
-  · simp only [hzero, ↓reduceDIte]
-    exact loopFromPos_eq_default lift γ it init Pl wf f
-
 @[inline, specialize]
-instance (priority := 1100) instIteratorLoop {m : Type u → Type v} [Monad m] :
+instance (priority := 1100) instIteratorLoop {m : Type u → Type v} [Monad m] [NatConsumer p] :
     IteratorLoop (RowMajorIterator shape) Id m where
   forIn _lift _γ _Pl it init f :=
     structuralLoop it init f
@@ -720,13 +717,6 @@ instance (priority := 1100) instIteratorLoop {m : Type u → Type v} [Monad m] :
 instance (priority := 100) instIteratorLoopDefault {m : Type u → Type v} [Monad m] :
     IteratorLoop (RowMajorIterator shape) Id m :=
   .defaultImplementation
-
-instance (priority := 1100) instLawfulIteratorLoop
-    {m : Type u → Type v} [Monad m] [LawfulMonad m] :
-    LawfulIteratorLoop (RowMajorIterator shape) Id m := by
-  constructor
-  intro lift _ γ it init Pl wf f
-  exact structuralLoop_eq_default lift γ it init Pl wf f
 
 end RowMajorIterator
 

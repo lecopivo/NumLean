@@ -3,3 +3,4 @@ import Tests.FloatArrayTensorBenchmark
 import Tests.FloatArrayTensorOps
 import Tests.TensorIndexIteratorCompiler
 import Tests.TensorIndexRangeIterators
+import Tests.HTupleRangeIterators

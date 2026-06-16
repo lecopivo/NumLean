@@ -48,3 +48,5 @@ lean_lib Tests.Float32ArrayEval where
 lean_lib Tests.TensorIndexRangeIterators where
 
 lean_lib Tests.TensorIndexIteratorCompiler where
+
+lean_lib Tests.HTupleRangeIterators where
