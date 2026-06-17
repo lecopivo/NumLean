@@ -5,7 +5,7 @@ import NumLean.Meta.ForAll
 
 open NumLean TensorIndex HList
 
-namespace Tests.FloatArrayTensorBenchmark
+namespace Benchmarks.FloatArrayTensorBenchmark
 
 def matrixSize : Nat := 192
 def rank3Dim0 : Nat := 96
@@ -494,7 +494,7 @@ def run : IO Unit := do
   timeRun "dense inner3 Vector range" 64 (fun token => pure (inner3VectorRangeChecksum tensorA tensorB htensorA htensorB token))
   timeRun "dense inner3 Vector enum range" 64 (fun token => pure (inner3VectorEnumRangeChecksum tensorA tensorB htensorA htensorB token))
 
-end Tests.FloatArrayTensorBenchmark
+end Benchmarks.FloatArrayTensorBenchmark
 
 def main : IO Unit :=
-  Tests.FloatArrayTensorBenchmark.run
+  Benchmarks.FloatArrayTensorBenchmark.run

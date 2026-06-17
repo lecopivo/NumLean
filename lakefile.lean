@@ -33,18 +33,20 @@ lean_lib NumLean.Data.FloatArray.TensorOps where
   moreLinkLibs := #[libNumLeanNative]
   precompileModules := true
 
-lean_exe floatArrayTensorOpsTest where
-  root := `Tests.FloatArrayTensorOps
-  supportInterpreter := true
-
 lean_exe floatArrayTensorBenchmark where
-  root := `Tests.FloatArrayTensorBenchmark
+  root := `Benchmarks.FloatArrayTensorBenchmark
   supportInterpreter := true
   moreLinkLibs := #[libNumLeanNative]
 
 lean_exe forAllBenchmark where
-  root := `Tests.ForAllBenchmark
+  root := `Benchmarks.ForAllBenchmark
   supportInterpreter := true
+
+@[test_driver]
+lean_exe tests where
+  root := `Tests
+  supportInterpreter := true
+  moreLinkLibs := #[libNumLeanNative]
 
 lean_lib Tests.Float32ArrayEval where
   precompileModules := true
@@ -62,3 +64,5 @@ lean_lib Tests.VectorRangeIterators where
 lean_lib Tests.TupleOrderNotation where
 
 lean_lib Tests.ForAllNotation where
+
+lean_lib Tests where

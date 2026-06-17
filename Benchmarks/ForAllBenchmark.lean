@@ -2,7 +2,7 @@ import NumLean.Meta.ForAll
 
 open NumLean TensorIndex Meta.ForAll
 
-namespace Tests.ForAllBenchmark
+namespace Benchmarks.ForAllBenchmark
 
 structure Stats where
   sum : Float
@@ -311,7 +311,7 @@ def run : IO Unit := do
     let s := statsHTupleUInt64ForAll tensor
     pure (s.checksum + Float.ofNat (token % 7) * 0.000001)
 
-end Tests.ForAllBenchmark
+end Benchmarks.ForAllBenchmark
 
 def main : IO Unit :=
-  Tests.ForAllBenchmark.run
+  Benchmarks.ForAllBenchmark.run

@@ -102,6 +102,11 @@ import NumLean.Mathlib.FiberedAddTorsor.Prod
 import NumLean.Mathlib.FiberedAddTorsor.Topology
 import NumLean.Mathlib.IsContinuousLinearMap
 import NumLean.Meta.ForAll
+import NumLean.Meta.ForAll.Basic
+import NumLean.Meta.ForAll.HTuple
+import NumLean.Meta.ForAll.Notation
+import NumLean.Meta.ForAll.RcoNat
+import NumLean.Meta.ForAll.RcoNative
 import NumLean.Meta.RewriteBy
 import NumLean.Tactic.ApplyRuleSets
 import NumLean.Tactic.ApplyRuleSets.Attr
@@ -111,3 +116,4 @@ import NumLean.Tactic.ApplyRuleSets.RuleProc
 import NumLean.Tactic.ApplyRuleSets.Types
 -- import NumLean.TargetTests
 import NumLean.TestUIntProofs
+import NumLean.Widget.LayoutVis

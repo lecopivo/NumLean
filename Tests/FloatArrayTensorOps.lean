@@ -53,7 +53,7 @@ def testZeroCount : IO Unit := do
   let extracted := FloatArray.extractTensorSlice counts xs 0 strides
   assertFloatArrayData "extract zero-sized slice" extracted #[]
 
-def main : IO Unit := do
+def runFloatArrayTensorOpsTests : IO Unit := do
   testFill
   testCopy
   testExtract

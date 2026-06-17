@@ -4,8 +4,6 @@ open NumLean TensorIndex
 
 namespace Tests.TensorIndexIteratorCompiler
 
-set_option trace.Compiler.result true
-
 abbrev Rank1Shape : Shape .leaf :=
   .leaf 8
 
@@ -82,10 +80,5 @@ example : iterRank1Sum = refRank1Sum := by native_decide
 example : iterRank2Sum = refRank2Sum := by native_decide
 example : iterRank3Sum = refRank3Sum := by native_decide
 example : iterNestedSum = refNestedSum := by native_decide
-
-#eval! iterRank1Sum
-#eval! iterRank2Sum
-#eval! iterRank3Sum
-#eval! iterNestedSum
 
 end Tests.TensorIndexIteratorCompiler

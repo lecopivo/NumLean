@@ -27,6 +27,11 @@ find Tests -type f -name '*.lean' | LC_ALL=C sort | while read -r file; do
     echo "import ${file%.lean}" | sed 's,/,.,g'
 done > Tests.lean
 
+cat >> Tests.lean <<'EOF'
+
+def main : IO Unit := do
+  runFloatArrayTensorOpsTests
+EOF
 
 
 mv .gitignore_backup .gitignore
