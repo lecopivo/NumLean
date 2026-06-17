@@ -2,6 +2,7 @@ import NumLean.Interfaces.HasFlatArray.Basic
 import NumLean.Interfaces.SetElem
 import Mathlib.Tactic.GCongr
 import Mathlib.Logic.Function.Iterate
+import Mathlib.Data.Set.Operations
 
 namespace NumLean
 
@@ -200,7 +201,7 @@ instance : Inhabited (FlatArray X) where
 
 @[simp]
 theorem size_emptyWithCapacity (c : Nat) :
-    (emptyWithCapacity (X := X) (Ks := Ks) (K := K) (nX := nX) c).size = 0 := by
+    (emptyWithCapacity (X := X) c).size = 0 := by
   sorry
 
 @[simp]
@@ -263,30 +264,92 @@ theorem getElem_push_lt (xs : FlatArray X) (x : X) (i : Nat) (hi : i < xs.size)
     (xs.push x)[i]'(by rw [size_push_of_pos xs x hnX]; exact Nat.lt_succ_of_lt hi) = xs[i] := by
   sorry
 
+def ofFn (f : Fin n → X) : FlatArray X :=
+  Fin.foldl n (init := emptyWithCapacity n) (fun xs i => xs.push (f i))
+
+@[simp, grind =]
+theorem size_ofFn {n} (f : Fin n → X) :
+    (ofFn f).size = n := sorry
+
+@[simp]
+theorem getElem_ofFn {n} (f : Fin n → X) (i : Nat) (h : i < n) :
+    (ofFn f)[i]'(by simp[h]) = f ⟨i, h ⟩ := sorry
+
 /-! ### Replication -/
 
+def Layout {I} (shape : Vector I n) (D : Type) : Type := Unit
+def Layout.Compact {I} {shape : Vector I n} {D} (layout : Layout shape D) : Prop := True
+def Layout.offset {I} {shape : Vector I n} {D} [Inhabited D] (layout : Layout shape D) : D := default
+
+-- the layout map is maps into shape'
+def IndexMap {I} (shape : Vector I n) (shape' : Vector I m) : Type := Unit
+
+def IndexMap.range {I} {shape : Vector I n} {shape' : Vector I m} (map : IndexMap shape shape') : Set (Vector I m) := sorry
+
+def IndexMap.Injective {I} {shape : Vector I n} {shape' : Vector I m} (map : IndexMap shape shape') : Prop := True
+
+/-- Extract a splice of `src` and copies it into a `dst` potentially enlagening `dst` in the process.
+
+To preven uninitialized memory we require that dstLayout is compact and that does not start beyond
+the end of `dst`.
+If you want to copy into `dst` but with gaps used `copySlice` -/
+def TensorOps.extractSlice (shape : Vector Nat n)
+    (src : Ks) (srcLayout : IndexMap shape #v[ArrayOps.size src])
+    (dst : Ks) (dstLayout : Layout shape Nat)
+    (h : dstLayout.Compact) (h' : dstLayout.offset ≤ ArrayOps.size dst) : Ks := sorry
+
+/-- Copy a splice from `src` to `dst` i.e. dst[dstMap i] := src[srcMap i] -/
+def TensorOps.copySlice (shape : Vector Nat n)
+    (src : Ks) (srcMap : IndexMap shape #v[ArrayOps.size src])
+    (dst : Ks) (dstMap : IndexMap shape #v[ArrayOps.size dst])
+    (h : dstMap.Injective) : Ks := sorry
+
+/-- this reverse along the first dimension of domain of `map` i.e. swaps src[map (i, j)] with src[map (k-i-1,j)] -/
+def TensorOps.reverseSlice (k : Nat) (shape : Vector Nat n)
+    (src : Ks) (map : IndexMap (#v[k] ++ shape) #v[ArrayOps.size src])
+    (h : map.Injective) : Ks := sorry
+
+/-- transpose element of `src` based on `map` i.e. swaps src[map (i,j)] with src[map (j,i)]. -/
+def TensorOps.transposeSlice (shape : Vector Nat n)
+    (src : Ks) (map : IndexMap (shape ++ shape) #v[ArrayOps.size src])
+    (h : map.Injective) : Ks := sorry
+
+/-- swap data between two arrays -/
+def TensorOps.swapSlice (shape : Vector Nat n)
+    (xs  : Ks) (map  : IndexMap shape #v[ArrayOps.size xs])
+    (xs' : Ks) (map' : IndexMap shape #v[ArrayOps.size xs'])
+    (h : map.Injective) (h' : map'.Injective) : Ks × Ks := sorry
+
 def replicate (n : Nat) (x : X) : FlatArray X :=
-  let xs : FlatArray X := .emptyWithCapacity n
-  Nat.iterate (push · x) n xs
+  let xdata : Ks := HasFlatArray.push (ArrayOps.emptyWithCapacity nX) x
+  let xsdata : Ks := ArrayOps.emptyWithCapacity (n * nX)
+  let xsdata := TensorOps.extractSlice #v[2, nX] xdata sorry xsdata sorry sorry sorry
+  { data := xsdata
+    h_size := sorry }
 
 @[simp]
 theorem size_replicate (n : Nat) (x : X) :
-    (replicate (X := X) (Ks := Ks) (K := K) (nX := nX) n x).size = n := by
+    (replicate n x).size = n := by
+  sorry
+
+@[simp]
+theorem getElem_replicate (n : Nat) (x : X) (i : Nat) (h : i < n) :
+    (replicate n x)[i]'(by simp[h]) = x := by
   sorry
 
 /-! ### Swapping -/
 
--- todo: these should be part of ArrayOps
-def ArrayOps.swapSlice (n : Nat) (xs : Ks) (xoff xinc : Nat) (yx : Ks) (yoff yinc : Nat) : Ks × Ks := sorry
--- todo: this is probably valid only if the ranges are non-overlapping
-def ArrayOps.swapSelf (n : Nat) (xs : Ks) (xoff xinc : Nat) (yoff yinc : Nat) : Ks := sorry
 
 @[inline]
 def swap (xs : FlatArray X) (i j : Nat)
     (hi : i < xs.size := by get_elem_tactic) (hj : j < xs.size := by get_elem_tactic) :
     FlatArray X :=
-  { data := ArrayOps.swapSelf nX xs.data (i*nX) 1 (j*nX) 1
-    h_size := sorry }
+  if i ≠ j then
+    let data := TensorOps.reverseSlice 2 #v[nX] xs.data sorry sorry
+    { data := data
+      h_size := sorry }
+  else
+    xs
 
 def swapIfInBounds (xs : FlatArray X) (i j : Nat) : FlatArray X := sorry
 
@@ -323,8 +386,9 @@ def append (xs ys : FlatArray X) : FlatArray X :=
 instance : Append (FlatArray X) where
   append := append
 
-theorem size_append_of_pos {xs ys : FlatArray X} (hnX : 0 < nX) :
-    (xs.append ys).size = xs.size + ys.size := by
+@[simp, grind =]
+theorem size_append_of_pos {xs ys : FlatArray X} :
+    (xs ++ ys).size = xs.size + ys.size := by
   sorry
 
 theorem getElem_append_left {xs ys : FlatArray X} {i : Nat} (h : i < xs.size)
@@ -332,9 +396,9 @@ theorem getElem_append_left {xs ys : FlatArray X} {i : Nat} (h : i < xs.size)
     (xs ++ ys)[i]'h' = xs[i]'h := by
   sorry
 
-theorem getElem_append_right {xs ys : FlatArray X} {i : Nat} (hle : xs.size ≤ i)
-    (h : i < (xs ++ ys).size) (h' : i - xs.size < ys.size) :
-    (xs ++ ys)[i]'h = ys[i - xs.size]'h' := by
+theorem getElem_append_right {xs ys : FlatArray X} {i : Nat}
+    (h : xs.size ≤ i) (h' : i < xs.size + ys.size):
+    (xs ++ ys)[i]'(by grind) = ys[i - xs.size] := by
   sorry
 
 /-! ### Extraction and slicing -/
@@ -368,6 +432,39 @@ theorem size_set! (xs : FlatArray X) (i : Nat) (x : X) :
 theorem size_setIfInBounds (xs : FlatArray X) (i : Nat) (x : X) :
     (xs.setIfInBounds i x).size = xs.size := by
   sorry
+
+
+instance : ArrayOps (FlatArray X) X where
+  toArray xs := .ofFn (fun i : Fin xs.size => xs[i])
+  fromArray xs := .ofFn (fun i : Fin xs.size => xs[i])
+  left_inv := sorry
+  right_inv := sorry
+  size := sorry
+  size_spec := sorry
+  emptyWithCapacity := sorry
+  emptyWithCapacity_spec := sorry
+  uget := sorry
+  uget_spec := sorry
+  get := sorry
+  get_spec := sorry
+  uset := sorry
+  uset_spec := sorry
+  set := sorry
+  set_spec := sorry
+  pop := sorry
+  pop_spec := sorry
+  replicate := sorry
+  replicate_spec := sorry
+  swap := sorry
+  swap_spec := sorry
+  push := sorry
+  push_spec := sorry
+  append := sorry
+  append_spec := sorry
+  copySlice := sorry
+  copySlice_spec := sorry
+  extractSlice := sorry
+  extractSlice_spec := sorry
 
 end FlatArray
 

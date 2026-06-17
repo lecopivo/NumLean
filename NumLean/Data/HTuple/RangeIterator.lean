@@ -1,4 +1,5 @@
 import NumLean.Data.TensorIndex.Basic
+import NumLean.Data.RangeEnum
 import Std.Data.Iterators.Producers.Range
 
 namespace NumLean
@@ -246,8 +247,8 @@ end NumLean
 namespace Std.Rco
 
 /-- Enumerate a natural hierarchical tuple range with row-major linear indices. -/
-@[inline] def enum {p : NumLean.HTuple.Profile}
-    (r : Std.Rco (NumLean.HTuple Nat p)) : NumLean.HTuple.Range.Enum p :=
-  ⟨r⟩
+@[inline] instance {p : NumLean.HTuple.Profile} :
+    HasEnum (Std.Rco (NumLean.HTuple Nat p)) (NumLean.HTuple.Range.Enum p) where
+  enum r := ⟨r⟩
 
 end Std.Rco

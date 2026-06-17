@@ -1,4 +1,5 @@
 import NumLean.Data.HTuple.Basic
+import NumLean.Algebra.Order
 
 namespace NumLean
 
@@ -59,6 +60,24 @@ instance {α : Type u} [Sub α] {p : Profile} : Sub (HTuple α p) where
 
 instance (priority := low) {R : Type u} {α : Type v} [SMul R α] {p : Profile} : SMul R (HTuple α p) where
   smul r x := smul r x
+
+instance {α : Type u} [LT α] {p : Profile} : LexLT (HTuple α p) where
+  lexLT x y := NumLean.List.lexLT x.toList y.toList
+
+instance {α : Type u} [LT α] {p : Profile} : LexLE (HTuple α p) where
+  lexLE x y := NumLean.List.lexLE x.toList y.toList
+
+instance {α : Type u} [LT α] {p : Profile} : ColexLT (HTuple α p) where
+  colexLT x y := NumLean.List.colexLT x.toList y.toList
+
+instance {α : Type u} [LT α] {p : Profile} : ColexLE (HTuple α p) where
+  colexLE x y := NumLean.List.colexLE x.toList y.toList
+
+instance {α : Type u} [LT α] {p : Profile} : ElementwiseLT (HTuple α p) where
+  elementwiseLT x y := NumLean.List.elementwiseLT x.toList y.toList
+
+instance {α : Type u} [LE α] {p : Profile} : ElementwiseLE (HTuple α p) where
+  elementwiseLE x y := NumLean.List.elementwiseLE x.toList y.toList
 
 /-- The basis tuple whose selected leaf is `1` and all other leaves are `0`. -/
 def basis {α : Type u} [Zero α] [One α] : {p : Profile} → Index p → HTuple α p

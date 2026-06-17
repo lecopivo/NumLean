@@ -1,6 +1,9 @@
 import Tests.Float32ArrayEval
 import Tests.FloatArrayTensorBenchmark
 import Tests.FloatArrayTensorOps
+import Tests.HTupleRangeIterators
+import Tests.HVector
 import Tests.TensorIndexIteratorCompiler
 import Tests.TensorIndexRangeIterators
-import Tests.HTupleRangeIterators
+import Tests.TupleOrderNotation
+import Tests.VectorRangeIterators

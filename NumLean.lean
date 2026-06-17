@@ -6,6 +6,7 @@ import NumLean.Algebra.Field
 import NumLean.Algebra.Float
 import NumLean.Algebra.Instances
 import NumLean.Algebra.Ops
+import NumLean.Algebra.Order
 import NumLean.Algebra.Sigma
 import NumLean.Basic
 import NumLean.Data.Array
@@ -16,10 +17,22 @@ import NumLean.Data.FlatVector.Basic
 import NumLean.Data.Float32Array
 import NumLean.Data.FloatArray.TensorOps
 import NumLean.Data.FloatP
+import NumLean.Data.HList
+import NumLean.Data.HList.Basic
+import NumLean.Data.HList.Notation
+import NumLean.Data.HList.Ops
+import NumLean.Data.HList.RangeIterator
 import NumLean.Data.HTuple
 import NumLean.Data.HTuple.Algebra
 import NumLean.Data.HTuple.Basic
+import NumLean.Data.HTuple.GetElemTactic
+import NumLean.Data.HTuple.GetElemTacticInit
 import NumLean.Data.HTuple.Ops
+import NumLean.Data.HTuple.RangeIterator
+import NumLean.Data.HTuple.RangeNotation
+import NumLean.Data.HVector
+import NumLean.Data.HVector.Basic
+import NumLean.Data.HVector.Ops
 import NumLean.Data.Idx
 -- import NumLean.Data.IdxP
 import NumLean.Data.KernelExpr
@@ -27,6 +40,7 @@ import NumLean.Data.KernelExpr.Basic
 import NumLean.Data.KernelExpr.HasKernelExpr
 import NumLean.Data.KernelExpr.Register
 import NumLean.Data.Prod
+import NumLean.Data.RangeEnum
 import NumLean.Data.Sigma
 import NumLean.Data.TensorIndex
 import NumLean.Data.TensorIndex.AxisOrder
@@ -45,6 +59,11 @@ import NumLean.Data.TensorIndex.SplitMap
 import NumLean.Data.TensorIndex.TensorIndexMap
 import NumLean.Data.TensorIndex.TensorIndexType
 import NumLean.Data.TensorIndex.TensorSliceMap
+import NumLean.Data.Vector
+import NumLean.Data.Vector.Algebra
+import NumLean.Data.Vector.Basic
+import NumLean.Data.Vector.Ops
+import NumLean.Data.Vector.RangeIterator
 import NumLean.Doodle
 import NumLean.Interfaces.ArrayOps.Array
 import NumLean.Interfaces.ArrayOps.Basic

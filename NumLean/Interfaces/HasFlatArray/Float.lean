@@ -38,4 +38,11 @@ instance : HasDefaultFlatArray Float FloatArray 1 where
     change (ks.push x)[ks.size] = x
     exact Array.getElem_push_eq (xs := ks) (x := x)
 
+  toArray x := (FloatArray.emptyWithCapacity 1).push x
+  size_toArray := by intro ⟨xs⟩; cbv
+  get_toArray_eq_getComp := by
+    intro x i h;
+    have hi : i = 0 := by grind
+    simp[hi]; cbv
+
 end NumLean

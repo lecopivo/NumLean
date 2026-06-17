@@ -34,10 +34,6 @@ class HasFlatArray (X : Type u) (Ks : Type v) (nX : outParam Nat)
     ArrayOps.get (set ks off x hoff) i (by grind)
     =
     ArrayOps.get ks i hi'
-      -- (ArrayOps.fromArray <| _root_.Vector.toArray <|
-      --   Fin.foldl (n:=nX) (init := _root_.Vector.mk (ArrayOps.toArray ks) rfl)
-      --     (fun acc i => acc.set (off + i.1) (FlatRepr.toVector K x)[i]
-      --       (by simp [← ArrayOps.size_spec]; omega)))
 
   -- /-- Write `x` into `ks` starting at `USize` scalar offset `off`. -/
   -- uset (ks : Ks) (off : USize) (x : X) (h : off.toNat + nX ≤ ArrayOps.size ks) : Ks
@@ -50,6 +46,12 @@ class HasFlatArray (X : Type u) (Ks : Type v) (nX : outParam Nat)
   array_get_push_eq (ks : Ks) (x : X) (i : Nat) (hi : i < nX) :
     ArrayOps.get (push ks x) (ArrayOps.size ks + i) (by rw [size_push]; grind) =
       getComp x i hi
+
+  -- for vectors, matrices, tensors this should be no-op
+  toArray : X → Ks
+  size_toArray (x : X) : ArrayOps.size (toArray x) = nX
+  get_toArray_eq_getComp (x : X) (i : Nat) (h : i < nX) :
+    ArrayOps.get (toArray x) i (by rw[size_toArray]; apply h) = getComp x i h
 
 /-- The default flat array type for `X`. -/
 class HasDefaultFlatArray (X : Type u) (Ks : outParam (Type v)) (nX : outParam Nat)

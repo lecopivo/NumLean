@@ -1,6 +1,8 @@
 import NumLean.Data.HTuple.RangeIterator
+import NumLean.Data.HList.RangeIterator
+import NumLean.Data.Vector.RangeIterator
 
-open NumLean TensorIndex
+open NumLean TensorIndex HList
 
 namespace Tests.FloatArrayTensorBenchmark
 
@@ -178,6 +180,108 @@ def inner3HTupleEnumRange (d0 d1 d2 token : Nat) (a b : FloatArray)
     acc := acc + a.get flat hflat * b.get flat hflatB
   return acc
 
+def inner3HPTupleRange (d0 d1 d2 token : Nat) (a b : FloatArray)
+    (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float := Id.run do
+  let lo : HList.HPTuple Nat hlp(•, •, •) := hl(0, 0, 0)
+  let hi : HList.HPTuple Nat hlp(•, •, •) := hl(d0, d1, d2)
+  let mut acc := Float.ofNat (token % 7) * 0.000001
+  for h : hl(i,j,k) in lo...hi do
+    have hbounds : i < d0 ∧ j < d1 ∧ k < d2 := by
+      simpa [lo, hi, Membership.mem, HList.Range.Valid, HList.HPTuple.cons, HList.HPTuple.leaf] using h
+    have hi : i < d0 := hbounds.1
+    have hj : j < d1 := hbounds.2.1
+    have hk : k < d2 := hbounds.2.2
+    let flat := (i * d1 + j) * d2 + k
+    have hflat : flat < a.size := by
+      rw [ha]
+      exact flat3_lt hi hj hk
+    have hflatB : flat < b.size := by
+      rw [hb]
+      exact flat3_lt hi hj hk
+    acc := acc + a.get flat hflat * b.get flat hflatB
+  return acc
+
+def inner3HPTupleEnumRange (d0 d1 d2 token : Nat) (a b : FloatArray)
+    (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float := Id.run do
+  let lo : HList.HPTuple Nat hlp(•, •, •) := hl(0, 0, 0)
+  let hi : HList.HPTuple Nat hlp(•, •, •) := hl(d0, d1, d2)
+  let r := lo...hi
+  let mut acc := Float.ofNat (token % 7) * 0.000001
+  for h : (linIdx, hl(i,j,k)) in r.enum do
+    have hbounds : i < d0 ∧ j < d1 ∧ k < d2 := by
+      simpa [Std.Rco.enum, Std.Rco.HasEnum.enum, r, lo, hi, Membership.mem, HList.Range.Valid,
+        Std.Rco.instHasEnumRcoHPTuple, HList.HPTuple.cons, HList.HPTuple.leaf] using h.1
+    have hi : i < d0 := hbounds.1
+    have hj : j < d1 := hbounds.2.1
+    have hk : k < d2 := hbounds.2.2
+    let flat := (i * d1 + j) * d2 + k
+    have hflat : flat < a.size := by
+      rw [ha]
+      exact flat3_lt hi hj hk
+    have hflatB : flat < b.size := by
+      rw [hb]
+      exact flat3_lt hi hj hk
+    acc := acc + a.get flat hflat * b.get flat hflatB
+  return acc
+
+def inner3VectorRange (d0 d1 d2 token : Nat) (a b : FloatArray)
+    (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float := Id.run do
+  let lo : Vector Nat 3 := Vector.ofFn fun _ => 0
+  let hi : Vector Nat 3 := Vector.ofFn fun i =>
+    match i.1 with
+    | 0 => d0
+    | 1 => d1
+    | _ => d2
+  let mut acc := Float.ofNat (token % 7) * 0.000001
+  for h : idx in lo...hi do
+    let i := idx[0]
+    let j := idx[1]
+    let k := idx[2]
+    have hbounds : i < d0 ∧ j < d1 ∧ k < d2 := by
+      simpa [lo, hi, i, j, k, Membership.mem, Vector.Range.Valid, Vector.head, Vector.tail] using h
+    have hi : i < d0 := hbounds.1
+    have hj : j < d1 := hbounds.2.1
+    have hk : k < d2 := hbounds.2.2
+    let flat := (i * d1 + j) * d2 + k
+    have hflat : flat < a.size := by
+      rw [ha]
+      exact flat3_lt hi hj hk
+    have hflatB : flat < b.size := by
+      rw [hb]
+      exact flat3_lt hi hj hk
+    acc := acc + a.get flat hflat * b.get flat hflatB
+  return acc
+
+def inner3VectorEnumRange (d0 d1 d2 token : Nat) (a b : FloatArray)
+    (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float := Id.run do
+  let lo : Vector Nat 3 := Vector.ofFn fun _ => 0
+  let hi : Vector Nat 3 := Vector.ofFn fun i =>
+    match i.1 with
+    | 0 => d0
+    | 1 => d1
+    | _ => d2
+  let r := lo...hi
+  let mut acc := Float.ofNat (token % 7) * 0.000001
+  for h : (linIdx, idx) in r.enum do
+    let i := idx[0]
+    let j := idx[1]
+    let k := idx[2]
+    have hbounds : i < d0 ∧ j < d1 ∧ k < d2 := by
+      simpa [Std.Rco.enum, Std.Rco.HasEnum.enum, Std.Rco.instHasEnumRcoVector, r, lo, hi,
+        i, j, k, Membership.mem, Vector.Range.Valid, Vector.head, Vector.tail] using h.1
+    have hi : i < d0 := hbounds.1
+    have hj : j < d1 := hbounds.2.1
+    have hk : k < d2 := hbounds.2.2
+    let flat := (i * d1 + j) * d2 + k
+    have hflat : flat < a.size := by
+      rw [ha]
+      exact flat3_lt hi hj hk
+    have hflatB : flat < b.size := by
+      rw [hb]
+      exact flat3_lt hi hj hk
+    acc := acc + a.get flat hflat * b.get flat hflatB
+  return acc
+
 def matmulDirectChecksum (a b : FloatArray)
     (ha : a.size = matrixSize * matrixSize) (hb : b.size = matrixSize * matrixSize)
     (token : Nat) : Float :=
@@ -206,6 +310,30 @@ def inner3HTupleEnumRangeChecksum (a b : FloatArray)
     (token : Nat) : Float :=
   inner3HTupleEnumRange rank3Dim0 rank3Dim1 rank3Dim2 token a b ha hb
 
+def inner3HPTupleRangeChecksum (a b : FloatArray)
+    (ha : a.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (hb : b.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (token : Nat) : Float :=
+  inner3HPTupleRange rank3Dim0 rank3Dim1 rank3Dim2 token a b ha hb
+
+def inner3HPTupleEnumRangeChecksum (a b : FloatArray)
+    (ha : a.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (hb : b.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (token : Nat) : Float :=
+  inner3HPTupleEnumRange rank3Dim0 rank3Dim1 rank3Dim2 token a b ha hb
+
+def inner3VectorRangeChecksum (a b : FloatArray)
+    (ha : a.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (hb : b.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (token : Nat) : Float :=
+  inner3VectorRange rank3Dim0 rank3Dim1 rank3Dim2 token a b ha hb
+
+def inner3VectorEnumRangeChecksum (a b : FloatArray)
+    (ha : a.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (hb : b.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (token : Nat) : Float :=
+  inner3VectorEnumRange rank3Dim0 rank3Dim1 rank3Dim2 token a b ha hb
+
 def run : IO Unit := do
   IO.println s!"FloatArray iterator benchmark payload: matmul={matrixSize}x{matrixSize}, dense-inner3={rank3Dim0}x{rank3Dim1}x{rank3Dim2}"
   IO.println "Comparisons are direct nested dimension loops vs HTuple range loops."
@@ -228,7 +356,11 @@ def run : IO Unit := do
   timeRun "matmul HTuple range" 2 (fun token => pure (matmulHTupleRangeChecksum matA matB hmatA hmatB token))
   timeRun "dense inner3 direct nested loops" 64 (fun token => pure (inner3DirectChecksum tensorA tensorB htensorA htensorB token))
   timeRun "dense inner3 HTuple range" 64 (fun token => pure (inner3HTupleRangeChecksum tensorA tensorB htensorA htensorB token))
-  timeRun "dense inner3 HTuple enum range" 64 (fun token => pure (inner3HTupleRangeChecksum tensorA tensorB htensorA htensorB token))
+  timeRun "dense inner3 HTuple enum range" 64 (fun token => pure (inner3HTupleEnumRangeChecksum tensorA tensorB htensorA htensorB token))
+  timeRun "dense inner3 HPTuple range" 64 (fun token => pure (inner3HPTupleRangeChecksum tensorA tensorB htensorA htensorB token))
+  timeRun "dense inner3 HPTuple enum range" 64 (fun token => pure (inner3HPTupleEnumRangeChecksum tensorA tensorB htensorA htensorB token))
+  timeRun "dense inner3 Vector range" 64 (fun token => pure (inner3VectorRangeChecksum tensorA tensorB htensorA htensorB token))
+  timeRun "dense inner3 Vector enum range" 64 (fun token => pure (inner3VectorEnumRangeChecksum tensorA tensorB htensorA htensorB token))
 
 end Tests.FloatArrayTensorBenchmark
 

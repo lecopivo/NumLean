@@ -50,3 +50,9 @@ lean_lib Tests.TensorIndexRangeIterators where
 lean_lib Tests.TensorIndexIteratorCompiler where
 
 lean_lib Tests.HTupleRangeIterators where
+
+lean_lib Tests.HVector where
+
+lean_lib Tests.VectorRangeIterators where
+
+lean_lib Tests.TupleOrderNotation where

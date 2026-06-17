@@ -1,4 +1,5 @@
 import NumLean.Data.TensorIndex.Layout
+import NumLean.Data.HTuple
 import NumLean.Data.TensorIndex.TensorIndexType
 
 namespace NumLean
@@ -22,5 +23,9 @@ instance : FunLike (FinTIndexMap shape shape') (FinTIndex shape) (FinTIndex shap
     intros f g h
     apply ext
     sorry
+
+instance : GetElem (FinTIndexMap shape shape') (TIndex Nat r) (FinTIndex shape')
+    (fun xs i => i ∈ 0...shape) where
+  getElem xs i h := xs ⟨i, sorry⟩
 
 end FinTIndexMap
