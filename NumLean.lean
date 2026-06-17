@@ -101,6 +101,7 @@ import NumLean.Mathlib.FiberedAddTorsor.MProd
 import NumLean.Mathlib.FiberedAddTorsor.Prod
 import NumLean.Mathlib.FiberedAddTorsor.Topology
 import NumLean.Mathlib.IsContinuousLinearMap
+import NumLean.Meta.ForAll
 import NumLean.Meta.RewriteBy
 import NumLean.Tactic.ApplyRuleSets
 import NumLean.Tactic.ApplyRuleSets.Attr

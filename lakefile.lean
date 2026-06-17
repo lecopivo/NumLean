@@ -42,6 +42,10 @@ lean_exe floatArrayTensorBenchmark where
   supportInterpreter := true
   moreLinkLibs := #[libNumLeanNative]
 
+lean_exe forAllBenchmark where
+  root := `Tests.ForAllBenchmark
+  supportInterpreter := true
+
 lean_lib Tests.Float32ArrayEval where
   precompileModules := true
 
@@ -56,3 +60,5 @@ lean_lib Tests.HVector where
 lean_lib Tests.VectorRangeIterators where
 
 lean_lib Tests.TupleOrderNotation where
+
+lean_lib Tests.ForAllNotation where
