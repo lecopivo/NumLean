@@ -31,6 +31,16 @@ def checksum (xs : FloatArray) : Float := Id.run do
     i := i + stride
   return acc
 
+def padRight (width : Nat) (s : String) : String :=
+  s.pushn ' ' (width - s.length)
+
+def printBenchHeader : IO Unit := do
+  IO.println s!"{padRight 54 "name"}{padRight 12 "total"}{padRight 18 "per-run"}checksum"
+  IO.println (String.ofList (List.replicate 108 '-'))
+
+def printBenchRow (name total perRun checksum : String) : IO Unit := do
+  IO.println s!"{padRight 54 name}{padRight 12 total}{padRight 18 perRun}{checksum}"
+
 def timeRun (name : String) (runs : Nat) (body : Nat → IO Float) : IO Unit := do
   let warmToken ← IO.monoMsNow
   let warm ← body warmToken
@@ -42,7 +52,7 @@ def timeRun (name : String) (runs : Nat) (body : Nat → IO Float) : IO Unit := 
   let stop ← IO.monoMsNow
   let elapsed := stop - start
   let perRun := if runs == 0 then 0.0 else Float.ofNat elapsed / Float.ofNat runs
-  IO.println s!"{name}\t{elapsed}ms\t{perRun}ms/run\t{guard}"
+  printBenchRow name s!"{elapsed}ms" s!"{perRun}ms/run" s!"{guard}"
 
 @[inline] def fset (xs : FloatArray) (i : Nat) (x : Float) : FloatArray :=
   if h : i < xs.size then xs.set i x h else xs
@@ -454,7 +464,7 @@ def run : IO Unit := do
   IO.println s!"FloatArray iterator benchmark payload: matmul={matrixSize}x{matrixSize}, dense-inner3={rank3Dim0}x{rank3Dim1}x{rank3Dim2}"
   IO.println "Comparisons are direct nested dimension loops vs HTuple range loops."
   IO.println "Inputs and per-run scalars depend on runtime IO.monoMsNow tokens to avoid compile-time folding."
-  IO.println "name\ttotal\tper-run\tchecksum"
+  printBenchHeader
   let salt ← IO.monoMsNow
   let matA := makeFloatArray (matrixSize * matrixSize) (salt + 1)
   let matB := makeFloatArray (matrixSize * matrixSize) (salt + 2)
