@@ -206,6 +206,30 @@ def inner3HTupleUInt64RangeUget (d0 d1 d2 token : Nat) (a b : FloatArray)
     acc := acc + a.uget flatIdx (by sorry) * b.uget flatIdx (by sorry)
   return acc
 
+def inner3HTupleUInt64ShapeDirectUget (d0 d1 d2 token : Nat) (a b : FloatArray)
+    (_ha : a.size = d0 * d1 * d2) (_hb : b.size = d0 * d1 * d2) : Float := Id.run do
+  let shape : TIndex UInt64 _ := h(UInt64.ofNat d0, UInt64.ofNat d1, UInt64.ofNat d2)
+  let h(d0u,d1u,d2u) := shape
+  let mut acc := Float.ofNat (token % 7) * 0.000001
+  for i in (0 : UInt64)...d0u do
+    for j in (0 : UInt64)...d1u do
+      for k in (0 : UInt64)...d2u do
+        let flat := (i * d1u + j) * d2u + k
+        let flatIdx := flat.toUSize
+        acc := acc + a.uget flatIdx (by sorry) * b.uget flatIdx (by sorry)
+  return acc
+
+def inner3HTupleUInt64FoldRangeUget (d0 d1 d2 token : Nat) (a b : FloatArray)
+    (_ha : a.size = d0 * d1 * d2) (_hb : b.size = d0 * d1 * d2) : Float :=
+  let shape : TIndex UInt64 _ := h(UInt64.ofNat d0, UInt64.ofNat d1, UInt64.ofNat d2)
+  let d1u := UInt64.ofNat d1
+  let d2u := UInt64.ofNat d2
+  let init := Float.ofNat (token % 7) * 0.000001
+  HTuple.Range.foldRange ((0 : TIndex UInt64 _)...shape) init fun h(i,j,k) _ acc =>
+    let flat := (i * d1u + j) * d2u + k
+    let flatIdx := flat.toUSize
+    acc + a.uget flatIdx (by sorry) * b.uget flatIdx (by sorry)
+
 def inner3HPTupleRange (d0 d1 d2 token : Nat) (a b : FloatArray)
     (ha : a.size = d0 * d1 * d2) (hb : b.size = d0 * d1 * d2) : Float := Id.run do
   let lo : HList.HPTuple Nat hlp(•, •, •) := hl(0, 0, 0)
@@ -348,6 +372,18 @@ def inner3HTupleUInt64RangeUgetChecksum (a b : FloatArray)
     (token : Nat) : Float :=
   inner3HTupleUInt64RangeUget rank3Dim0 rank3Dim1 rank3Dim2 token a b ha hb
 
+def inner3HTupleUInt64ShapeDirectUgetChecksum (a b : FloatArray)
+    (ha : a.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (hb : b.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (token : Nat) : Float :=
+  inner3HTupleUInt64ShapeDirectUget rank3Dim0 rank3Dim1 rank3Dim2 token a b ha hb
+
+def inner3HTupleUInt64FoldRangeUgetChecksum (a b : FloatArray)
+    (ha : a.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (hb : b.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
+    (token : Nat) : Float :=
+  inner3HTupleUInt64FoldRangeUget rank3Dim0 rank3Dim1 rank3Dim2 token a b ha hb
+
 def inner3HPTupleRangeChecksum (a b : FloatArray)
     (ha : a.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
     (hb : b.size = rank3Dim0 * rank3Dim1 * rank3Dim2)
@@ -397,6 +433,8 @@ def run : IO Unit := do
   timeRun "dense inner3 HTuple range" 64 (fun token => pure (inner3HTupleRangeChecksum tensorA tensorB htensorA htensorB token))
   timeRun "dense inner3 HTuple enum range" 64 (fun token => pure (inner3HTupleEnumRangeChecksum tensorA tensorB htensorA htensorB token))
   timeRun "dense inner3 HTuple UInt64 uget range" 64 (fun token => pure (inner3HTupleUInt64RangeUgetChecksum tensorA tensorB htensorA htensorB token))
+  timeRun "dense inner3 HTuple UInt64 foldRange uget" 64 (fun token => pure (inner3HTupleUInt64FoldRangeUgetChecksum tensorA tensorB htensorA htensorB token))
+  timeRun "dense inner3 HTuple UInt64 shape direct uget" 64 (fun token => pure (inner3HTupleUInt64ShapeDirectUgetChecksum tensorA tensorB htensorA htensorB token))
   timeRun "dense inner3 HPTuple range" 64 (fun token => pure (inner3HPTupleRangeChecksum tensorA tensorB htensorA htensorB token))
   timeRun "dense inner3 HPTuple enum range" 64 (fun token => pure (inner3HPTupleEnumRangeChecksum tensorA tensorB htensorA htensorB token))
   timeRun "dense inner3 Vector range" 64 (fun token => pure (inner3VectorRangeChecksum tensorA tensorB htensorA htensorB token))

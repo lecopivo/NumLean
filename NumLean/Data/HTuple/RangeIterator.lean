@@ -89,6 +89,47 @@ attribute [always_inline, inline, specialize] ForInProfile.forInRangeStep
   | .done acc => pure acc
   | .yield acc => pure acc
 
+/-- Typeclass-specialized fold over a tuple range for loops that do not use `break`.
+
+Unlike `ForInProfile`, this carries the accumulator directly instead of through `ForInStep`, which
+lets scalar accumulators such as `Float` remain unboxed in compiled tight loops. -/
+class FoldProfile (p : Profile) where
+  foldRange {α : Type u} [LE α] [LT α] [DecidableLT α]
+      [UpwardEnumerable α] [LawfulUpwardEnumerable α] [LawfulUpwardEnumerableLE α]
+      [LawfulUpwardEnumerableLT α] [Rxo.IsAlwaysFinite α] [Finite (Rxo.Iterator α) Id]
+      {β : Type v} (r : Std.Rco (HTuple α p)) (init : β)
+      (f : (idx : HTuple α p) → idx ∈ r → β → β) : β
+
+attribute [always_inline, inline, specialize] FoldProfile.foldRange
+
+@[always_inline, inline] instance : FoldProfile .leaf where
+  foldRange r init f :=
+    match r with
+    | ⟨.leaf lo, .leaf hi⟩ => Id.run do
+        let mut acc := init
+        for hidx : idx in lo...hi do
+          acc := f (.leaf idx) hidx acc
+        return acc
+
+@[always_inline, inline] instance {p q : Profile} [FoldProfile p] [FoldProfile q] :
+    FoldProfile (.prod p q) where
+  foldRange r init f :=
+    match r with
+    | ⟨.prod lo₀ lo₁, .prod hi₀ hi₁⟩ =>
+        let r₀ : Std.Rco (HTuple _ p) := lo₀...hi₀
+        let r₁ : Std.Rco (HTuple _ q) := lo₁...hi₁
+        FoldProfile.foldRange r₀ init fun idx₀ hidx₀ acc =>
+          FoldProfile.foldRange r₁ acc fun idx₁ hidx₁ acc =>
+            f (.prod idx₀ idx₁) ⟨hidx₀, hidx₁⟩ acc
+
+@[always_inline, inline, specialize] def foldRange {α : Type u} [LE α] [LT α] [DecidableLT α]
+    [UpwardEnumerable α] [LawfulUpwardEnumerable α] [LawfulUpwardEnumerableLE α]
+    [LawfulUpwardEnumerableLT α] [Rxo.IsAlwaysFinite α] [Finite (Rxo.Iterator α) Id]
+    {p : Profile} [FoldProfile p] {β : Type v}
+    (r : Std.Rco (HTuple α p)) (init : β)
+    (f : (idx : HTuple α p) → idx ∈ r → β → β) : β :=
+  FoldProfile.foldRange r init f
+
 @[always_inline, inline]
 instance instForIn'RcoHTuple {α : Type u} [LE α] [LT α] [DecidableLT α]
     [UpwardEnumerable α] [LawfulUpwardEnumerable α] [LawfulUpwardEnumerableLE α]
