@@ -40,6 +40,42 @@ def smul {R : Type u} {α : Type v} [SMul R α] (r : R) : {p : Profile} → HTup
   | .leaf, .leaf x => .leaf (r • x)
   | .prod _ _, .prod x₀ x₁ => .prod (smul r x₀) (smul r x₁)
 
+/-- Map a refined tuple to a coarser profile by collapsing each refined subtree. -/
+def coarsenMap {α : Type u} {β : Type v} (p : Profile) {q : Profile} (x : HTuple α q)
+    (f : {q' : Profile} → HTuple α q' → β) [h : q.Refines p] : HTuple β p :=
+  match h, x with
+  | .leaf _, x => .leaf (f x)
+  | .prod _ _, .prod x₁ x₂ => .prod (coarsenMap _ x₁ f) (coarsenMap _ x₂ f)
+
+/-- Binary version of `coarsenMap`, collapsing matching refined subtrees. -/
+def coarsenMap₂ {α : Type u} {β : Type v} {γ : Type w} (p : Profile) {q : Profile}
+    (x : HTuple α q) (y : HTuple β q)
+    (f : {q' : Profile} → HTuple α q' → HTuple β q' → γ) [h : q.Refines p] : HTuple γ p :=
+  match h, x, y with
+  | .leaf _, x, y => .leaf (f x y)
+  | .prod _ _, .prod x₁ x₂, .prod y₁ y₂ =>
+      .prod (coarsenMap₂ _ x₁ y₁ f) (coarsenMap₂ _ x₂ y₂ f)
+
+/-- Map a coarse tuple to a refined profile by broadcasting leaves over refined subtrees. -/
+def refineMap {α : Type u} {β : Type v} (q : Profile) {p : Profile} (x : HTuple α p)
+    (f : α → β) [h : q.Refines p] : HTuple β q :=
+  match h, x with
+  | .leaf q, .leaf x => HTuple.ofFn (p := q) fun _ => f x
+  | .prod _ _, .prod x₁ x₂ => .prod (refineMap _ x₁ f) (refineMap _ x₂ f)
+
+/-- Binary version of `refineMap`, broadcasting the left tuple over the refined right tuple. -/
+def refineMap₂ {α : Type u} {β : Type v} {γ : Type w} (q : Profile) {p : Profile}
+    (x : HTuple α p) (y : HTuple β q) (f : α → β → γ) [h : q.Refines p] : HTuple γ q :=
+  match h, x, y with
+  | .leaf _, .leaf x, y => y.map (f x)
+  | .prod _ _, .prod x₁ x₂, .prod y₁ y₂ =>
+      .prod (refineMap₂ _ x₁ y₁ f) (refineMap₂ _ x₂ y₂ f)
+
+/-- Scalar multiplication where the left tuple may have a coarser profile than the right tuple. -/
+def refinedSMul {α : Type u} {β : Type v} {p q : Profile} [SMul α β]
+    [q.Refines p] (x : HTuple α p) (y : HTuple β q) : HTuple β q :=
+  refineMap₂ q x y (· • ·)
+
 instance {α : Type u} [Zero α] {p : Profile} : Zero (HTuple α p) where
   zero := zero
 
@@ -60,6 +96,10 @@ instance {α : Type u} [Sub α] {p : Profile} : Sub (HTuple α p) where
 
 instance (priority := low) {R : Type u} {α : Type v} [SMul R α] {p : Profile} : SMul R (HTuple α p) where
   smul r x := smul r x
+
+instance {α : Type u} {β : Type v} [SMul α β] {p q : Profile} [q.Refines p] :
+    SMul (HTuple α p) (HTuple β q) where
+  smul := refinedSMul
 
 instance {α : Type u} [LT α] {p : Profile} : LexLT (HTuple α p) where
   lexLT x y := NumLean.List.lexLT x.toList y.toList
@@ -150,6 +190,71 @@ theorem smul_leaf {R : Type u} {α : Type v} [SMul R α] (r : R) (x : α) :
 theorem smul_prod {R : Type u} {α : Type v} [SMul R α] {p q : Profile}
     (r : R) (x₀ : HTuple α p) (x₁ : HTuple α q) :
     r • (.prod x₀ x₁ : HTuple α (.prod p q)) = .prod (r • x₀) (r • x₁) := rfl
+
+@[simp]
+theorem coarsenMap_leaf {α : Type u} {β : Type v} {q : Profile} (x : HTuple α q)
+    (f : {q' : Profile} → HTuple α q' → β) [h : q.Refines .leaf] :
+    coarsenMap .leaf x f = .leaf (f x) := by
+  cases h
+  simp [coarsenMap]
+
+@[simp]
+theorem coarsenMap_prod {α : Type u} {β : Type v} {p₁ p₂ q₁ q₂ : Profile}
+    [q₁.Refines p₁] [q₂.Refines p₂] (x₁ : HTuple α q₁) (x₂ : HTuple α q₂)
+    (f : {q' : Profile} → HTuple α q' → β) :
+    coarsenMap (.prod p₁ p₂) (.prod x₁ x₂) f =
+      .prod (coarsenMap p₁ x₁ f) (coarsenMap p₂ x₂ f) := rfl
+
+@[simp]
+theorem coarsenMap₂_leaf {α : Type u} {β : Type v} {γ : Type w} {q : Profile}
+    (x : HTuple α q) (y : HTuple β q)
+    (f : {q' : Profile} → HTuple α q' → HTuple β q' → γ) [h : q.Refines .leaf] :
+    coarsenMap₂ .leaf x y f = .leaf (f x y) := by
+  cases h
+  simp [coarsenMap₂]
+
+@[simp]
+theorem coarsenMap₂_prod {α : Type u} {β : Type v} {γ : Type w} {p₁ p₂ q₁ q₂ : Profile}
+    [q₁.Refines p₁] [q₂.Refines p₂] (x₁ : HTuple α q₁) (x₂ : HTuple α q₂)
+    (y₁ : HTuple β q₁) (y₂ : HTuple β q₂)
+    (f : {q' : Profile} → HTuple α q' → HTuple β q' → γ) :
+    coarsenMap₂ (.prod p₁ p₂) (.prod x₁ x₂) (.prod y₁ y₂) f =
+      .prod (coarsenMap₂ p₁ x₁ y₁ f) (coarsenMap₂ p₂ x₂ y₂ f) := rfl
+
+@[simp]
+theorem refineMap_leaf {α : Type u} {β : Type v} {q : Profile} (x : α) (f : α → β) :
+    refineMap q (.leaf x) f = HTuple.ofFn (p := q) (fun _ => f x) := rfl
+
+@[simp]
+theorem refineMap_prod {α : Type u} {β : Type v} {p₁ p₂ q₁ q₂ : Profile}
+    [q₁.Refines p₁] [q₂.Refines p₂] (x₁ : HTuple α p₁) (x₂ : HTuple α p₂)
+    (f : α → β) :
+    refineMap (.prod q₁ q₂) (.prod x₁ x₂) f =
+      .prod (refineMap q₁ x₁ f) (refineMap q₂ x₂ f) := rfl
+
+@[simp]
+theorem refineMap₂_leaf {α : Type u} {β : Type v} {γ : Type w} {q : Profile}
+    (x : α) (y : HTuple β q) (f : α → β → γ) :
+    refineMap₂ q (.leaf x) y f = y.map (f x) := rfl
+
+@[simp]
+theorem refineMap₂_prod {α : Type u} {β : Type v} {γ : Type w} {p₁ p₂ q₁ q₂ : Profile}
+    [q₁.Refines p₁] [q₂.Refines p₂] (x₁ : HTuple α p₁) (x₂ : HTuple α p₂)
+    (y₁ : HTuple β q₁) (y₂ : HTuple β q₂) (f : α → β → γ) :
+    refineMap₂ (.prod q₁ q₂) (.prod x₁ x₂) (.prod y₁ y₂) f =
+      .prod (refineMap₂ q₁ x₁ y₁ f) (refineMap₂ q₂ x₂ y₂ f) := rfl
+
+@[simp]
+theorem smul_leaf_refined {α : Type u} {β : Type v} {q : Profile} [SMul α β]
+    (x : α) (y : HTuple β q) :
+    (.leaf x : HTuple α .leaf) • y = y.map (x • ·) := rfl
+
+@[simp]
+theorem smul_prod_refined {α : Type u} {β : Type v} [SMul α β]
+    {p₁ p₂ q₁ q₂ : Profile} [q₁.Refines p₁] [q₂.Refines p₂]
+    (x₁ : HTuple α p₁) (x₂ : HTuple α p₂) (y₁ : HTuple β q₁) (y₂ : HTuple β q₂) :
+    (.prod x₁ x₂ : HTuple α (.prod p₁ p₂)) • (.prod y₁ y₂ : HTuple β (.prod q₁ q₂)) =
+      .prod (x₁ • y₁) (x₂ • y₂) := rfl
 
 end HTuple
 

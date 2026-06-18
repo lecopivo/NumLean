@@ -368,6 +368,82 @@ instance instCommSemiring [CommSemiring α] {p : Profile} : CommSemiring (HTuple
     intro i
     simp [mul_comm]
 
+/-- Refined module structure: a coarse scalar tuple acts on every leaf of each refined subtree. -/
+instance instModuleRefined {α : Type u} {β : Type v} [Semiring α] [AddCommMonoid β] [Module α β]
+    {p q : Profile} [h : q.Refines p] : Module (HTuple α p) (HTuple β q) where
+  one_smul := by
+    intro b
+    induction h with
+    | leaf q =>
+        apply ext
+        intro i
+        simp
+    | prod h₁ h₂ ih₁ ih₂ =>
+        cases b with | prod b₁ b₂ =>
+        simp [ih₁, ih₂]
+  mul_smul := by
+    intro x y b
+    induction h with
+    | leaf q =>
+        cases x with | leaf x =>
+        cases y with | leaf y =>
+        apply ext
+        intro i
+        simp [mul_smul]
+    | prod h₁ h₂ ih₁ ih₂ =>
+        cases x with | prod x₁ x₂ =>
+        cases y with | prod y₁ y₂ =>
+        cases b with | prod b₁ b₂ =>
+        simp [ih₁, ih₂]
+  smul_zero := by
+    intro x
+    induction h with
+    | leaf q =>
+        cases x with | leaf x =>
+        apply ext
+        intro i
+        simp
+    | prod h₁ h₂ ih₁ ih₂ =>
+        cases x with | prod x₁ x₂ =>
+        simp [ih₁, ih₂]
+  smul_add := by
+    intro x b c
+    induction h with
+    | leaf q =>
+        cases x with | leaf x =>
+        apply ext
+        intro i
+        simp [smul_add]
+    | prod h₁ h₂ ih₁ ih₂ =>
+        cases x with | prod x₁ x₂ =>
+        cases b with | prod b₁ b₂ =>
+        cases c with | prod c₁ c₂ =>
+        simp [ih₁, ih₂]
+  add_smul := by
+    intro x y b
+    induction h with
+    | leaf q =>
+        cases x with | leaf x =>
+        cases y with | leaf y =>
+        apply ext
+        intro i
+        simp [add_smul]
+    | prod h₁ h₂ ih₁ ih₂ =>
+        cases x with | prod x₁ x₂ =>
+        cases y with | prod y₁ y₂ =>
+        cases b with | prod b₁ b₂ =>
+        simp [ih₁, ih₂]
+  zero_smul := by
+    intro b
+    induction h with
+    | leaf q =>
+        apply ext
+        intro i
+        simp
+    | prod h₁ h₂ ih₁ ih₂ =>
+        cases b with | prod b₁ b₂ =>
+        simp [ih₁, ih₂]
+
 /-- Scaling the right argument of an inner product scales the resulting inner product. -/
 theorem inner_smul_right {I : Type u} {D : Type v} [AddCommMonoid D] [Semiring I] [Module I D]
     {p : Profile} (idx : HTuple I p) (stride : HTuple D p) (n : Nat) :

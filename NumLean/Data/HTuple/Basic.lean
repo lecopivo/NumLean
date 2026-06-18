@@ -20,12 +20,44 @@ namespace Profile
   | .leaf => 1
   | .prod left right => left.size + right.size
 
+/-- Product of profiles, replacing each leaf of the second profile by the first profile. -/
+@[inline] def mul (p q : Profile) : Profile :=
+  match q with
+  | .leaf => p
+  | .prod q₁ q₂ => .prod (mul p q₁) (mul p q₂)
+
+/-- `p.Refines q` means that `q` is obtained from `p` by collapsing subtrees. -/
+class inductive Refines : Profile → Profile → Type where
+  | leaf (p : Profile) : Refines p .leaf
+  | prod {p₁ p₂ q₁ q₂ : Profile} (h₁ : Refines p₁ q₁) (h₂ : Refines p₂ q₂) :
+      Refines (.prod p₁ p₂) (.prod q₁ q₂)
+
+instance : Mul Profile where
+  mul := mul
+
+instance {q : Profile} : q.Refines .leaf := .leaf q
+
+instance {p₁ p₂ q₁ q₂ : Profile} [h₁ : p₁.Refines q₁] [h₂ : p₂.Refines q₂] :
+    (Profile.prod p₁ p₂).Refines (Profile.prod q₁ q₂) := .prod h₁ h₂
+
 @[simp]
 theorem size_leaf : Profile.leaf.size = 1 := rfl
 
 @[simp]
 theorem size_prod (left right : Profile) :
     (Profile.prod left right).size = left.size + right.size := rfl
+
+@[simp]
+theorem mul_leaf (p : Profile) : p * .leaf = p := rfl
+
+@[simp]
+theorem mul_prod (p q r : Profile) : p * .prod q r = .prod (p * q) (p * r) := rfl
+
+@[simp]
+theorem leaf_mul (p : Profile) : .leaf * p = p := by
+  induction p with
+  | leaf => rfl
+  | prod p q hp hq => simp [hp, hq]
 
 theorem size_pos (p : Profile) : 0 < p.size := by
   induction p with
@@ -194,6 +226,21 @@ theorem map_map {α : Type u} {β : Type v} {γ : Type w}
       simp [hp, hq]
 
 @[simp]
+theorem map_id {α : Type u} {p : Profile} (x : HTuple α p) :
+    map id x = x := by
+  induction p with
+  | leaf =>
+      cases x with | leaf value => rfl
+  | prod p q hp hq =>
+      cases x with | prod fst snd =>
+      simp [hp, hq]
+
+@[simp]
+theorem map_id_fun {α : Type u} {p : Profile} (x : HTuple α p) :
+    map (fun a => a) x = x := by
+  simpa only [id_eq] using (map_id x)
+
+@[simp]
 theorem map₂_leaf {α : Type u} {β : Type v} {γ : Type w} (f : α → β → γ) (a : α) (b : β) :
     map₂ f (.leaf a) (.leaf b) = .leaf (f a b) := rfl
 
@@ -353,6 +400,60 @@ theorem ofFn_get {α : Type u} {p : Profile} (x : HTuple α p) :
   | prod p q hp hq =>
       cases x with | prod x₀ x₁ =>
       simp [ofFn, hp, hq]
+
+/-- Flatten an `HTuple` of `HTuple`s by multiplying their profiles. -/
+@[inline] def join {α : Type u} {p : Profile} : {q : Profile} →
+    HTuple (HTuple α p) q → HTuple α (p * q)
+  | .leaf, .leaf x => x
+  | .prod _ _, .prod x₁ x₂ => .prod x₁.join x₂.join
+
+/-- Split an `HTuple` over a product profile into an `HTuple` of `HTuple`s. -/
+@[inline] def split {α : Type u} {p : Profile} : {q : Profile} →
+    HTuple α (p * q) → HTuple (HTuple α p) q
+  | .leaf, x => .leaf x
+  | .prod _ _, .prod x₁ x₂ => .prod x₁.split x₂.split
+
+@[simp]
+theorem join_leaf {α : Type u} {p : Profile} (x : HTuple α p) :
+    join (.leaf x) = x := rfl
+
+@[simp]
+theorem join_prod {α : Type u} {p q r : Profile}
+    (x : HTuple (HTuple α p) q) (y : HTuple (HTuple α p) r) :
+    join (.prod x y) = .prod x.join y.join := rfl
+
+@[simp]
+theorem split_leaf {α : Type u} {p : Profile} (x : HTuple α p) :
+    split (q := .leaf) x = .leaf x := rfl
+
+@[simp]
+theorem split_prod {α : Type u} {p q r : Profile}
+    (x : HTuple α (p * q)) (y : HTuple α (p * r)) :
+    split (q := .prod q r) (.prod x y) = .prod x.split y.split := rfl
+
+@[simp]
+theorem join_split {α : Type u} {p q : Profile} (x : HTuple α (p * q)) :
+    join (split (p := p) (q := q) x) = x := by
+  induction q with
+  | leaf => rfl
+  | prod q r hq hr =>
+      cases x with | prod x y => simp [hq, hr]
+
+@[simp]
+theorem split_join {α : Type u} {p q : Profile} (x : HTuple (HTuple α p) q) :
+    split (join x) = x := by
+  induction q with
+  | leaf => cases x with | leaf x => rfl
+  | prod q r hq hr =>
+      cases x with | prod x y => simp [hq, hr]
+
+/-- Equivalence between nested tuples and tuples over product profiles. -/
+@[simps! apply symm_apply]
+def joinEquiv {α : Type u} (p q : Profile) : HTuple (HTuple α p) q ≃ HTuple α (p * q) where
+  toFun := join
+  invFun := split
+  left_inv := split_join
+  right_inv := join_split
 
 end HTuple
 
