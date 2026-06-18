@@ -19,7 +19,7 @@ structure LayoutVisProps where
 
 @[widget_module]
 def LayoutVis : Component LayoutVisProps where
-  javascript := (include_str "js" / "layoutVis.js") ++ "\n/* layout-vis-no-title-v15 */"
+  javascript := (include_str "js" / "layoutVis.js") ++ "\n/* layout-vis-no-title-v16 */"
 
 /--
 Display the tensor layout visualizer in the infoview.

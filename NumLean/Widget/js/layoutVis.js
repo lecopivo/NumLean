@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-const WIDGET_VERSION = 'layout-vis-no-title-v15'
+const WIDGET_VERSION = 'layout-vis-no-title-v16'
 
 const idxKey = (idx) => idx.join(',')
 const cellKey = (r, c) => `${r},${c}`
@@ -233,7 +233,7 @@ function Style() {
     .nl-layout-vis .cell.oob { background: var(--invalid) !important; color: #ffd9df; }
     .nl-layout-vis .cell.unmapped { background: var(--unmapped); color: #768094; cursor: default; }
     .nl-layout-vis .cell.alias, .nl-layout-vis .memcell.alias { outline: 3px solid var(--alias); outline-offset: -2px; }
-    .nl-layout-vis .cell.highlight, .nl-layout-vis .memcell.highlight { box-shadow: 0 0 0 3px #fff, 0 0 25px 6px rgba(148,184,255,.62); z-index: 8; }
+    .nl-layout-vis .cell.highlight, .nl-layout-vis .memcell.highlight { box-shadow: 0 0 0 2px rgba(255,255,255,.9), 0 0 12px 3px rgba(255,255,255,.15); z-index: 8; }
     .nl-layout-vis .memory { display: grid; gap: 3px; width: 100%; }
     .nl-layout-vis .memcell { border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
     .nl-layout-vis .memcell small { margin-top: 2px; font-size: 8px; opacity: .68; }
