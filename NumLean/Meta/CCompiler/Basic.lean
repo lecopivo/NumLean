@@ -10,7 +10,7 @@ namespace NumLean.Meta.CCompiler
 open Lean Elab Command Lean.Compiler
 
 initialize registerTraceClass `NumLean.Meta.CCompiler
-initialize registerTraceClass `NumLean.Meta.CCompiler.extern_in
+initialize registerTraceClass `NumLean.Meta.CCompiler.extern_c
 
 
 inductive CType where

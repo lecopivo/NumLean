@@ -18,6 +18,34 @@ namespace FinHTupleMap
 
 variable {p q : HTuple.Profile} {src : HTuple Nat p} {dst : HTuple Nat q}
 
+/-- Raw evaluation of a bounded affine map on an unbounded tuple. -/
+@[coe]
+def eval (f : FinHTupleMap src dst) (i : HTuple Nat p) : HTuple Nat q := f.toHTupleMap.eval i
+
+/-- Evaluate a bounded affine map on a bounded tuple, keeping the bounded output type. -/
+def evalFin (f : FinHTupleMap src dst) (i : FinHTuple src) : FinHTuple dst :=
+  ⟨f.eval i.val, f.inBounds i.val i.isLt⟩
+
+instance : CoeFun (FinHTupleMap src dst) (fun _ => HTuple Nat p → HTuple Nat q) := ⟨eval⟩
+
+instance : GetElem (FinHTupleMap src dst) (HTuple Nat p) (FinHTuple dst) (fun _ i => i <ₑ src) where
+  getElem f i h := f.evalFin ⟨i, h⟩
+
+@[simp]
+theorem evalFin_val (f : FinHTupleMap src dst) (i : FinHTuple src) :
+    (f.evalFin i).val = f.eval i.val := rfl
+
+@[simp]
+theorem getElem_val (f : FinHTupleMap src dst) (i : HTuple Nat p) (h : i <ₑ src) :
+    (f[i]'h).val = f.eval i := rfl
+
+@[simp]
+theorem getElem_isLt (f : FinHTupleMap src dst) (i : HTuple Nat p) (h : i <ₑ src) :
+    (f[i]'h).isLt = f.inBounds i h := rfl
+
+@[grind ←, grind_htuple_order ←]
+theorem eval_lt (f : FinHTupleMap src dst) (i : HTuple Nat p) : i <ₑ src → f i <ₑ dst := f.2 i
+
 /-- Identity bounded affine map. -/
 def id (src : HTuple Nat p) : FinHTupleMap src src where
   toHTupleMap := HTupleMap.id p
@@ -25,9 +53,9 @@ def id (src : HTuple Nat p) : FinHTupleMap src src where
     intro i hi
     simpa using hi
 
-/-- Alias for `id`. -/
-def identity (src : HTuple Nat p) : FinHTupleMap src src :=
-  id src
+@[simp]
+theorem id_eval (src : HTuple Nat p) (i : HTuple Nat p) : id src i = i := by
+  simp [id, eval]
 
 /-- Compose bounded affine maps. -/
 def comp {mid : HTuple Nat q} {r : HTuple.Profile} {dst : HTuple Nat r}
@@ -87,41 +115,14 @@ def linearize (f : FinHTupleMap src dst) : FinHTupleMap src h(dst.numel) where
     intro i hi
     sorry
 
-/-- Raw evaluation of a bounded affine map on an unbounded tuple. -/
-@[coe]
-def eval (f : FinHTupleMap src dst) (i : HTuple Nat p) : HTuple Nat q := f.toHTupleMap.eval i
-
-/-- Raw evaluation of a bounded affine map on an unbounded tuple. -/
-abbrev evalRaw (f : FinHTupleMap src dst) (i : HTuple Nat p) : HTuple Nat q :=
-  f.eval i
-
-/-- Evaluate a bounded affine map on a bounded tuple, keeping the bounded output type. -/
-def evalFin (f : FinHTupleMap src dst) (i : FinHTuple src) : FinHTuple dst :=
-  ⟨f.evalRaw i.val, f.inBounds i.val i.isLt⟩
-
-instance : CoeFun (FinHTupleMap src dst) (fun _ => HTuple Nat p → HTuple Nat q) := ⟨eval⟩
-
-instance : GetElem (FinHTupleMap src dst) (HTuple Nat p) (FinHTuple dst) (fun _ i => i <ₑ src) where
-  getElem f i h := f.evalFin ⟨i, h⟩
-
-@[simp]
-theorem evalFin_val (f : FinHTupleMap src dst) (i : FinHTuple src) :
-    (f.evalFin i).val = f.evalRaw i.val := rfl
-
-@[simp]
-theorem getElem_val (f : FinHTupleMap src dst) (i : HTuple Nat p) (h : i <ₑ src) :
-    (f[i]'h).val = f.evalRaw i := rfl
-
-@[simp]
-theorem getElem_isLt (f : FinHTupleMap src dst) (i : HTuple Nat p) (h : i <ₑ src) :
-    (f[i]'h).isLt = f.inBounds i h := rfl
-
-@[grind ←, grind_htuple_order ←]
-theorem eval_lt (f : FinHTupleMap src dst) (i : HTuple Nat p) : i <ₑ src → f i <ₑ dst := f.2 i
 
 /-- A bounded map has no collisions on its bounded domain. -/
 def Injective (f : FinHTupleMap src dst) : Prop :=
-  Function.Injective fun i : FinHTuple src => f i
+  Function.Injective (fun i : FinHTuple src => f i)
+
+/-- A bounded map has no collisions on its bounded domain. -/
+def Bijective (f : FinHTupleMap src dst) : Prop :=
+  Function.Bijective f.evalFin
 
 /-- `f` maps `0...src` onto `f.range`
 

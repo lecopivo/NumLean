@@ -6,11 +6,11 @@ open NumLean
 
 namespace Tests.ExternIn
 
-@[extern_in "generated/extern_scalar.c"]
+@[extern_c "generated/extern_scalar.c"]
 def scalarKernel (n : USize) (x y : Float) : Float :=
   n.toFloat + x * y
 
-@[extern_in "generated/extern_fill.c"]
+@[extern_c "generated/extern_fill.c"]
 def fillKernel (n : USize) (dst : FloatArray) (x : Float) : FloatArray := Id.run do
   let mut dst := dst
   for_all i in 0...n do

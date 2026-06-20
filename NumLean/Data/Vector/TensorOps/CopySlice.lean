@@ -19,8 +19,8 @@ theorem copySlice_in_dst_range
     {K n m r} {shape : HTuple Nat r}
     (src : Vector K n) (srcMap : FinHTupleMap shape h(n))
     (dst : Vector K m) (dstMap : FinHTupleMap shape h(m))
-    (h : dstMap.Injective) (i : Nat) (hi : i ∈ dstMap.rangeNat) :
-    (copySlice src srcMap dst dstMap h)[i]
+    (hf : dstMap.Injective) (i : Nat) (hi : i ∈ dstMap.rangeNat) :
+    (copySlice src srcMap dst dstMap hf)[i]
     =
     src[(srcMap (invFun dstMap i))] := by
   classical
@@ -39,7 +39,8 @@ theorem copySlice_in_dst_range
     · simp (disch:= first | assumption | grind) [s]
   case hpreserve =>
     intro j hj a ha xs
-    have h : (dstMap a.1).toScalar ≠ j := cast (by simp; sorry) ha
+    have h : (dstMap a.1).toScalar ≠ j :=
+      cast (by simp_all; intro ha'; rw[←ha'] at ha; simp at ha;) ha
     simp [h]
   simp
   have h : ((Fold.entries.{0,0,0} 0...shape).filter (fun a : Subtype _ => dstMap a = i))
@@ -47,11 +48,9 @@ theorem copySlice_in_dst_range
            [⟨invFun dstMap i, sorry⟩] := by sorry
   conv => enter [1,1,3]; erw[h]
   simp only [List.foldl_cons, List.foldl_nil]
-  have h : dstMap (invFun dstMap i) = h(i) := sorry
-  conv => enter [1,1,2]; erw[h]
-  conv => enter [1,1]
-  conv => enter[1,1,2]; change i
-  simp only [HTuple.natCast_leaf, Vector.getElem_set_self]
+  have h : dstMap (invFun dstMap i) = h(i) := by sorry
+  conv => enter [1,1,2]; rw[h]
+  simp only [HTuple.leaf_toScalar, HTuple.natCast_leaf, Vector.getElem_set_self]
 
 theorem copySlice_out_dst_range
     {K n m r} {shape : HTuple Nat r}
@@ -76,7 +75,8 @@ theorem copySlice_out_dst_range
     · simp (disch:= first | assumption | grind) [s]
   case hpreserve =>
     intro j hj a ha xs
-    have h : (dstMap a.1).toScalar ≠ j := cast (by simp; sorry) ha
+    have h : (dstMap a.1).toScalar ≠ j :=
+      cast (by simp_all; intro ha'; rw[←ha'] at ha; simp at ha;) ha
     simp [h]
   simp
   have hEntries :
