@@ -18,29 +18,29 @@ attribute [simp] Vector.getElem_mul
   exact Vector.getElem_replicate h
 
 /-- Elementwise strict order on vectors. -/
-instance [LT α] : NumLean.ElementwiseLT (Vector α n) where
-  elementwiseLT x y := ∀ i : Fin n, x[i] < y[i]
+instance [LT α] : LT (NumLean.ElementwiseOrder (Vector α n)) where
+  lt x y := ∀ i : Fin n, x.val[i] < y.val[i]
 
 /-- Elementwise non-strict order on vectors. -/
-instance [LE α] : NumLean.ElementwiseLE (Vector α n) where
-  elementwiseLE x y := ∀ i : Fin n, x[i] ≤ y[i]
+instance [LE α] : LE (NumLean.ElementwiseOrder (Vector α n)) where
+  le x y := ∀ i : Fin n, x.val[i] ≤ y.val[i]
 
 /-- Lexicographic strict order on vectors. -/
-instance [LT α] : NumLean.LexLT (Vector α n) where
-  lexLT x y := ∃ i : Fin n, x[i] < y[i] ∧
-    ∀ j : Fin n, j.1 < i.1 → x[j] = y[j]
+instance [LT α] : LT (NumLean.LexOrder (Vector α n)) where
+  lt x y := ∃ i : Fin n, x.val[i] < y.val[i] ∧
+    ∀ j : Fin n, j.1 < i.1 → x.val[j] = y.val[j]
 
 /-- Lexicographic non-strict order on vectors. -/
-instance [LT α] : NumLean.LexLE (Vector α n) where
-  lexLE x y := x = y ∨ NumLean.LexLT.lexLT x y
+instance [LT α] : LE (NumLean.LexOrder (Vector α n)) where
+  le x y := x.val = y.val ∨ x.val <ˡ y.val
 
 /-- Colexicographic strict order on vectors. -/
-instance [LT α] : NumLean.ColexLT (Vector α n) where
-  colexLT x y := ∃ i : Fin n, x[i] < y[i] ∧
-    ∀ j : Fin n, i.1 < j.1 → x[j] = y[j]
+instance [LT α] : LT (NumLean.ColexOrder (Vector α n)) where
+  lt x y := ∃ i : Fin n, x.val[i] < y.val[i] ∧
+    ∀ j : Fin n, i.1 < j.1 → x.val[j] = y.val[j]
 
 /-- Colexicographic non-strict order on vectors. -/
-instance [LT α] : NumLean.ColexLE (Vector α n) where
-  colexLE x y := x = y ∨ NumLean.ColexLT.colexLT x y
+instance [LT α] : LE (NumLean.ColexOrder (Vector α n)) where
+  le x y := x.val = y.val ∨ x.val <ₗ y.val
 
 end Vector

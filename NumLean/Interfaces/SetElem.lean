@@ -60,6 +60,13 @@ elab:max (priority:=high+1) x:term noWs "[" is:term,* "]" : term => do
     return ← elabTerm (← `(getElem $x $i (by get_elem_tactic))) none
 
 
+-- a[i] := x
+macro (priority:=high) x:ident noWs "[" i:term "]" " := " xi:term : doElem => do
+  `(doElem| $x:ident := setElem $x $i $xi (by get_elem_tactic))
+
+-- a[i] := x
+macro (priority:=high) x:ident noWs "[" i:term "]'" h:term " := " xi:term : doElem => do
+  `(doElem| $x:ident := setElem $x $i $xi $h)
 
 
 local instance {X n} : DefaultIndexOfRank (Vector X n) 1 (Fin n) := ⟨⟩

@@ -12,6 +12,10 @@ import NumLean.Basic
 import NumLean.Data.Array
 import NumLean.Data.Array.TensorOps
 import NumLean.Data.Complex
+import NumLean.Data.FinHTuple
+import NumLean.Data.FinHTuple.Basic
+import NumLean.Data.FinHTuple.FinHTupleMap
+import NumLean.Data.FinHTuple.Fold
 import NumLean.Data.FlatArray.Basic
 import NumLean.Data.FlatVector.Basic
 import NumLean.Data.Float32Array
@@ -25,10 +29,15 @@ import NumLean.Data.HList.RangeIterator
 import NumLean.Data.HTuple
 import NumLean.Data.HTuple.Algebra
 import NumLean.Data.HTuple.Basic
+import NumLean.Data.HTuple.Fold
 import NumLean.Data.HTuple.GetElemTactic
 import NumLean.Data.HTuple.GetElemTacticInit
+import NumLean.Data.HTuple.HTupleMap
 import NumLean.Data.HTuple.Ops
+import NumLean.Data.HTuple.Order
+import NumLean.Data.HTuple.Range
 import NumLean.Data.HTuple.RangeIterator
+import NumLean.Data.HTuple.RangeIteratorSpec
 import NumLean.Data.HTuple.RangeNotation
 import NumLean.Data.HVector
 import NumLean.Data.HVector.Basic
@@ -40,8 +49,12 @@ import NumLean.Data.KernelExpr.Basic
 import NumLean.Data.KernelExpr.HasKernelExpr
 import NumLean.Data.KernelExpr.Register
 import NumLean.Data.Prod
+import NumLean.Data.Prod.Fold
+import NumLean.Data.Prod.Order
+import NumLean.Data.Prod.OrderInit
 import NumLean.Data.RangeEnum
 import NumLean.Data.Sigma
+import NumLean.Data.ScalarArrays
 import NumLean.Data.TensorIndex
 import NumLean.Data.TensorIndex.AxisOrder
 import NumLean.Data.TensorIndex.Basic
@@ -55,6 +68,7 @@ import NumLean.Data.TensorIndex.FinTIndexMap
 import NumLean.Data.TensorIndex.IntFinTIndex
 import NumLean.Data.TensorIndex.Layout
 import NumLean.Data.TensorIndex.Linear
+import NumLean.Data.TensorIndex.Range
 import NumLean.Data.TensorIndex.SplitMap
 import NumLean.Data.TensorIndex.TensorIndexMap
 import NumLean.Data.TensorIndex.TensorIndexType
@@ -64,7 +78,16 @@ import NumLean.Data.Vector.Algebra
 import NumLean.Data.Vector.Basic
 import NumLean.Data.Vector.Ops
 import NumLean.Data.Vector.RangeIterator
-import NumLean.Doodle
+import NumLean.Data.Vector.TensorOps
+import NumLean.Data.Vector.TensorOps.CopySlice
+import NumLean.Data.Vector.TensorOps.Defs
+import NumLean.Data.Vector.TensorOps.FoldMap
+import NumLean.Data.Vector.TensorOps.ReverseSlice
+import NumLean.Data.Vector.TensorOps.ShapeEntries
+import NumLean.Data.Vector.TensorOps.SwapSlice
+import NumLean.Data.Vector.TensorOps.TransposeSlice
+import NumLean.Device.Basic
+-- import NumLean.Doodle
 import NumLean.Interfaces.ArrayOps.Array
 import NumLean.Interfaces.ArrayOps.Basic
 import NumLean.Interfaces.ArrayOps.ByteArray
@@ -84,14 +107,23 @@ import NumLean.Interfaces.FlatRepr.Lawful
 import NumLean.Interfaces.FlatRepr.Prod
 import NumLean.Interfaces.FlatRepr.Sigma
 import NumLean.Interfaces.FlatRepr.Vector
+import NumLean.Interfaces.Fold
+import NumLean.Interfaces.Fold.Basic
+import NumLean.Interfaces.Fold.Commute
+import NumLean.Interfaces.Fold.Embedding
+import NumLean.Interfaces.Fold.RangeIso
+import NumLean.Interfaces.Fold.RcoNative
 import NumLean.Interfaces.HasFlatArray
 import NumLean.Interfaces.HasFlatArray.Basic
 import NumLean.Interfaces.HasFlatArray.Float
+import NumLean.Interfaces.HasFlatVector
+import NumLean.Interfaces.HasFlatVector.Basic
 import NumLean.Interfaces.IndexType
 import NumLean.Interfaces.MachinePrecision
 import NumLean.Interfaces.SetElem
 import NumLean.Interfaces.TensorArrayOps
 import NumLean.Interfaces.TensorArrayOps.Basic
+import NumLean.Interfaces.VectorType.Basic
 import NumLean.Mathlib.Calculus
 import NumLean.Mathlib.Calculus.TDeriv
 import NumLean.Mathlib.FiberedAddTorsor
@@ -101,6 +133,7 @@ import NumLean.Mathlib.FiberedAddTorsor.MProd
 import NumLean.Mathlib.FiberedAddTorsor.Prod
 import NumLean.Mathlib.FiberedAddTorsor.Topology
 import NumLean.Mathlib.IsContinuousLinearMap
+import NumLean.Meta
 import NumLean.Meta.ForAll
 import NumLean.Meta.ForAll.Basic
 import NumLean.Meta.ForAll.HTuple
@@ -108,6 +141,8 @@ import NumLean.Meta.ForAll.Notation
 import NumLean.Meta.ForAll.RcoNat
 import NumLean.Meta.ForAll.RcoNative
 import NumLean.Meta.RewriteBy
+import NumLean.Misc.CuTe
+import NumLean.Misc.VerifiedTensor
 import NumLean.Tactic.ApplyRuleSets
 import NumLean.Tactic.ApplyRuleSets.Attr
 import NumLean.Tactic.ApplyRuleSets.Core
@@ -116,4 +151,9 @@ import NumLean.Tactic.ApplyRuleSets.RuleProc
 import NumLean.Tactic.ApplyRuleSets.Types
 -- import NumLean.TargetTests
 import NumLean.TestUIntProofs
+import NumLean.Widget.CuteExamples
+import NumLean.Widget.CuteVis
 import NumLean.Widget.LayoutVis
+import NumLean.Widget.ProfileVis
+import NumLean.Widget.Visualize
+import NumLean.Widget.VisualizeExamples

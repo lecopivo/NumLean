@@ -6,5 +6,6 @@ import NumLean.Data.TensorIndex.FinTIndexFold
 import NumLean.Data.TensorIndex.Compatibility
 import NumLean.Data.TensorIndex.Layout
 import NumLean.Data.TensorIndex.Linear
+import NumLean.Data.TensorIndex.Range
 import NumLean.Data.TensorIndex.SplitMap
 import NumLean.Data.TensorIndex.TensorIndexType

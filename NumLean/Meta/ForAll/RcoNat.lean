@@ -20,6 +20,30 @@ decreasing_by omega
 def rcoNatEntries (xs : Std.Rco Nat) : List {i : Nat // i ∈ xs} :=
   rcoNatEntriesFrom xs xs.lower (Nat.le_refl xs.lower)
 
+theorem mem_rcoNatEntriesFrom {xs : Std.Rco Nat} {i j : Nat} (hlo : xs.lower ≤ i)
+    (hij : i ≤ j) (hj : j ∈ xs) : ⟨j, hj⟩ ∈ rcoNatEntriesFrom xs i hlo := by
+  unfold rcoNatEntriesFrom
+  split
+  · rename_i hhi
+    by_cases hji : j = i
+    · subst hji
+      simp
+    · have hne : i ≠ j := by intro h; exact hji h.symm
+      have hij' : i + 1 ≤ j := Nat.succ_le_of_lt (Nat.lt_of_le_of_ne hij hne)
+      have hnext : xs.lower ≤ i + 1 := Nat.le_trans hlo (Nat.le_succ i)
+      exact List.mem_cons_of_mem _ (mem_rcoNatEntriesFrom hnext hij' hj)
+  · rename_i hnhi
+    have : ¬ j ∈ xs := by
+      intro hmem
+      exact hnhi (Nat.lt_of_le_of_lt hij hmem.2)
+    exact False.elim (this hj)
+termination_by xs.upper - i
+decreasing_by omega
+
+theorem mem_rcoNatEntries {xs : Std.Rco Nat} {j : Nat} (hj : j ∈ xs) :
+    ⟨j, hj⟩ ∈ rcoNatEntries xs :=
+  mem_rcoNatEntriesFrom (xs := xs) (i := xs.lower) (Nat.le_refl xs.lower) hj.1 hj
+
 @[always_inline, inline, specialize] def forAllInRcoNatLoop {β : Type v} (xs : Std.Rco Nat)
     (i : Nat) (hlo : xs.lower ≤ i) (acc : β)
     (f : (a : Nat) → a ∈ xs → β → β) : β :=
@@ -205,6 +229,7 @@ decreasing_by omega
 @[always_inline, inline, default_instance low] instance instLawfulForAllIn'RcoNat {β : Type v} :
     LawfulForAllIn' (Std.Rco Nat) Nat β inferInstance where
   entries := rcoNatEntries
+  mem_entries h := mem_rcoNatEntries h
   forAllIn'_eq_foldl xs init f := by
     exact forAllInRcoNatLoop_eq_foldl xs xs.lower (Nat.le_refl xs.lower) init f
 
@@ -216,6 +241,7 @@ decreasing_by omega
 @[always_inline, inline, default_instance 100] instance instLawfulForAllIn'RcoNatMProd2 {β γ : Type v} :
     LawfulForAllIn' (Std.Rco Nat) Nat (MProd β γ) inferInstance where
   entries := rcoNatEntries
+  mem_entries h := mem_rcoNatEntries h
   forAllIn'_eq_foldl xs init f :=
     forAllInRcoNatMProd2Loop_eq_foldl xs xs.lower (Nat.le_refl xs.lower) init.fst init.snd f
 
@@ -227,6 +253,7 @@ decreasing_by omega
 @[always_inline, inline, default_instance 200] instance instLawfulForAllIn'RcoNatMProd3 {β γ δ : Type v} :
     LawfulForAllIn' (Std.Rco Nat) Nat (MProd β (MProd γ δ)) inferInstance where
   entries := rcoNatEntries
+  mem_entries h := mem_rcoNatEntries h
   forAllIn'_eq_foldl xs init f :=
     forAllInRcoNatMProd3Loop_eq_foldl xs xs.lower (Nat.le_refl xs.lower)
       init.fst init.snd.fst init.snd.snd f
@@ -239,6 +266,7 @@ decreasing_by omega
 @[always_inline, inline, default_instance 300] instance instLawfulForAllIn'RcoNatMProd4 {β γ δ ε : Type v} :
     LawfulForAllIn' (Std.Rco Nat) Nat (MProd β (MProd γ (MProd δ ε))) inferInstance where
   entries := rcoNatEntries
+  mem_entries h := mem_rcoNatEntries h
   forAllIn'_eq_foldl xs init f :=
     forAllInRcoNatMProd4Loop_eq_foldl xs xs.lower (Nat.le_refl xs.lower)
       init.fst init.snd.fst init.snd.snd.fst init.snd.snd.snd f
@@ -251,6 +279,7 @@ decreasing_by omega
 @[always_inline, inline, default_instance 400] instance instLawfulForAllIn'RcoNatMProd5 {β γ δ ε ζ : Type v} :
     LawfulForAllIn' (Std.Rco Nat) Nat (MProd β (MProd γ (MProd δ (MProd ε ζ)))) inferInstance where
   entries := rcoNatEntries
+  mem_entries h := mem_rcoNatEntries h
   forAllIn'_eq_foldl xs init f :=
     forAllInRcoNatMProd5Loop_eq_foldl xs xs.lower (Nat.le_refl xs.lower)
       init.fst init.snd.fst init.snd.snd.fst init.snd.snd.snd.fst
@@ -264,6 +293,7 @@ decreasing_by omega
 @[always_inline, inline, default_instance 500] instance instLawfulForAllIn'RcoNatMProd6 {β γ δ ε ζ η : Type v} :
     LawfulForAllIn' (Std.Rco Nat) Nat (MProd β (MProd γ (MProd δ (MProd ε (MProd ζ η))))) inferInstance where
   entries := rcoNatEntries
+  mem_entries h := mem_rcoNatEntries h
   forAllIn'_eq_foldl xs init f :=
     forAllInRcoNatMProd6Loop_eq_foldl xs xs.lower (Nat.le_refl xs.lower)
       init.fst init.snd.fst init.snd.snd.fst init.snd.snd.snd.fst

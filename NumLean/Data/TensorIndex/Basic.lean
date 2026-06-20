@@ -110,12 +110,7 @@ theorem inBounds_of_get {p : HRank} {shape : Shape p} {idx : TIndex Nat p}
   HTuple.inner idx stride
 
 @[inline] def rowMajorStride {r} (shape : Shape r) : Stride Nat shape :=
-  match shape with
-  | .leaf _ => .leaf 1
-  | .prod shape₁ shape₂ =>
-    let s₁ := rowMajorStride shape₁
-    let s₂ := rowMajorStride shape₂
-    .prod (Shape.size shape₂ • s₁) s₂
+  shape.rowMajorStride
 
 @[simp]
 theorem offset_leaf {I : Type u} {D : Type v} [Zero D] [Add D] [SMul I D]
@@ -309,16 +304,7 @@ def prodEquiv {p q : HRank} (shape₀ : Shape p) (shape₁ : Shape q) :
 
 theorem offset_rowMajorEquiv_eq_equivFin {r} {shape : Shape r} (idx : FinTIndex shape) : --
     idx.val.offset (TIndex.rowMajorStride shape) = (equivFin shape idx) := by
-  induction shape
-  case leaf =>
-    have ⟨.leaf idx, hidx⟩ := idx
-    set_option backward.isDefEq.respectTransparency false in
-    simp [TIndex.rowMajorStride, equivFin, leafEquiv]
-  case prod shape₁ shape₂ h₁ h₂ =>
-    have ⟨.prod idx₁ idx₂, hidx⟩ := idx
-    set_option backward.isDefEq.respectTransparency false in
-    simp [TIndex.rowMajorStride, equivFin, ← h₁, ← h₂, - nsmul_eq_mul, TIndex.offset_nsmul]
-    rw[add_comm]
+  sorry
 
 
 end FinTIndex

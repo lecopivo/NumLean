@@ -28,4 +28,7 @@ instance : GetElem (FinTIndexMap shape shape') (TIndex Nat r) (FinTIndex shape')
     (fun xs i => i ∈ 0...shape) where
   getElem xs i h := xs ⟨i, sorry⟩
 
+def range (f : FinTIndexMap shape shape') : Set Nat :=
+  Set.range fun i : FinTIndex shape => (FinTIndex.equivFin shape' (f i)).val
+
 end FinTIndexMap

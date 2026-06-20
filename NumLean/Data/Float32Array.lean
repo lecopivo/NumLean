@@ -20,7 +20,7 @@ attribute [ext] Float32Array
 
 @[extern "lean_mk_empty_float32_array"]
 def emptyWithCapacity (c : @& Nat) : Float32Array :=
-  { data := #[] }
+  { data := Array.mkEmpty c }
 
 def empty : Float32Array :=
   emptyWithCapacity 0
@@ -33,19 +33,19 @@ instance : EmptyCollection Float32Array where
 
 @[extern "lean_float32_array_push"]
 def push : Float32Array → Float32 → Float32Array
-  | ⟨ds⟩, b => ⟨ds.push b⟩
+  | ⟨ds⟩, x => ⟨ds.push x⟩
 
 @[extern "lean_float32_array_size", tagged_return]
 def size : (@& Float32Array) → Nat
   | ⟨ds⟩ => ds.size
 
-@[extern "lean_sarray_size", simp]
+@[simp]
 def usize (a : @& Float32Array) : USize :=
   a.size.toUSize
 
 @[extern "lean_float32_array_uget"]
 def uget : (a : @& Float32Array) → (i : USize) → i.toNat < a.size → Float32
-  | ⟨ds⟩, i, h => ds[i]
+  | ⟨ds⟩, i, h => ds[i.toNat]
 
 @[extern "lean_float32_array_fget"]
 def get : (ds : @& Float32Array) → (i : @& Nat) → (h : i < ds.size := by get_elem_tactic) → Float32
@@ -53,7 +53,7 @@ def get : (ds : @& Float32Array) → (i : @& Nat) → (h : i < ds.size := by get
 
 @[extern "lean_float32_array_get"]
 def get! : (@& Float32Array) → (@& Nat) → Float32
-  | ⟨ds⟩, i => ds[i]!
+  | ⟨ds⟩, i => if h : i < ds.size then ds[i] else 0
 
 def get? (ds : Float32Array) (i : Nat) : Option Float32 :=
   if h : i < ds.size then
@@ -69,15 +69,15 @@ instance : GetElem Float32Array USize Float32 fun xs i => i.toNat < xs.size wher
 
 @[extern "lean_float32_array_uset"]
 def uset : (a : Float32Array) → (i : USize) → Float32 → (h : i.toNat < a.size := by get_elem_tactic) → Float32Array
-  | ⟨ds⟩, i, v, h => ⟨ds.uset i v h⟩
+  | ⟨ds⟩, i, x, h => ⟨ds.set i.toNat x h⟩
 
 @[extern "lean_float32_array_fset"]
 def set : (ds : Float32Array) → (i : @& Nat) → Float32 → (h : i < ds.size := by get_elem_tactic) → Float32Array
-  | ⟨ds⟩, i, d, h => ⟨ds.set i d h⟩
+  | ⟨ds⟩, i, x, h => ⟨ds.set i x h⟩
 
 @[extern "lean_float32_array_set"]
 def set! : Float32Array → (@& Nat) → Float32 → Float32Array
-  | ⟨ds⟩, i, d => ⟨ds.set! i d⟩
+  | ⟨ds⟩, i, x => if h : i < ds.size then ⟨ds.set i x h⟩ else ⟨ds⟩
 
 def isEmpty (s : Float32Array) : Bool :=
   s.size == 0

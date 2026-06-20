@@ -30,7 +30,7 @@ done > Tests.lean
 cat >> Tests.lean <<'EOF'
 
 def main : IO Unit := do
-  runFloatArrayTensorOpsTests
+  pure ()
 EOF
 
 

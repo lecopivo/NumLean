@@ -47,6 +47,20 @@ def coarsenMap {α : Type u} {β : Type v} (p : Profile) {q : Profile} (x : HTup
   | .leaf _, x => .leaf (f x)
   | .prod _ _, .prod x₁ x₂ => .prod (coarsenMap _ x₁ f) (coarsenMap _ x₂ f)
 
+/-- Apply `coarsenMap` at every coarsening of the input tuple's profile. -/
+def allCoarseningsMap {α : Type u} {β : Type v} {p : Profile} (x : HTuple α p)
+    (f : {q : Profile} → HTuple α q → β) : Array (Sigma fun q : Profile => HTuple β q) :=
+  match x with
+  | .leaf _ => #[⟨.leaf, .leaf (f x)⟩]
+  | .prod x₁ x₂ => Id.run do
+      let xs₁ := allCoarseningsMap x₁ f
+      let xs₂ := allCoarseningsMap x₂ f
+      let mut xs : Array (Sigma fun q : Profile => HTuple β q) := #[⟨.leaf, .leaf (f x)⟩]
+      for ⟨q₁, y₁⟩ in xs₁ do
+        for ⟨q₂, y₂⟩ in xs₂ do
+          xs := xs.push ⟨.prod q₁ q₂, .prod y₁ y₂⟩
+      return xs
+
 /-- Binary version of `coarsenMap`, collapsing matching refined subtrees. -/
 def coarsenMap₂ {α : Type u} {β : Type v} {γ : Type w} (p : Profile) {q : Profile}
     (x : HTuple α q) (y : HTuple β q)
@@ -100,24 +114,6 @@ instance (priority := low) {R : Type u} {α : Type v} [SMul R α] {p : Profile} 
 instance {α : Type u} {β : Type v} [SMul α β] {p q : Profile} [q.Refines p] :
     SMul (HTuple α p) (HTuple β q) where
   smul := refinedSMul
-
-instance {α : Type u} [LT α] {p : Profile} : LexLT (HTuple α p) where
-  lexLT x y := NumLean.List.lexLT x.toList y.toList
-
-instance {α : Type u} [LT α] {p : Profile} : LexLE (HTuple α p) where
-  lexLE x y := NumLean.List.lexLE x.toList y.toList
-
-instance {α : Type u} [LT α] {p : Profile} : ColexLT (HTuple α p) where
-  colexLT x y := NumLean.List.colexLT x.toList y.toList
-
-instance {α : Type u} [LT α] {p : Profile} : ColexLE (HTuple α p) where
-  colexLE x y := NumLean.List.colexLE x.toList y.toList
-
-instance {α : Type u} [LT α] {p : Profile} : ElementwiseLT (HTuple α p) where
-  elementwiseLT x y := NumLean.List.elementwiseLT x.toList y.toList
-
-instance {α : Type u} [LE α] {p : Profile} : ElementwiseLE (HTuple α p) where
-  elementwiseLE x y := NumLean.List.elementwiseLE x.toList y.toList
 
 /-- The basis tuple whose selected leaf is `1` and all other leaves are `0`. -/
 def basis {α : Type u} [Zero α] [One α] : {p : Profile} → Index p → HTuple α p

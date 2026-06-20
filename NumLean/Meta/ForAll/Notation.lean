@@ -1,6 +1,8 @@
+import NumLean.Interfaces.Fold
 import NumLean.Meta.ForAll.Basic
 import Lean.Elab.BuiltinDo.Basic
 import Lean.Parser.Do
+import Lean.PrettyPrinter.Delaborator
 
 public section
 
@@ -48,7 +50,15 @@ where
           go xs rest.fvarId! sndTy (letFVars |>.push x |>.push rest)
 
 syntax (name := doForAll)
-  "for_all " optional(ident " : ") term " in " termBeforeDo " do " doSeq : doElem
+  "for_all " optional(atomic(ident " : ")) term " in " termBeforeDo " do " doSeq : doElem
+
+syntax (name := doForAllFast)
+  "for_all_fast " optional(atomic(ident " : ")) term " in " termBeforeDo " do " doSeq : doElem
+
+-- @[app_unexpander NumLean.Fold.fold] def unexpandFoldFold : Lean.PrettyPrinter.Unexpander
+--   | `($(_) $xs:term $_init:term fun $x:ident $_h:ident $_s:ident => $body:term) =>
+--       `(doElem| for_all $x:ident in $xs do $body:term)
+--   | _ => throw ()
 
 @[macro doForAll] def expandDoForAll : Macro := fun stx => do
   match stx with
@@ -68,16 +78,49 @@ syntax (name := doForAll)
       `(doElem| for_all $[$h? : ]? $x:ident in $xs do $body)
   | _ => Macro.throwUnsupported
 
-@[builtin_doElem_control_info NumLean.Meta.ForAll.doForAll] def inferForAllControlInfo : ControlInfoHandler := fun stx => do
+@[macro doForAllFast] def expandDoForAllFast : Macro := fun stx => do
+  match stx with
+  | `(doForAllFast| for_all_fast $[$_ : ]? $_:ident in $_ do $_) =>
+      Macro.throwUnsupported
+  | `(doForAllFast| for_all_fast $[$h? : ]? $pattern in $xs do $body) =>
+      let mut body := body
+      let x ←
+        if pattern.raw.isIdent then
+          pure ⟨pattern⟩
+        else if pattern.raw.isOfKind ``Lean.Parser.Term.hole then
+          Term.mkFreshIdent pattern
+        else
+          let x ← Term.mkFreshIdent pattern
+          body ← `(doSeq| match $x:term with | $pattern => $body)
+          pure x
+      `(doElem| for_all_fast $[$h? : ]? $x:ident in $xs do $body)
+  | _ => Macro.throwUnsupported
+
+@[builtin_doElem_control_info NumLean.Meta.ForAll.doForAll]
+def inferForAllControlInfo : ControlInfoHandler := fun stx => do
   let `(doForAll| for_all $[$_ : ]? $_:ident in $_ do $body) := stx | throwUnsupportedSyntax
   let info ← inferControlInfoSeq body
   if info.breaks then
     throwErrorAt stx "`for_all` does not support `break`; use `for` for early exit"
-  if info.continues then
-    throwErrorAt stx "`for_all` does not support `continue`; use `for` for early exit"
   if info.returnsEarly then
     throwErrorAt stx "`for_all` does not support `return` from the loop body"
   return { info with numRegularExits := 1, breaks := false, continues := false, returnsEarly := false }
+
+@[doElem_control_info NumLean.Meta.ForAll.doForAll]
+def inferForAllControlInfoNested : ControlInfoHandler := inferForAllControlInfo
+
+@[builtin_doElem_control_info NumLean.Meta.ForAll.doForAllFast]
+def inferForAllFastControlInfo : ControlInfoHandler := fun stx => do
+  let `(doForAllFast| for_all_fast $[$_ : ]? $_:ident in $_ do $body) := stx | throwUnsupportedSyntax
+  let info ← inferControlInfoSeq body
+  if info.breaks then
+    throwErrorAt stx "`for_all_fast` does not support `break`; use `for` for early exit"
+  if info.returnsEarly then
+    throwErrorAt stx "`for_all_fast` does not support `return` from the loop body"
+  return { info with numRegularExits := 1, breaks := false, continues := false, returnsEarly := false }
+
+@[doElem_control_info NumLean.Meta.ForAll.doForAllFast]
+def inferForAllFastControlInfoNested : ControlInfoHandler := inferForAllFastControlInfo
 
 @[doElem_elab NumLean.Meta.ForAll.doForAll] def elabDoForAll : DoElab := fun stx dec => do
   let `(doForAll| for_all $[$h? : ]? $x:ident in $xs do $body) := stx | throwUnsupportedSyntax
@@ -133,8 +176,88 @@ syntax (name := doForAll)
       let nextState : DoElabM Expr := do
         let (tuple, _tupleTy) ← mkMProdMkN (← useLoopMutVars) mi.u
         mkPureApp bodyResultType tuple
+      let breakCont : DoElabM Expr :=
+        throwErrorAt stx "`for_all` does not support `break`; use `for` for early exit"
+      let returnCont ← getReturnCont
+      let returnCont := { returnCont with k := fun _ =>
+        throwErrorAt stx "`for_all` does not support `return` from the loop body" }
       withDoBlockResultType bodyResultType do
-      withoutControl do
+      enterLoopBody breakCont nextState returnCont do
+        elabDoSeq body { dec with k := nextState, kind := .duplicable }
+    let bodyVal ← mkAppM ``Id.run #[bodyExpr]
+    mkLambdaFVars (xh.push loopS) bodyVal
+
+  let folded ← mkAppM ``NumLean.Fold.fold #[xs, preS, bodyFn]
+  let γ := (← read).doBlockResultType
+  let rest ←
+    withLocalDeclD s σ fun postS => do
+    mkLambdaFVars #[postS] <| ← do
+      bindMutVarsFromMProd loopMutVarNames postS.fvarId! do
+        dec.continueWithUnit
+
+  mkBindApp σ γ folded rest
+
+@[doElem_elab NumLean.Meta.ForAll.doForAllFast] def elabDoForAllFast : DoElab := fun stx dec => do
+  let `(doForAllFast| for_all_fast $[$h? : ]? $x:ident in $xs do $body) := stx | throwUnsupportedSyntax
+  checkMutVarsForShadowing #[x]
+
+  let mi := (← read).monadInfo
+  unless ← isDefEq mi.m (mkConst ``Id [mi.u]) do
+    throwErrorAt stx "`for_all_fast` is currently supported only in pure `Id` do-blocks"
+
+  let xsTy ← mkFreshExprMVar (mkSort (mi.u.succ)) (userName := `ρ)
+  let xs ← Term.elabTermEnsuringType xs xsTy
+
+  let info ← inferForAllFastControlInfo stx
+  let mutVars := (← read).mutVars
+  let loopMutVars := mutVars.filter fun x => info.reassigns.contains x.getId
+  let loopMutVarNames := (loopMutVars.map (·.getId)).toList
+
+  unless ← isDefEq dec.resultType (← mkPUnit) do
+    logError m!"Type mismatch. `for_all_fast` loops have result type {← mkPUnit}, but the rest of the `do` sequence expected {dec.resultType}."
+
+  let useLoopMutVars : TermElabM (Array Expr) := do
+    let mut defs := #[]
+    for x in loopMutVars do
+      let defn ← getLocalDeclFromUserName x.getId
+      Term.addTermInfo' x defn.toExpr
+      discard <| Term.ensureHasType (mkSort (mi.u.succ)) defn.type
+      defs := defs.push defn.toExpr
+    return defs
+
+  let (preS, σ) ← mkMProdMkN (← useLoopMutVars) mi.u
+
+  let idxTy ←
+    match (← whnf (← instantiateMVars xsTy)) with
+    | .app (.const ``Std.Rco _) idxTy => pure idxTy
+    | _ => mkFreshExprMVar (mkSort (mi.u.succ)) (userName := `α)
+  let uIdx ← getDecLevel idxTy
+  let memInst ← synthInstance (mkApp2 (mkConst ``Membership [uIdx, mi.u]) idxTy xsTy)
+  let hxTy (idx : Expr) : Expr :=
+    mkApp5 (mkConst ``Membership.mem [uIdx, mi.u]) idxTy xsTy memInst xs idx
+
+  let s ← mkFreshUserName `__s
+  let anonH ← mkFreshUserName `__h
+  let xh : Array (Name × (Array Expr → DoElabM Expr)) := match h? with
+    | some h => #[(x.getId, fun _ => pure idxTy), (h.getId, fun xs => pure (hxTy xs[0]!))]
+    | none => #[(x.getId, fun _ => pure idxTy), (anonH, fun xs => pure (hxTy xs[0]!))]
+
+  let bodyFn ←
+    withLocalDeclsD xh fun xh => do
+    withLocalDecl s .default σ (kind := .implDetail) fun loopS => do
+    let bodyExpr ←
+      bindMutVarsFromMProd loopMutVarNames loopS.fvarId! do
+      let bodyResultType := σ
+      let nextState : DoElabM Expr := do
+        let (tuple, _tupleTy) ← mkMProdMkN (← useLoopMutVars) mi.u
+        mkPureApp bodyResultType tuple
+      let breakCont : DoElabM Expr :=
+        throwErrorAt stx "`for_all_fast` does not support `break`; use `for` for early exit"
+      let returnCont ← getReturnCont
+      let returnCont := { returnCont with k := fun _ =>
+        throwErrorAt stx "`for_all_fast` does not support `return` from the loop body" }
+      withDoBlockResultType bodyResultType do
+      enterLoopBody breakCont nextState returnCont do
         elabDoSeq body { dec with k := nextState, kind := .duplicable }
     let bodyVal ← mkAppM ``Id.run #[bodyExpr]
     mkLambdaFVars (xh.push loopS) bodyVal

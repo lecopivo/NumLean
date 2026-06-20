@@ -360,6 +360,15 @@ instance instSemiring [Semiring α] {p : Profile} : Semiring (HTuple α p) where
     intro i
     simp [HTuple.npow, pow_succ]
 
+@[simp]
+theorem natCast_eq_toScalar (n : Nat) : (n.cast : HTuple ℕ .leaf).toScalar = n := by rfl
+
+@[simp, norm_cast]
+theorem coe_natCast_leaf (n : Nat) : ((n : HTuple Nat .leaf) : Nat) = n := rfl
+
+@[simp]
+theorem natCast_leaf (n : Nat) : (n : HTuple Nat .leaf) = .leaf n := rfl
+
 /-- Pointwise commutative semiring structure on hierarchical tuples. -/
 instance instCommSemiring [CommSemiring α] {p : Profile} : CommSemiring (HTuple α p) where
   mul_comm := by

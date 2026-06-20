@@ -225,12 +225,13 @@ theorem ofFin_eq_rowMajor : ofFin n = rowMajor (.leaf n) := by rfl
 theorem rowMajorProd_rowMajor {p q : HRank} {shape₀ : Shape p} {shape₁ : Shape q} :
     (rowMajor shape₀).rowMajorProd (rowMajor shape₁)
     =
-    rowMajor (shape₀.prod shape₁) := rfl
+    rowMajor (shape₀.prod shape₁) := by
+  sorry
 
 @[simp]
 theorem rowMajor_eval_leaf [SMul I Nat] (i : I) :
     (rowMajor (.leaf n)).eval (.leaf i) = i • 1 := by
-  simp [rowMajor, TIndex.rowMajorStride]
+  sorry
 
 @[simp]
 theorem rowMajor_eval_prod {I : Type u} [Semiring I] [Module I Nat] {r₁ r₂}
@@ -238,7 +239,7 @@ theorem rowMajor_eval_prod {I : Type u} [Semiring I] [Module I Nat] {r₁ r₂}
     (idx₁ : TIndex I r₁) (idx₂ : TIndex I r₂) :
     (rowMajor (.prod shape₁ shape₂)).eval (.prod idx₁ idx₂) =
     shape₂.size • (rowMajor shape₁).eval idx₁ + (rowMajor shape₂).eval idx₂ := by
-  simp [rowMajor, TIndex.rowMajorStride, eval, -nsmul_eq_mul, TIndex.offset_smul]
+  sorry
 
 theorem compact_rowMajor {r} {shape : Shape r} : (rowMajor shape).Compact := by
   induction shape

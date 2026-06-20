@@ -1,7 +1,14 @@
 import NumLean.Data.Prod
+import NumLean.Data.Sigma
 import NumLean.Interfaces.FlatRepr.Lawful
 
 namespace NumLean
+
+instance {X Y : Type _} (m : Nat) [OfNat X m] [OfNat Y m] : OfNat (X × Y) m where
+  ofNat := (OfNat.ofNat m, OfNat.ofNat m)
+
+instance {X Y : Type _} [NatPow X] [NatPow Y] : NatPow (X × Y) where
+  pow xy n := (xy.1 ^ n, xy.2 ^ n)
 
 open FlatRepr in
 instance {X Y K nX nY} [FlatRepr X K nX] [FlatRepr Y K nY] :

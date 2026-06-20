@@ -1,5 +1,7 @@
 import Mathlib.Data.Fin.Basic
+import Mathlib.Data.List.TakeDrop
 import Mathlib.Tactic
+import NumLean.Interfaces.SetElem
 
 set_option linter.unnecessarySimpa false
 
@@ -20,11 +22,11 @@ namespace Profile
   | .leaf => 1
   | .prod left right => left.size + right.size
 
-/-- Product of profiles, replacing each leaf of the second profile by the first profile. -/
-@[inline] def mul (p q : Profile) : Profile :=
+/-- Tensorial product of profiles, replacing each leaf of the second profile by the first profile. -/
+@[inline] def tmul (p q : Profile) : Profile :=
   match q with
   | .leaf => p
-  | .prod q₁ q₂ => .prod (mul p q₁) (mul p q₂)
+  | .prod q₁ q₂ => .prod (tmul p q₁) (tmul p q₂)
 
 /-- `p.Refines q` means that `q` is obtained from `p` by collapsing subtrees. -/
 class inductive Refines : Profile → Profile → Type where
@@ -32,8 +34,70 @@ class inductive Refines : Profile → Profile → Type where
   | prod {p₁ p₂ q₁ q₂ : Profile} (h₁ : Refines p₁ q₁) (h₂ : Refines p₂ q₂) :
       Refines (.prod p₁ p₂) (.prod q₁ q₂)
 
-instance : Mul Profile where
-  mul := mul
+/-- `p.StrictlyRefines q` means that `q` is obtained from `p` by at least one real collapse.
+
+Unlike `Refines`, there is no reflexive constructor: `.leaf` does not strictly refine itself, and
+products strictly refine products only when at least one component strictly refines its target. -/
+class inductive StrictlyRefines : Profile → Profile → Type where
+  | leaf (p₁ p₂ : Profile) : StrictlyRefines (.prod p₁ p₂) .leaf
+  | prodLeft {p₁ p₂ q₁ q₂ : Profile} (h₁ : StrictlyRefines p₁ q₁) (h₂ : Refines p₂ q₂) :
+      StrictlyRefines (.prod p₁ p₂) (.prod q₁ q₂)
+  | prodRight {p₁ p₂ q₁ q₂ : Profile} (h₁ : Refines p₁ q₁) (h₂ : StrictlyRefines p₂ q₂) :
+      StrictlyRefines (.prod p₁ p₂) (.prod q₁ q₂)
+
+@[reducible] def StrictlyRefines.toRefines {p q : Profile} : p.StrictlyRefines q → p.Refines q
+  | .leaf p₁ p₂ => .leaf (.prod p₁ p₂)
+  | .prodLeft h₁ h₂ => .prod h₁.toRefines h₂
+  | .prodRight h₁ h₂ => .prod h₁ h₂.toRefines
+
+instance (priority := low) {p q : Profile} [h : p.StrictlyRefines q] : p.Refines q :=
+  h.toRefines
+
+instance {p₁ p₂ : Profile} : (Profile.prod p₁ p₂).StrictlyRefines .leaf :=
+  .leaf p₁ p₂
+
+instance {p₁ p₂ q₁ q₂ : Profile} [h₁ : p₁.StrictlyRefines q₁] [h₂ : p₂.Refines q₂] :
+    (Profile.prod p₁ p₂).StrictlyRefines (Profile.prod q₁ q₂) :=
+  .prodLeft h₁ h₂
+
+instance {p₁ p₂ q₁ q₂ : Profile} [h₁ : p₁.Refines q₁] [h₂ : p₂.StrictlyRefines q₂] :
+    (Profile.prod p₁ p₂).StrictlyRefines (Profile.prod q₁ q₂) :=
+  .prodRight h₁ h₂
+
+theorem not_strictlyRefines_self (p : Profile) : p.StrictlyRefines p → False := by
+  induction p with
+  | leaf =>
+      intro h
+      cases h
+  | prod p₁ p₂ ih₁ ih₂ =>
+      intro h
+      cases h with
+      | prodLeft h₁ _ => exact ih₁ h₁
+      | prodRight _ h₂ => exact ih₂ h₂
+
+/-- Decide whether `p` refines `q`, returning the refinement proof when it does. -/
+def refines? : (p q : Profile) → Option (p.Refines q)
+  | p, .leaf => some (.leaf p)
+  | .leaf, .prod _ _ => none
+  | .prod p₁ p₂, .prod q₁ q₂ =>
+      match refines? p₁ q₁, refines? p₂ q₂ with
+      | some h₁, some h₂ => some (.prod h₁ h₂)
+      | _, _ => none
+
+/-- All profiles obtained by coarsening `p`, including `.leaf` and `p` itself. -/
+def allCoarsenings : Profile → Array Profile
+  | .leaf => #[.leaf]
+  | .prod p₁ p₂ => Id.run do
+      let ps₁ := allCoarsenings p₁
+      let ps₂ := allCoarsenings p₂
+      let mut ps := #[.leaf]
+      for q₁ in ps₁ do
+        for q₂ in ps₂ do
+          ps := ps.push (.prod q₁ q₂)
+      return ps
+
+-- instance : Mul Profile where
+--   mul := mul
 
 instance {q : Profile} : q.Refines .leaf := .leaf q
 
@@ -48,13 +112,13 @@ theorem size_prod (left right : Profile) :
     (Profile.prod left right).size = left.size + right.size := rfl
 
 @[simp]
-theorem mul_leaf (p : Profile) : p * .leaf = p := rfl
+theorem mul_leaf (p : Profile) : p.tmul .leaf = p := rfl
 
 @[simp]
-theorem mul_prod (p q r : Profile) : p * .prod q r = .prod (p * q) (p * r) := rfl
+theorem mul_prod (p q r : Profile) : p.tmul (.prod q r) = .prod (p.tmul q) (p.tmul r) := rfl
 
 @[simp]
-theorem leaf_mul (p : Profile) : .leaf * p = p := by
+theorem leaf_mul (p : Profile) : (Profile.leaf).tmul p = p := by
   induction p with
   | leaf => rfl
   | prod p q hp hq => simp [hp, hq]
@@ -76,21 +140,6 @@ inductive HTuple (α : Type u) : HTuple.Profile → Type u where
   deriving Repr
 
 namespace HTuple
-
-/-- Types that can be converted to a homogeneous hierarchical tuple. -/
-class ToHTuple (P : Type u) (α : outParam (Type v)) (p : outParam Profile) where
-  toHTuple : P → HTuple α p
-
-export ToHTuple (toHTuple)
-
-instance (priority := low) {α : Type u} : ToHTuple α α .leaf where
-  toHTuple x := .leaf x
-
-instance {P : Type u} {Q : Type v} {α : Type w} {p q : Profile}
-    [ToHTuple P α p] [ToHTuple Q α q] : ToHTuple (P × Q) α (.prod p q) where
-  toHTuple
-    | (x, y) => HTuple.prod (toHTuple x) (toHTuple y)
-
 
 declare_syntax_cat htuple_stx (behavior := both)
 syntax term : htuple_stx
@@ -165,6 +214,60 @@ macro_rules
   | `($(_) hp($x:htuple_profile_stx) hp($y:htuple_profile_stx)) => `(hp(($x), $y))
   | _ => throw ()
 
+@[coe]
+def toScalar (x : HTuple α .leaf) : α := match x with | .leaf x => x
+
+instance : CoeOut (HTuple α .leaf) α := ⟨toScalar⟩
+instance : Coe α (HTuple α .leaf) := ⟨.leaf⟩
+
+@[simp]
+theorem leaf_toScalar (a : α) : (HTuple.leaf a).toScalar = a := rfl
+
+@[simp]
+theorem leaf_toScalar_eta (x : HTuple α .leaf) : HTuple.leaf x.toScalar = x := by
+  cases x
+  rfl
+
+@[simp]
+theorem coe_leaf (a : α) : ((HTuple.leaf a : HTuple α .leaf) : α) = a := rfl
+
+@[simp]
+theorem leaf_coe (x : HTuple α .leaf) : (HTuple.leaf (x : α) : HTuple α .leaf) = x := by
+  cases x
+  rfl
+
+theorem toScalar_injective : Function.Injective (toScalar : HTuple α .leaf → α) := by
+  intro x y h
+  cases x
+  cases y
+  simp_all
+
+/-- We provide this instance because when we write `xs[i]` and `i : HTuple Nat .leaf` the index
+does not get coerced to `Nat`. This instance will force `xs[i]` to be turned into `xs[i.toScalar]`.-/
+@[reducible]
+instance [GetElem cont idx elem dom] : GetElem cont (HTuple idx .leaf) elem (fun xs i => dom xs i) where
+  getElem xs i h := xs[(i : idx)]'h
+
+/-- Normalize `getElem` from index type `HTuple idx .leaf` to `idx`. -/
+@[simp]
+theorem getElem_leaf [GetElem cont idx elem dom] (xs : cont) (i : HTuple idx .leaf) (h : dom xs i) :
+  getElem xs i h = getElem xs i.toScalar h := rfl
+
+/-- We provide this instance because when we write `xs[i] := ...` and `i : HTuple Nat .leaf` the
+index does not get coerced to `Nat`. This instance will force `xs[i] := ...` to be turned into
+`xs[i.toScalar] := ...`.-/
+@[reducible]
+instance [inst : SetElem cont idx elem dom] :
+    SetElem cont (HTuple idx .leaf) elem (fun xs i => dom xs i) where
+  setElem xs i x h := setElem xs (i : idx) x h
+  setElem_valid := inst.setElem_valid
+
+/-- Normalize `getElem` from index type `HTuple idx .leaf` to `idx`. -/
+@[simp]
+theorem setElem_leaf [SetElem cont idx elem dom]
+    (xs : cont) (i : HTuple idx .leaf) (x : elem) (h : dom xs i) :
+  setElem xs i x h = setElem xs i.toScalar x h := rfl
+
 /-- Map a function over every leaf of a hierarchical tuple. -/
 @[inline, specialize] def map {α : Type u} {β : Type v} (f : α → β) : {p : Profile} → HTuple α p → HTuple β p
   | .leaf, .leaf value => .leaf (f value)
@@ -200,10 +303,86 @@ abbrev zipWith := @map₂
     (idx : HTuple α p) (stride : HTuple β p) : β :=
   innerWith (fun n d => n • d) idx stride
 
+/-- Number of elements in the bounded rectangle `0...shape`. -/
+@[inline] def numel {p : Profile} : HTuple Nat p → Nat
+  | .leaf n => n
+  | .prod l r => l.numel * r.numel
+
+/-- Row-major stride for `0...shape`, with the rightmost coordinate innermost. -/
+@[inline] def rowMajorStride : {p : Profile} → HTuple Nat p → HTuple Nat p
+  | .leaf, .leaf _ => .leaf 1
+  | .prod _ _, .prod l r => .prod ((rowMajorStride l).map (fun x => r.numel * x)) (rowMajorStride r)
+
+/-- Row-major index inside `0...shape`, with the rightmost coordinate innermost. -/
+@[inline] def rowMajorIndex : {p : Profile} → HTuple Nat p → HTuple Nat p → Nat
+  | .leaf, .leaf i, .leaf _ => i
+  | .prod _ _, .prod il ir, .prod sl sr => rowMajorIndex ir sr + sr.numel * rowMajorIndex il sl
+
+theorem inner_map_mul_left (n : Nat) {p : Profile} (i stride : HTuple Nat p) :
+    i.inner (stride.map (fun x => n * x)) = n * i.inner stride := by
+  induction p with
+  | leaf =>
+      cases i with | leaf i =>
+      cases stride with | leaf stride =>
+      change i * (n * stride) = n * (i * stride)
+      ac_rfl
+  | prod p q hp hq =>
+      cases i with | prod il ir =>
+      cases stride with | prod sl sr =>
+      change il.inner (sl.map (fun x => n * x)) + ir.inner (sr.map (fun x => n * x)) =
+        n * (il.inner sl + ir.inner sr)
+      rw [hp il sl, hq ir sr, Nat.left_distrib]
+
+/-- Recursive row-major indexing agrees with evaluating against the row-major stride. -/
+theorem rowMajorIndex_eq_inner_rowMajorStride {p : Profile} (i shape : HTuple Nat p) :
+    rowMajorIndex i shape = i.inner (rowMajorStride shape) := by
+  induction p with
+  | leaf =>
+      cases i with | leaf i =>
+      cases shape with | leaf shape =>
+      simp [rowMajorIndex, rowMajorStride, inner, innerWith]
+  | prod p q hp hq =>
+      cases i with | prod il ir =>
+      cases shape with | prod sl sr =>
+      change rowMajorIndex ir sr + sr.numel * rowMajorIndex il sl =
+        il.inner ((rowMajorStride sl).map (fun x => sr.numel * x)) + ir.inner (rowMajorStride sr)
+      rw [hp il sl, hq ir sr, inner_map_mul_left]
+      omega
+
 /-- The leaf values of a hierarchical tuple in left-to-right order. -/
 @[inline] def toList {α : Type u} : {p : Profile} → HTuple α p → List α
   | .leaf, .leaf value => [value]
   | .prod _ _, .prod fst snd => fst.toList ++ snd.toList
+
+@[simp]
+theorem length_toList {α : Type u} : {p : Profile} → (x : HTuple α p) → x.toList.length = p.size
+  | .leaf, .leaf _ => rfl
+  | .prod _ _, .prod fst snd => by
+      simp [toList, length_toList fst, length_toList snd]
+
+theorem toList_injective {α : Type u} {p : Profile} :
+    Function.Injective (fun x : HTuple α p => x.toList) := by
+  induction p with
+  | leaf =>
+      intro x y h
+      cases x with | leaf x =>
+      cases y with | leaf y =>
+      simp [toList] at h
+      exact congrArg HTuple.leaf h
+  | prod p q hp hq =>
+      intro x y h
+      cases x with | prod x₀ x₁ =>
+      cases y with | prod y₀ y₁ =>
+      have h₀ : x₀.toList = y₀.toList := by
+        have ht := congrArg (fun xs : List α => xs.take p.size) h
+        simpa [toList, length_toList x₀, length_toList y₀] using ht
+      have h₁ : x₁.toList = y₁.toList := by
+        have hd := congrArg (fun xs : List α => xs.drop p.size) h
+        simpa [toList, length_toList x₀, length_toList y₀] using hd
+      exact congrArg₂ HTuple.prod (hp h₀) (hq h₁)
+
+/-- Remove `Profile` from the type. Useful if you need to store `HTuple` in `Array` or `List` -/
+def eraseProfile {α p} (x : HTuple α p) : (p' : HTuple.Profile) × HTuple α p' := ⟨p, x⟩
 
 @[simp]
 theorem map_leaf {α : Type u} {β : Type v} (f : α → β) (value : α) :
@@ -268,9 +447,9 @@ namespace Index
 /-- Convert a hierarchical tuple leaf selector to a flat `Fin p.size`. -/
 @[inline] def toFin : {p : Profile} → Index p → Fin p.size
   | .leaf, .leaf => ⟨0, by simp [Profile.size]⟩
-  | .prod _ _, .left i => ⟨i.toFin, by
+  | .prod _ _, .left i => ⟨(toFin i).1, by
       exact Nat.lt_of_lt_of_le i.toFin.isLt (Nat.le_add_right _ _)⟩
-  | .prod l _, .right i => ⟨l.size + i.toFin, by
+  | .prod l _, .right i => ⟨l.size + i.toFin.1, by
       exact Nat.add_lt_add_left i.toFin.isLt l.size⟩
 
 /-- Convert a flat leaf index to a hierarchical tuple leaf selector. -/
@@ -403,13 +582,13 @@ theorem ofFn_get {α : Type u} {p : Profile} (x : HTuple α p) :
 
 /-- Flatten an `HTuple` of `HTuple`s by multiplying their profiles. -/
 @[inline] def join {α : Type u} {p : Profile} : {q : Profile} →
-    HTuple (HTuple α p) q → HTuple α (p * q)
+    HTuple (HTuple α p) q → HTuple α (p.tmul q)
   | .leaf, .leaf x => x
   | .prod _ _, .prod x₁ x₂ => .prod x₁.join x₂.join
 
 /-- Split an `HTuple` over a product profile into an `HTuple` of `HTuple`s. -/
 @[inline] def split {α : Type u} {p : Profile} : {q : Profile} →
-    HTuple α (p * q) → HTuple (HTuple α p) q
+    HTuple α (p.tmul q) → HTuple (HTuple α p) q
   | .leaf, x => .leaf x
   | .prod _ _, .prod x₁ x₂ => .prod x₁.split x₂.split
 
@@ -428,11 +607,11 @@ theorem split_leaf {α : Type u} {p : Profile} (x : HTuple α p) :
 
 @[simp]
 theorem split_prod {α : Type u} {p q r : Profile}
-    (x : HTuple α (p * q)) (y : HTuple α (p * r)) :
+    (x : HTuple α (p.tmul q)) (y : HTuple α (p.tmul r)) :
     split (q := .prod q r) (.prod x y) = .prod x.split y.split := rfl
 
 @[simp]
-theorem join_split {α : Type u} {p q : Profile} (x : HTuple α (p * q)) :
+theorem join_split {α : Type u} {p q : Profile} (x : HTuple α (p.tmul q)) :
     join (split (p := p) (q := q) x) = x := by
   induction q with
   | leaf => rfl
@@ -449,7 +628,7 @@ theorem split_join {α : Type u} {p q : Profile} (x : HTuple (HTuple α p) q) :
 
 /-- Equivalence between nested tuples and tuples over product profiles. -/
 @[simps! apply symm_apply]
-def joinEquiv {α : Type u} (p q : Profile) : HTuple (HTuple α p) q ≃ HTuple α (p * q) where
+def joinEquiv {α : Type u} (p q : Profile) : HTuple (HTuple α p) q ≃ HTuple α (p.tmul q) where
   toFun := join
   invFun := split
   left_inv := split_join

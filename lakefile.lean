@@ -1,6 +1,16 @@
 import Lake
 open System Lake DSL
 
+partial def collectCFiles (dir : FilePath) : IO (Array FilePath) := do
+  let entries ← dir.readDir
+  let mut files := #[]
+  for entry in entries do
+    if (← entry.path.isDir) then
+      files := files ++ (← collectCFiles entry.path)
+    else if entry.path.extension == some "c" then
+      files := files.push entry.path
+  return files
+
 package «NumLean» where
   version := v!"0.1.0"
   keywords := #["math"]
@@ -9,12 +19,7 @@ require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.30.0"
 
 target libNumLeanNative pkg : Dynlib := do
-  let entries ← (pkg.dir / "c").readDir
-  let cFiles := entries.filterMap fun entry =>
-    if entry.path.extension == some "c" then
-      some entry.path
-    else
-      none
+  let cFiles ← collectCFiles (pkg.dir / "c")
   let objJobs ← cFiles.mapM fun cFile => do
     let srcJob ← inputFile cFile true
     let oFile := (pkg.buildDir / "c" / cFile.fileName.get!).withExtension "o"
@@ -43,9 +48,8 @@ lean_exe forAllBenchmark where
   supportInterpreter := true
 
 @[test_driver]
-lean_exe tests where
-  root := `Tests
-  supportInterpreter := true
+lean_lib tests where
+  roots := #[`Tests]
   moreLinkLibs := #[libNumLeanNative]
 
 lean_lib Tests.Float32ArrayEval where
@@ -64,5 +68,7 @@ lean_lib Tests.VectorRangeIterators where
 lean_lib Tests.TupleOrderNotation where
 
 lean_lib Tests.ForAllNotation where
+
+lean_lib Tests.CCompiler where
 
 lean_lib Tests where

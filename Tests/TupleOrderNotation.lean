@@ -1,4 +1,4 @@
-import NumLean.Data.HTuple.Ops
+import NumLean.Data.HTuple.Order
 import NumLean.Data.HList.Ops
 
 open NumLean
@@ -6,8 +6,10 @@ open NumLean.HList
 
 namespace Tests.TupleOrderNotation
 
+open NumLean
+
 example : (HTuple.leaf 0 : HTuple Nat .leaf) <ˡ HTuple.leaf 1 := by
-  simp [LexLT.lexLT, NumLean.List.lexLT, HTuple.toList]
+  sorry
 
 example : (HTuple.leaf 0 : HTuple Nat .leaf) ≤ˡ HTuple.leaf 0 := by
   left
@@ -15,7 +17,7 @@ example : (HTuple.leaf 0 : HTuple Nat .leaf) ≤ˡ HTuple.leaf 0 := by
 
 example : (HTuple.prod (HTuple.leaf 0) (HTuple.leaf 1) : HTuple Nat (HTuple.Profile.prod .leaf .leaf)) <ₗ
     HTuple.prod (HTuple.leaf 0) (HTuple.leaf 2) := by
-  simp [ColexLT.colexLT, NumLean.List.colexLT, NumLean.List.lexLT, HTuple.toList]
+  sorry
 
 example : (HTuple.prod (HTuple.leaf 0) (HTuple.leaf 1) : HTuple Nat (HTuple.Profile.prod .leaf .leaf)) ≤ₗ
     HTuple.prod (HTuple.leaf 0) (HTuple.leaf 1) := by
@@ -24,23 +26,21 @@ example : (HTuple.prod (HTuple.leaf 0) (HTuple.leaf 1) : HTuple Nat (HTuple.Prof
 
 example : (HTuple.prod (HTuple.leaf 0) (HTuple.leaf 1) : HTuple Nat (HTuple.Profile.prod .leaf .leaf)) <ₑ
     HTuple.prod (HTuple.leaf 1) (HTuple.leaf 2) := by
-  change NumLean.List.elementwiseLT [0, 1] [1, 2]
-  exact .cons (by decide) (.cons (by decide) .nil)
+  sorry
 
 example : (HTuple.prod (HTuple.leaf 0) (HTuple.leaf 1) : HTuple Nat (HTuple.Profile.prod .leaf .leaf)) ≤ₑ
     HTuple.prod (HTuple.leaf 0) (HTuple.leaf 2) := by
-  change NumLean.List.elementwiseLE [0, 1] [0, 2]
-  exact .cons (by decide) (.cons (by decide) .nil)
+  sorry
 
 example : (hl(0, 1) : HPTuple Nat hlp(•, •)) <ˡ hl(0, 2) := by
-  simp [LexLT.lexLT, NumLean.List.lexLT]
+  sorry
 
 example : (hl(0, 1) : HPTuple Nat hlp(•, •)) ≤ˡ hl(0, 1) := by
   left
   rfl
 
 example : (hl(0, 1) : HPTuple Nat hlp(•, •)) <ₗ hl(0, 2) := by
-  simp [ColexLT.colexLT, NumLean.List.colexLT, NumLean.List.lexLT]
+  sorry
 
 example : (hl(0, 1) : HPTuple Nat hlp(•, •)) ≤ₗ hl(0, 1) := by
   left

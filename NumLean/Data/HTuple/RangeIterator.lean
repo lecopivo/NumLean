@@ -1,4 +1,4 @@
-import NumLean.Data.TensorIndex.Basic
+import NumLean.Data.HTuple.Range
 import NumLean.Data.RangeEnum
 import Std.Data.Iterators.Producers.Range
 
@@ -9,17 +9,6 @@ namespace HTuple
 namespace Range
 
 open Std Std.PRange Std.Iterators
-
-/-- Pointwise membership for half-open hierarchical tuple ranges. -/
-@[inline] def Valid {α : Type u} [LE α] [LT α] : {p : Profile} →
-    HTuple α p → HTuple α p → HTuple α p → Prop
-  | .leaf, .leaf lo, .leaf hi, .leaf idx => idx ∈ (lo...hi)
-  | .prod _ _, .prod lo₀ lo₁, .prod hi₀ hi₁, .prod idx₀ idx₁ =>
-      Valid lo₀ hi₀ idx₀ ∧ Valid lo₁ hi₁ idx₁
-
-instance instMembershipRcoHTuple {α : Type u} [LE α] [LT α] {p : Profile} :
-    Membership (HTuple α p) (Std.Rco (HTuple α p)) where
-  mem r idx := Valid r.lower r.upper idx
 
 /-- Leaf loop for generic half-open scalar ranges.
 
@@ -64,7 +53,7 @@ attribute [always_inline, inline, specialize] ForInProfile.forInRangeStep
   forInRangeStep r init f :=
     match r with
     | ⟨.leaf lo, .leaf hi⟩ =>
-        forInLeafStep lo hi init fun idx hidx acc => f (.leaf idx) hidx acc
+        forInLeafStep lo hi init fun idx hidx acc => f (.leaf idx) (mem_iff_Valid.2 hidx) acc
 
 @[always_inline, inline] instance {p q : Profile} [ForInProfile p] [ForInProfile q] :
     ForInProfile (.prod p q) where
@@ -75,7 +64,8 @@ attribute [always_inline, inline, specialize] ForInProfile.forInRangeStep
         let r₁ : Std.Rco (HTuple _ q) := lo₁...hi₁
         ForInProfile.forInRangeStep r₀ init fun idx₀ hidx₀ acc =>
           ForInProfile.forInRangeStep r₁ acc fun idx₁ hidx₁ acc =>
-            f (.prod idx₀ idx₁) ⟨hidx₀, hidx₁⟩ acc
+            f (.prod idx₀ idx₁)
+              (mem_iff_Valid.2 ⟨mem_iff_Valid.1 hidx₀, mem_iff_Valid.1 hidx₁⟩) acc
 
 @[always_inline, inline, specialize] def forInRange {α : Type u} [LE α] [LT α] [DecidableLT α]
     [UpwardEnumerable α] [LawfulUpwardEnumerable α] [LawfulUpwardEnumerableLE α]
@@ -108,7 +98,7 @@ attribute [always_inline, inline, specialize] FoldProfile.foldRange
     | ⟨.leaf lo, .leaf hi⟩ => Id.run do
         let mut acc := init
         for hidx : idx in lo...hi do
-          acc := f (.leaf idx) hidx acc
+          acc := f (.leaf idx) (mem_iff_Valid.2 hidx) acc
         return acc
 
 @[always_inline, inline] instance {p q : Profile} [FoldProfile p] [FoldProfile q] :
@@ -120,7 +110,8 @@ attribute [always_inline, inline, specialize] FoldProfile.foldRange
         let r₁ : Std.Rco (HTuple _ q) := lo₁...hi₁
         FoldProfile.foldRange r₀ init fun idx₀ hidx₀ acc =>
           FoldProfile.foldRange r₁ acc fun idx₁ hidx₁ acc =>
-            f (.prod idx₀ idx₁) ⟨hidx₀, hidx₁⟩ acc
+            f (.prod idx₀ idx₁)
+              (mem_iff_Valid.2 ⟨mem_iff_Valid.1 hidx₀, mem_iff_Valid.1 hidx₁⟩) acc
 
 @[always_inline, inline, specialize] def foldRange {α : Type u} [LE α] [LT α] [DecidableLT α]
     [UpwardEnumerable α] [LawfulUpwardEnumerable α] [LawfulUpwardEnumerableLE α]
@@ -139,73 +130,6 @@ instance instForIn'RcoHTuple {α : Type u} [LE α] [LT α] [DecidableLT α]
     ForIn' m (Std.Rco (HTuple α p)) (HTuple α p) inferInstance where
   forIn' r init f :=
     forInRange r init f
-
-/-- Cardinality of a half-open natural tuple range. -/
-@[inline] def card : {p : Profile} → HTuple Nat p → HTuple Nat p → Nat
-  | .leaf, .leaf lo, .leaf hi => hi - lo
-  | .prod _ _, .prod lo₀ lo₁, .prod hi₀ hi₁ => card lo₀ hi₀ * card lo₁ hi₁
-
-/-- Row-major linear index inside a natural tuple range, with the rightmost coordinate fastest. -/
-@[inline] def linearIndex : {p : Profile} → HTuple Nat p → HTuple Nat p → HTuple Nat p → Nat
-  | .leaf, .leaf lo, _hi, .leaf idx => idx - lo
-  | .prod _ _, .prod lo₀ lo₁, .prod hi₀ hi₁, .prod idx₀ idx₁ =>
-      linearIndex lo₁ hi₁ idx₁ + card lo₁ hi₁ * linearIndex lo₀ hi₀ idx₀
-
-/-- Structural list specification for natural tuple ranges, in row-major order. -/
-@[inline] def toList : {p : Profile} → HTuple Nat p → HTuple Nat p → List (HTuple Nat p)
-  | .leaf, .leaf lo, .leaf hi => (List.range' lo (hi - lo)).map HTuple.leaf
-  | .prod _ _, .prod lo₀ lo₁, .prod hi₀ hi₁ =>
-      (toList lo₀ hi₀).flatMap fun idx₀ =>
-        (toList lo₁ hi₁).map fun idx₁ => HTuple.prod idx₀ idx₁
-
-@[simp] theorem card_leaf (lo hi : Nat) : card (.leaf lo) (.leaf hi) = hi - lo := rfl
-
-@[simp] theorem card_prod {p q : Profile}
-    (lo₀ hi₀ : HTuple Nat p) (lo₁ hi₁ : HTuple Nat q) :
-    card (.prod lo₀ lo₁) (.prod hi₀ hi₁) = card lo₀ hi₀ * card lo₁ hi₁ := rfl
-
-@[simp] theorem toList_leaf (lo hi : Nat) :
-    toList (.leaf lo) (.leaf hi) = (List.range' lo (hi - lo)).map HTuple.leaf := rfl
-
-@[simp] theorem toList_prod {p q : Profile}
-    (lo₀ hi₀ : HTuple Nat p) (lo₁ hi₁ : HTuple Nat q) :
-    toList (.prod lo₀ lo₁) (.prod hi₀ hi₁) =
-      (toList lo₀ hi₀).flatMap fun idx₀ =>
-        (toList lo₁ hi₁).map fun idx₁ => HTuple.prod idx₀ idx₁ := rfl
-
-theorem length_toList : {p : Profile} → (lo hi : HTuple Nat p) →
-    (toList lo hi).length = card lo hi
-  | .leaf, .leaf lo, .leaf hi => by simp
-  | .prod _ _, .prod lo₀ lo₁, .prod hi₀ hi₁ => by
-      simp [length_toList lo₀ hi₀, length_toList lo₁ hi₁]
-
-@[simp] theorem card_zero_shape {p : Profile} (shape : TensorIndex.Shape p) :
-    card 0 shape = TensorIndex.Shape.size shape := by
-  induction p with
-  | leaf => cases shape; rfl
-  | prod p q hp hq =>
-      cases shape with
-      | prod shape₀ shape₁ => simp [hp, hq]
-
-theorem length_toList_zero_shape {p : Profile} (shape : TensorIndex.Shape p) :
-    (toList 0 shape).length = TensorIndex.Shape.size shape := by
-  rw [length_toList, card_zero_shape]
-
-theorem valid_zero_shape_iff_inBounds {p : Profile}
-    {shape : TensorIndex.Shape p} {idx : TensorIndex.TIndex Nat p} :
-    idx ∈ ((0 : HTuple Nat p)...shape) ↔ TensorIndex.TIndex.InBounds shape idx := by
-  induction p with
-  | leaf =>
-      cases shape with | leaf dim =>
-      cases idx with | leaf i =>
-      change (0 ≤ i ∧ i < dim) ↔ i < dim
-      omega
-  | prod p q hp hq =>
-      cases shape with | prod shape₀ shape₁ =>
-      cases idx with | prod idx₀ idx₁ =>
-      change (idx₀ ∈ ((0 : HTuple Nat p)...shape₀) ∧ idx₁ ∈ ((0 : HTuple Nat q)...shape₁)) ↔
-        TensorIndex.TIndex.InBounds shape₀ idx₀ ∧ TensorIndex.TIndex.InBounds shape₁ idx₁
-      rw [hp, hq]
 
 /-- Explicit indexed view of a natural tuple range. -/
 structure Enum (p : Profile) where
@@ -232,7 +156,7 @@ attribute [inline, specialize] EnumForInProfile.forInEnum
         ForIn'.forIn' (m := _) (ρ := Std.Rco Nat) (α := Nat) (lo...hi) init
           fun idx hidx acc =>
             let out : Nat × HTuple Nat .leaf := (idx - lo, .leaf idx)
-            f out ⟨hidx, rfl⟩ acc
+            f out ⟨mem_iff_Valid.2 hidx, rfl⟩ acc
 
 @[inline] instance {p q : Profile} [EnumForInProfile p] [EnumForInProfile q] :
     EnumForInProfile (.prod p q) where
@@ -254,7 +178,9 @@ attribute [inline, specialize] EnumForInProfile.forInEnum
                     let idx := HTuple.prod idx₀ idx₁
                     let out : Nat × HTuple Nat (.prod p q) :=
                       (linearIndex (.prod lo₀ lo₁) (.prod hi₀ hi₁) idx, idx)
-                    let step ← f out ⟨⟨hout₀.1, hout₁.1⟩, rfl⟩ acc
+                    let hidx : idx ∈ ((HTuple.prod lo₀ lo₁)...(HTuple.prod hi₀ hi₁)) :=
+                      mem_iff_Valid.2 ⟨mem_iff_Valid.1 hout₀.1, mem_iff_Valid.1 hout₁.1⟩
+                    let step ← f out ⟨hidx, rfl⟩ acc
                     match step with
                     | .done acc => pure (ForInStep.done (ForInStep.done acc))
                     | .yield acc => pure (ForInStep.yield (ForInStep.yield acc))
@@ -270,14 +196,6 @@ instance instForIn'Enum {p : Profile} [EnumForInProfile p]
     ForIn' m (Enum p) (Nat × HTuple Nat p) inferInstance where
   forIn' e init f :=
     EnumForInProfile.forInEnum e.range init f
-
-theorem enum_valid_zero_shape {p : Profile} {shape : TensorIndex.Shape p}
-    {out : Nat × TensorIndex.TIndex Nat p}
-    (h : out ∈ (Enum.mk ((0 : HTuple Nat p)...shape) : Enum p)) :
-    TensorIndex.TIndex.InBounds shape out.2 ∧
-      out.1 = linearIndex (0 : HTuple Nat p) shape out.2 := by
-  exact ⟨valid_zero_shape_iff_inBounds.mp h.1, h.2⟩
-
 
 end Range
 

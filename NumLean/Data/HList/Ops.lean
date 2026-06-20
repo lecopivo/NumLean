@@ -69,23 +69,23 @@ instance (priority := low) {R : Type u} {α : Type v} [SMul R α] {p : Profile} 
     SMul R (HPTuple α p) where
   smul r := HPTuple.map (fun x => r • x)
 
-instance {α : Type u} [LT α] {p : Profile} : LexLT (HPTuple α p) where
-  lexLT x y := NumLean.List.lexLT x.toList y.toList
+instance {α : Type u} [LT α] {p : Profile} : LT (LexOrder (HPTuple α p)) where
+  lt x y := NumLean.List.lexLT x.val.toList y.val.toList
 
-instance {α : Type u} [LT α] {p : Profile} : LexLE (HPTuple α p) where
-  lexLE x y := NumLean.List.lexLE x.toList y.toList
+instance {α : Type u} [LT α] {p : Profile} : LE (LexOrder (HPTuple α p)) where
+  le x y := NumLean.List.lexLE x.val.toList y.val.toList
 
-instance {α : Type u} [LT α] {p : Profile} : ColexLT (HPTuple α p) where
-  colexLT x y := NumLean.List.colexLT x.toList y.toList
+instance {α : Type u} [LT α] {p : Profile} : LT (ColexOrder (HPTuple α p)) where
+  lt x y := NumLean.List.colexLT x.val.toList y.val.toList
 
-instance {α : Type u} [LT α] {p : Profile} : ColexLE (HPTuple α p) where
-  colexLE x y := NumLean.List.colexLE x.toList y.toList
+instance {α : Type u} [LT α] {p : Profile} : LE (ColexOrder (HPTuple α p)) where
+  le x y := NumLean.List.colexLE x.val.toList y.val.toList
 
-instance {α : Type u} [LT α] {p : Profile} : ElementwiseLT (HPTuple α p) where
-  elementwiseLT x y := NumLean.List.elementwiseLT x.toList y.toList
+instance {α : Type u} [LT α] {p : Profile} : LT (ElementwiseOrder (HPTuple α p)) where
+  lt x y := NumLean.List.elementwiseLT x.val.toList y.val.toList
 
-instance {α : Type u} [LE α] {p : Profile} : ElementwiseLE (HPTuple α p) where
-  elementwiseLE x y := NumLean.List.elementwiseLE x.toList y.toList
+instance {α : Type u} [LE α] {p : Profile} : LE (ElementwiseOrder (HPTuple α p)) where
+  le x y := NumLean.List.elementwiseLE x.val.toList y.val.toList
 
 /-- The basis tuple whose selected leaf is `1` and all other leaves are `0`. -/
 def basis {α : Type u} [Zero α] [One α] {p : Profile} (i : Index p) : HPTuple α p :=

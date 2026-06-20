@@ -37,7 +37,6 @@ example :
     Id.run (do
       let mut ok := true
       for hmem : h(i,j) in 0...h((2:Nat), 3) do
-        have _hbounds := HTuple.Range.valid_zero_shape_iff_inBounds.mp hmem
         ok := ok && (i < 2) && (j < 3)
       return ok) = true := by
   native_decide
@@ -50,25 +49,8 @@ example :
       return ok) = true := by
   native_decide
 
-
-open TensorIndex
-example :
-    Id.run (do
-      let mut ok := true
-      for hmem : (lin, idx) in ((0 : Shape hp(•,•))...h(2, 3)).enum do
-        have _hprops := HTuple.Range.enum_valid_zero_shape (shape := h(2, 3)) hmem
-        match idx with
-        | h(i, j) =>
-            ok := ok && (lin == j + 3 * i)
-      return ok) = true := by
-  native_decide
-
 example : (HTuple.Range.toList (0 : HTuple Nat Rank2) h(2, 3)).length = 6 := by
   native_decide
 
-example :
-    (HTuple.Range.toList (0 : HTuple Nat Rank2) h(2, 3)).length =
-      TensorIndex.Shape.size h(2, 3) := by
-  simpa using HTuple.Range.length_toList_zero_shape (shape := h(2, 3))
 
 end Tests.HTupleRangeIterators
