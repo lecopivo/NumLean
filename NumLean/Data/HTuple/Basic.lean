@@ -309,12 +309,14 @@ abbrev zipWith := @map₂
   | .prod l r => l.numel * r.numel
 
 /-- Row-major stride for `0...shape`, with the rightmost coordinate innermost. -/
-@[inline] def rowMajorStride : {p : Profile} → HTuple Nat p → HTuple Nat p
+@[inline] def rowMajorStride {p : Profile} (shape : HTuple Nat p) : HTuple Nat p :=
+  match p, shape with
   | .leaf, .leaf _ => .leaf 1
   | .prod _ _, .prod l r => .prod ((rowMajorStride l).map (fun x => r.numel * x)) (rowMajorStride r)
 
 /-- Row-major index inside `0...shape`, with the rightmost coordinate innermost. -/
-@[inline] def rowMajorIndex : {p : Profile} → HTuple Nat p → HTuple Nat p → Nat
+@[inline] def rowMajorIndex {p : Profile} (x : HTuple Nat p) (shape : HTuple Nat p) : Nat :=
+  match p, x, shape with
   | .leaf, .leaf i, .leaf _ => i
   | .prod _ _, .prod il ir, .prod sl sr => rowMajorIndex ir sr + sr.numel * rowMajorIndex il sl
 
@@ -383,6 +385,22 @@ theorem toList_injective {α : Type u} {p : Profile} :
 
 /-- Remove `Profile` from the type. Useful if you need to store `HTuple` in `Array` or `List` -/
 def eraseProfile {α p} (x : HTuple α p) : (p' : HTuple.Profile) × HTuple α p' := ⟨p, x⟩
+
+/-- Left projection from a product-profile tuple. -/
+@[inline] def fst {α : Type u} {p q : Profile} : HTuple α (.prod p q) → HTuple α p
+  | .prod x _ => x
+
+/-- Right projection from a product-profile tuple. -/
+@[inline] def snd {α : Type u} {p q : Profile} : HTuple α (.prod p q) → HTuple α q
+  | .prod _ y => y
+
+@[simp]
+theorem fst_prod {α : Type u} {p q : Profile} (x : HTuple α p) (y : HTuple α q) :
+    fst (.prod x y) = x := rfl
+
+@[simp]
+theorem snd_prod {α : Type u} {p q : Profile} (x : HTuple α p) (y : HTuple α q) :
+    snd (.prod x y) = y := rfl
 
 @[simp]
 theorem map_leaf {α : Type u} {β : Type v} (f : α → β) (value : α) :

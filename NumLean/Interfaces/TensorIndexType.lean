@@ -59,9 +59,9 @@ instance {I nI} [IndexType I nI] : TensorIndexTypeOfRank I nI .leaf (.leaf nI) w
   compact_layout := sorry
   tensorEquiv := (IndexType.equivFin (I := I)).trans (FinHTuple.equivFin h(nI)).symm
   layout_eval_tensorEquiv_eq_toFin := by
-    intro i; simp -- [Layout.ofFin, FinHTuple.equivFin, FinHTuple.leafEquiv, IndexType.equivFin]
+    intro i; simp [FinHTuple.equivFin, IndexType.equivFin]
 
-instance {r} {shape : Shape r} : TensorIndexTypeOfRank (FinHTuple shape) shape.size r shape where
+instance {r} {shape : HTuple Nat r} : TensorIndexTypeOfRank (FinHTuple shape) shape.numel r shape where
   toIdx i := ((FinHTuple.equivFin shape) i).toIdx
   fromIdx i := (FinHTuple.equivFin shape).symm i.toFin
   left_inv := by intro h; sorry
@@ -71,11 +71,12 @@ instance {r} {shape : Shape r} : TensorIndexTypeOfRank (FinHTuple shape) shape.s
   left_inv' := by exact Equiv.leftInverse_symm (FinHTuple.equivFin shape)
   right_inv' := by exact Equiv.rightInverse_symm (FinHTuple.equivFin shape)
   size_eq_shape_size := by simp
-  layout := Layout.rowMajor shape
-  compact_layout := Layout.compact_rowMajor
+  layout := (FinHTupleMap.id shape).linearize
+  compact_layout := sorry
   tensorEquiv := Equiv.refl _
   layout_eval_tensorEquiv_eq_toFin := by
     intros; simp
+    simp [FinHTuple.equivFin_val_eq_linearIndex_zero]
     unfold Layout.eval Layout.rowMajor
     rw[FinHTuple.offset_rowMajorEquiv_eq_equivFin]
     simp only [zero_add]

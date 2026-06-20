@@ -22,7 +22,7 @@ theorem copySlice_in_dst_range
     (hf : dstMap.Injective) (i : Nat) (hi : i ∈ dstMap.rangeNat) :
     (copySlice src srcMap dst dstMap hf)[i]
     =
-    src[(srcMap (invFun dstMap i))] := by
+    src[srcMap (dstMap.rangeNatInv i hi)] := by
   classical
   unfold copySlice
   simp only [LawfulFold.fold_eq_foldl]
@@ -45,12 +45,14 @@ theorem copySlice_in_dst_range
   simp
   have h : ((Fold.entries.{0,0,0} 0...shape).filter (fun a : Subtype _ => dstMap a = i))
            =
-           [⟨invFun dstMap i, sorry⟩] := by sorry
+           [⟨(dstMap.rangeNatInv i hi).val, FinHTuple.val_mem_zero_shape (dstMap.rangeNatInv i hi)⟩] := by sorry
   conv => enter [1,1,3]; erw[h]
   simp only [List.foldl_cons, List.foldl_nil]
-  have h : dstMap (invFun dstMap i) = h(i) := by sorry
+  have h : dstMap (dstMap.rangeNatInv i hi) = h(i) := by
+    apply HTuple.toScalar_injective
+    exact dstMap.eval_rangeNatInv i hi
   conv => enter [1,1,2]; rw[h]
-  simp only [HTuple.leaf_toScalar, HTuple.natCast_leaf, Vector.getElem_set_self]
+  simp only [HTuple.leaf_toScalar, Vector.getElem_set_self]
 
 theorem copySlice_out_dst_range
     {K n m r} {shape : HTuple Nat r}

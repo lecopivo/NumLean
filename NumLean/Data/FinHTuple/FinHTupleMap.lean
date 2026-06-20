@@ -28,6 +28,7 @@ def evalFin (f : FinHTupleMap src dst) (i : FinHTuple src) : FinHTuple dst :=
 
 instance : CoeFun (FinHTupleMap src dst) (fun _ => HTuple Nat p → HTuple Nat q) := ⟨eval⟩
 
+-- todo: remove this
 instance : GetElem (FinHTupleMap src dst) (HTuple Nat p) (FinHTuple dst) (fun _ i => i <ₑ src) where
   getElem f i h := f.evalFin ⟨i, h⟩
 
@@ -48,7 +49,7 @@ theorem eval_lt (f : FinHTupleMap src dst) (i : HTuple Nat p) : i <ₑ src → f
 
 /-- Identity bounded affine map. -/
 def id (src : HTuple Nat p) : FinHTupleMap src src where
-  toHTupleMap := HTupleMap.id p
+  toHTupleMap := HTupleMap.id Nat p
   inBounds := by
     intro i hi
     simpa using hi
@@ -60,10 +61,16 @@ theorem id_eval (src : HTuple Nat p) (i : HTuple Nat p) : id src i = i := by
 /-- Compose bounded affine maps. -/
 def comp {mid : HTuple Nat q} {r : HTuple.Profile} {dst : HTuple Nat r}
     (g : FinHTupleMap mid dst) (f : FinHTupleMap src mid) : FinHTupleMap src dst where
-  toHTupleMap := HTupleMap.comp g.toHTupleMap f.toHTupleMap
+  toHTupleMap := g.toHTupleMap.comp f.toHTupleMap
   inBounds := by
     intro i hi
-    sorry
+    simpa only [HTupleMap.eval_comp] using g.inBounds (f i) (f.inBounds i hi)
+
+@[simp]
+theorem eval_comp {mid : HTuple Nat q} {r : HTuple.Profile} {dst : HTuple Nat r}
+    (g : FinHTupleMap mid dst) (f : FinHTupleMap src mid) (i : HTuple Nat p) :
+    g.comp f i = g (f i) := by
+  simp [comp, eval]
 
 /-- Compose bounded affine maps when the inner map is known to land in the outer source. -/
 def compCast {mid outerSrc : HTuple Nat q} {r : HTuple.Profile} {dst : HTuple Nat r}
@@ -73,7 +80,15 @@ def compCast {mid outerSrc : HTuple Nat q} {r : HTuple.Profile} {dst : HTuple Na
   toHTupleMap := HTupleMap.comp g.toHTupleMap f.toHTupleMap
   inBounds := by
     intro i hi
-    sorry
+    simpa only [HTupleMap.eval_comp] using g.inBounds (f i) (hcast i hi)
+
+@[simp]
+theorem eval_compCast {mid outerSrc : HTuple Nat q} {r : HTuple.Profile} {dst : HTuple Nat r}
+    (g : FinHTupleMap outerSrc dst) (f : FinHTupleMap src mid)
+    (hcast : ∀ i : HTuple Nat p, i <ₑ src → f.toHTupleMap.eval i <ₑ outerSrc)
+    (i : HTuple Nat p) :
+    g.compCast f hcast i = g (f i) := by
+  simp [compCast, eval]
 
 /-- Project the left component of the bounded destination. -/
 def fst {r : HTuple.Profile} {dst' : HTuple Nat r}
@@ -81,7 +96,16 @@ def fst {r : HTuple.Profile} {dst' : HTuple Nat r}
   toHTupleMap := HTupleMap.fst f.toHTupleMap
   inBounds := by
     intro i hi
-    sorry
+    have h := f.inBounds i hi
+    cases hf : f.toHTupleMap.eval i with | prod x y =>
+      simp [HTupleMap.eval_fst, hf] at h ⊢
+      exact h.1
+
+@[simp]
+theorem eval_fst {r : HTuple.Profile} {dst' : HTuple Nat r}
+    (f : FinHTupleMap src (HTuple.prod dst dst')) (i : HTuple Nat p) :
+    f.fst i = (f i).fst := by
+  simp [fst, eval]
 
 /-- Project the right component of the bounded destination. -/
 def snd {r : HTuple.Profile} {dst' : HTuple Nat r}
@@ -89,7 +113,16 @@ def snd {r : HTuple.Profile} {dst' : HTuple Nat r}
   toHTupleMap := HTupleMap.snd f.toHTupleMap
   inBounds := by
     intro i hi
-    sorry
+    have h := f.inBounds i hi
+    cases hf : f.toHTupleMap.eval i with | prod x y =>
+      simp [HTupleMap.eval_snd, hf] at h ⊢
+      exact h.2
+
+@[simp]
+theorem eval_snd {r : HTuple.Profile} {dst' : HTuple Nat r}
+    (f : FinHTupleMap src (HTuple.prod dst' dst)) (i : HTuple Nat p) :
+    f.snd i = (f i).snd := by
+  simp [snd, eval]
 
 /-- Pair two bounded affine maps with the same source. -/
 def prod {r : HTuple.Profile} {dst' : HTuple Nat r}
@@ -98,7 +131,13 @@ def prod {r : HTuple.Profile} {dst' : HTuple Nat r}
   toHTupleMap := HTupleMap.prod f.toHTupleMap g.toHTupleMap
   inBounds := by
     intro i hi
-    sorry
+    simpa [eval, HTupleMap.eval_prod] using And.intro (f.inBounds i hi) (g.inBounds i hi)
+
+@[simp]
+theorem eval_prod {r : HTuple.Profile} {dst' : HTuple Nat r}
+    (f : FinHTupleMap src dst) (g : FinHTupleMap src dst') (i : HTuple Nat p) :
+    f.prod g i = HTuple.prod (f i) (g i) := by
+  simp [prod, eval]
 
 /-- Constant bounded affine map. -/
 def const (src : HTuple Nat p) {dst : HTuple Nat q} (x : HTuple Nat q) (hx : x <ₑ dst) :
@@ -106,14 +145,24 @@ def const (src : HTuple Nat p) {dst : HTuple Nat q} (x : HTuple Nat q) (hx : x <
   toHTupleMap := HTupleMap.const p x
   inBounds := by
     intro i hi
-    sorry
+    simpa only [HTupleMap.eval_const] using hx
+
+@[simp]
+theorem eval_const (src : HTuple Nat p) {dst : HTuple Nat q}
+    (x : HTuple Nat q) (hx : x <ₑ dst) (i : HTuple Nat p) :
+    const src x hx i = x := by
+  simp [const, eval]
 
 /-- Linearize the bounded destination of a map into its row-major flat index. -/
 def linearize (f : FinHTupleMap src dst) : FinHTupleMap src h(dst.numel) where
-  toHTupleMap := HTupleMap.comp (HTupleMap.linearize dst) f.toHTupleMap
+  toHTupleMap := HTupleMap.comp (HTupleMap.rowMajorMap dst) f.toHTupleMap
   inBounds := by
     intro i hi
-    sorry
+    simpa only [HTupleMap.eval_comp] using HTupleMap.eval_rowMajorMap_lt_card (f.inBounds i hi)
+
+theorem eval_linearize (f : FinHTupleMap src dst) (i : HTuple Nat p) :
+   f.linearize i = HTuple.Range.linearIndex 0 dst (f i) := by
+  simp [linearize, eval, HTuple.Range.linearIndex_zero]
 
 
 /-- A bounded map has no collisions on its bounded domain. -/
@@ -139,7 +188,7 @@ def rangeNat {m} (f : FinHTupleMap src h(m)) : Set Nat :=
 @[grind →, grind_htuple_order →]
 theorem mem_range_lt {f : FinHTupleMap src dst} {i : HTuple Nat q} (h : i ∈ f.range) : i <ₑ dst := by
   rcases h with ⟨j, rfl⟩
-  sorry
+  exact f.inBounds j.val j.isLt
 
 @[simp, grind ←, grind_htuple_order ←]
 theorem mem_range_eval {f : FinHTupleMap src dst} {i : FinHTuple src} : f i ∈ f.range := by
@@ -148,7 +197,7 @@ theorem mem_range_eval {f : FinHTupleMap src dst} {i : FinHTuple src} : f i ∈ 
 @[grind →, grind_htuple_order →]
 theorem mem_rangeNat_lt {f : FinHTupleMap src h(m)} {i : Nat} (h : i ∈ f.rangeNat) : i < m := by
   rcases h with ⟨j, rfl⟩
-  sorry
+  simpa using f.inBounds j.val j.isLt
 
 @[simp, grind ←, grind_htuple_order ←]
 theorem mem_rangeNat_eval {m} {f : FinHTupleMap src h(m)} {i : FinHTuple src} :
@@ -159,31 +208,39 @@ theorem mem_rangeNat_eval {m} {f : FinHTupleMap src h(m)} {i : FinHTuple src} :
 theorem mem_range_iff_mem_rangeNat
     {p} {src : HTuple Nat p}
     (map : FinHTupleMap src h(n)) (i : Nat) :
-    h(i) ∈ map.range ↔ i ∈ map.rangeNat := by sorry
-
-open Function
-@[grind ←, grind_htuple_order ←]
-theorem invFun_lt_src (f : FinHTupleMap src dst) (i : HTuple Nat q) (hi : i ∈ f.range) :
-    (invFun f i) <ₑ src := by
-  let f' : FinHTuple src → FinHTuple dst := fun i => ⟨f i, f.2 i i.2⟩
-  have ⟨j, hj⟩ := hi
-  have : Nonempty (FinHTuple src) := .intro j
-  have h : ∀ x : FinHTuple src, invFun f (f x) = invFun f' (f' x) := by
-    sorry
-  simp[← hj, h]
-  grind only [grind_htuple_order]
-
-@[grind ←, grind_htuple_order ←]
-theorem invFun_lt_src_nat (f : FinHTupleMap src h(n)) (i : Nat) (hi : i ∈ f.rangeNat) :
-    (invFun f i) <ₑ src := by
-  fail_if_success grind only [grind_htuple_order]
-  have : h(i) ∈ f.range := by grind only [grind_htuple_order]
-  simp
-  grind only [grind_htuple_order]
+    h(i) ∈ map.range ↔ i ∈ map.rangeNat := by
+  constructor
+  · rintro ⟨j, hj⟩
+    refine ⟨j, ?_⟩
+    simpa using congrArg HTuple.toScalar hj
+  · rintro ⟨j, hj⟩
+    refine ⟨j, ?_⟩
+    apply HTuple.toScalar_injective
+    simpa using hj
 
 noncomputable
 def rangeInv (f : FinHTupleMap src dst) (i : HTuple Nat q) (h : i ∈ f.range) : FinHTuple src :=
   Classical.choose h
+
+noncomputable
+def rangeNatInv (f : FinHTupleMap src h(m)) (i : Nat) (h : i ∈ f.rangeNat) : FinHTuple src :=
+  Classical.choose h
+
+@[grind ←, grind_htuple_order ←]
+theorem rangeInv_lt_src (f : FinHTupleMap src dst) (i : HTuple Nat q) (h : i ∈ f.range) :
+    (f.rangeInv i h).val <ₑ src :=
+  (f.rangeInv i h).isLt
+
+@[grind ←, grind_htuple_order ←]
+theorem rangeNatInv_lt_src (f : FinHTupleMap src h(m)) (i : Nat) (h : i ∈ f.rangeNat) :
+    (f.rangeNatInv i h).val <ₑ src :=
+  (f.rangeNatInv i h).isLt
+
+open Function in
+theorem invFun_evalFin_lt_src [Nonempty (FinHTuple src)]
+    (f : FinHTupleMap src dst) (i : FinHTuple dst) :
+    (invFun f.evalFin i).val <ₑ src :=
+  (invFun f.evalFin i).isLt
 
 open Function in
 theorem eval_invFun (f : FinHTupleMap src dst) (i : HTuple Nat q) (h : i ∈ Set.range f) :
@@ -194,10 +251,20 @@ theorem eval_rangeInv (f : FinHTupleMap src dst) (i : HTuple Nat q) (h : i ∈ f
     f (f.rangeInv i h) = i := by
   exact Classical.choose_spec h
 
+theorem eval_rangeNatInv (f : FinHTupleMap src h(m)) (i : Nat) (h : i ∈ f.rangeNat) :
+    (f (f.rangeNatInv i h) : Nat) = i := by
+  exact Classical.choose_spec h
+
 theorem rangeInv_eval (f : FinHTupleMap src dst) (i : FinHTuple src) (h : f.Injective) :
     f.rangeInv (f i) (by simp) = i := by
   apply h
   exact f.eval_rangeInv (f i) (by simp)
+
+theorem rangeNatInv_eval (f : FinHTupleMap src h(m)) (i : FinHTuple src) (h : f.Injective) :
+    f.rangeNatInv (f i) (by simp) = i := by
+  apply h
+  apply HTuple.toScalar_injective
+  simpa using f.eval_rangeNatInv (f i) (by simp)
 
 -- -- is this even true? probably yes as we are working with Nat
 -- /-- Bounded affine maps are equal when their underlying affine maps agree on all bounded inputs. -/

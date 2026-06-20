@@ -4,6 +4,14 @@ namespace NumLean
 
 namespace HTuple
 
+private theorem sub_zero_nat {p : Profile} (x : HTuple Nat p) : x - 0 = x := by
+  induction p with
+  | leaf =>
+      cases x with | leaf x => simp
+  | prod p q hp hq =>
+      cases x with | prod x₀ x₁ =>
+      simp [hp, hq]
+
 namespace Range
 
 /-- Pointwise membership for half-open hierarchical tuple ranges. -/
@@ -68,6 +76,18 @@ theorem mem_iff_Valid {p : Profile} [LE α] [LT α]
     toList (.prod lo₀ lo₁) (.prod hi₀ hi₁) =
       (toList lo₀ hi₀).flatMap fun idx₀ =>
         (toList lo₁ hi₁).map fun idx₁ => HTuple.prod idx₀ idx₁ := rfl
+
+theorem linearIndex_zero {p : Profile} (shape idx : HTuple Nat p) :
+    linearIndex 0 shape idx = idx.rowMajorIndex shape := by
+  induction p with
+  | leaf =>
+      cases shape with | leaf shape =>
+      cases idx with | leaf idx =>
+      simp [linearIndex, HTuple.rowMajorIndex]
+  | prod p q hp hq =>
+      cases shape with | prod shape₀ shape₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      simp [linearIndex, HTuple.rowMajorIndex, sub_zero_nat]
 
 theorem length_toList : {p : Profile} → (lo hi : HTuple Nat p) →
     (toList lo hi).length = card lo hi

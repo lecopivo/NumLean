@@ -1,4 +1,5 @@
 import NumLean.Data.HTuple.Range
+import NumLean.Data.HTuple.Algebra
 
 namespace NumLean
 
@@ -16,60 +17,121 @@ variable {p q r : HTuple.Profile}
 def eval [Zero J] [Add J] [SMul I J] (f : HTupleMap J p q) (x : HTuple I p) : HTuple J q :=
   f.offset + x.inner f.stride
 
+@[simp]
+theorem eval_mk [Zero J] [Add J] [SMul I J]
+    (offset : HTuple J q) (strides : HTuple (HTuple J q) p) (x : HTuple I p) :
+    (HTupleMap.mk offset strides).eval x = offset + x.inner strides := rfl
+
+-- todo: do we want this even if we have to specialize to Nat?
+instance : CoeFun (HTupleMap Nat p q) (fun _ => HTuple Nat p → HTuple Nat q) := ⟨eval⟩
+
+variable (K) in
+/-- Identity affine `HTupleMap`. -/
+def id [Zero K] [One K] (p : HTuple.Profile) : HTupleMap K p p where
+  offset := 0
+  stride := HTuple.basisTuple p
+
+@[simp]
+theorem eval_id [Semiring I] (x : HTuple I p) : (id I p).eval x = x := by
+  simp [id, eval]
+
 /-- Compose affine `HTupleMap`s. -/
 def comp [Zero K] [Add K] [SMul J K] (g : HTupleMap K q r) (f : HTupleMap J p q) :
     HTupleMap K p r where
   offset := g.offset + f.offset.inner g.stride
   stride := f.stride.map fun fs => fs.inner g.stride
 
-/-- Identity affine `HTupleMap`. -/
-def id [Zero K] [One K] (p : HTuple.Profile) : HTupleMap K p p where
-  offset := 0
-  stride := HTuple.basisTuple p
-
-/-- Alias for `id`, matching the bounded `FinHTupleMap.identity` API. -/
-def identity [Zero K] [One K] (p : HTuple.Profile) : HTupleMap K p p :=
-  id p
-
-/-- Project the left component of a product-valued affine map. -/
-def fst (f : HTupleMap K p (.prod q r)) : HTupleMap K p q where
-  offset := match f.offset with | .prod x _ => x
-  stride := f.stride.map fun y => match y with | .prod x _ => x
-
-/-- Project the right component of a product-valued affine map. -/
-def snd (f : HTupleMap K p (.prod q r)) : HTupleMap K p r where
-  offset := match f.offset with | .prod _ y => y
-  stride := f.stride.map fun y => match y with | .prod _ y => y
-
-/-- Pair two affine maps with the same source profile. -/
-def prod (f : HTupleMap K p q) (g : HTupleMap K p r) : HTupleMap K p (.prod q r) where
-  offset := .prod f.offset g.offset
-  stride := HTuple.map₂ (fun x y => HTuple.prod x y) f.stride g.stride
+@[simp]
+theorem eval_comp [Semiring I] [Semiring J] [AddCommMonoid K] [Module I J]
+    [Module J K] [Module I K] [IsScalarTower I J K]
+    (g : HTupleMap K q r) (f : HTupleMap J p q) (x : HTuple I p) :
+    (g.comp f).eval x = g.eval (f.eval x) := by
+  simp [comp, eval]
+  rw [HTuple.inner_add_left, HTuple.inner_map_inner]
+  simp [add_assoc]
 
 /-- Constant affine map. -/
 def const [Zero K] (p : HTuple.Profile) (x : HTuple K q) : HTupleMap K p q where
   offset := x
   stride := 0
 
+@[simp]
+theorem eval_const [Semiring I] [AddCommMonoid K] [Module I K]
+    (x : HTuple K q) (i : HTuple I p) :
+    (const p x).eval i = x := by
+  simp [const, eval]
+
+/-- Project the left component of a product-valued affine map. -/
+def fst (f : HTupleMap K p (.prod q r)) : HTupleMap K p q where
+  offset := f.offset.fst
+  stride := f.stride.map HTuple.fst
+
+@[simp]
+theorem eval_fst [Zero K] [Add K] [SMul I K] (f : HTupleMap K p (.prod q r))
+    (i : HTuple I p) :
+    f.fst.eval i = (f.eval i).fst := by
+  cases f with | mk offset stride =>
+  cases offset with | prod offset₀ offset₁ =>
+  simp [fst, eval, HTuple.inner_map_prod_fst]
+  cases i.inner stride with | prod x y => rfl
+
+/-- Project the right component of a product-valued affine map. -/
+def snd (f : HTupleMap K p (.prod q r)) : HTupleMap K p r where
+  offset := f.offset.snd
+  stride := f.stride.map HTuple.snd
+
+@[simp]
+theorem eval_snd [Zero K] [Add K] [SMul I K] (f : HTupleMap K p (.prod q r))
+    (i : HTuple I p) :
+    f.snd.eval i = (f.eval i).snd := by
+  cases f with | mk offset stride =>
+  cases offset with | prod offset₀ offset₁ =>
+  simp [snd, eval, HTuple.inner_map_prod_snd]
+  cases i.inner stride with | prod x y => rfl
+
+/-- Pair two affine maps with the same source profile. -/
+def prod (f : HTupleMap K p q) (g : HTupleMap K p r) : HTupleMap K p (.prod q r) where
+  offset := .prod f.offset g.offset
+  stride := HTuple.map₂ (fun x y => HTuple.prod x y) f.stride g.stride
+
+@[simp]
+theorem eval_prod [Zero K] [Add K] [SMul I K] (f : HTupleMap K p q) (g : HTupleMap K p r)
+    (i : HTuple I p) :
+    (f.prod g).eval i = HTuple.prod (f.eval i) (g.eval i) := by
+  cases f with | mk offset₀ stride₀ =>
+  cases g with | mk offset₁ stride₁ =>
+  simp [prod, eval, HTuple.inner_map₂_prod]
+
 /-- Row-major affine linearization map from `0...shape` into a flat natural coordinate. -/
-def linearize (shape : HTuple Nat q) : HTupleMap Nat q .leaf where
+def rowMajorMap (shape : HTuple Nat q) : HTupleMap Nat q .leaf where
   offset := .leaf 0
   stride := shape.rowMajorStride.map HTuple.leaf
 
 /-- `linearize` computes the row-major range index. -/
+@[simp]
+theorem eval_rowMajorMap (shape : HTuple Nat q) (i : HTuple Nat q) :
+    rowMajorMap shape i = h(i.rowMajorIndex shape) := by
+  simp [rowMajorMap, HTuple.rowMajorIndex_eq_inner_rowMajorStride, HTuple.inner_map_leaf]
+
+/-- `linearize` maps bounded coordinates into `0...shape.numel`. -/
+theorem eval_rowMajorMap_lt_card {shape : HTuple Nat q} {i : HTuple Nat q}
+    (hi : i <ₑ shape) : rowMajorMap shape i <ₑ h(shape.numel) := by
+  rw [eval_rowMajorMap]
+  simpa using HTuple.rowMajorIndex_lt_numel hi
+
+/-- Row-major affine linearization map from `0...shape` into a flat natural coordinate. -/
+@[deprecated "please use rowMajorMap" (since := "20-06-2026")]
+abbrev linearize (shape : HTuple Nat q) : HTupleMap Nat q .leaf := rowMajorMap shape
+
+/-- `linearize` computes the row-major range index. -/
+@[simp]
 theorem eval_linearize (shape : HTuple Nat q) (i : HTuple Nat q) :
-    (linearize shape).eval i = h(i.rowMajorIndex shape) := by
-  sorry
+    linearize shape i = h(i.rowMajorIndex shape) := eval_rowMajorMap shape i
 
 /-- `linearize` maps bounded coordinates into `0...shape.numel`. -/
 theorem eval_linearize_lt_card {shape : HTuple Nat q} {i : HTuple Nat q}
     (hi : i <ₑ shape) : (linearize shape).eval i <ₑ h(shape.numel) := by
-  sorry
-
-@[simp]
-theorem eval_id [Semiring I] (x : HTuple I p) :
-    (id (K := I) p).eval x = x := by
-  simp [id, eval]
+  exact eval_rowMajorMap_lt_card hi
 
 /-- Move a nested output coefficient profile into the output profile. -/
 def joinEquiv (I : Type u) (r p q : HTuple.Profile) :

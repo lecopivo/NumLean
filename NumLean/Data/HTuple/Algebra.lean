@@ -266,6 +266,13 @@ instance instModule [Semiring R] [AddCommMonoid α] [Module R α] {p : Profile} 
     intro i
     simp
 
+instance instIsScalarTower [SMul R S] [SMul S α] [SMul R α] [IsScalarTower R S α]
+    {p : Profile} : IsScalarTower R S (HTuple α p) where
+  smul_assoc r s a := by
+    apply ext
+    intro i
+    simp [smul_assoc]
+
 /-- Pointwise semiring structure on hierarchical tuples. -/
 instance instSemiring [Semiring α] {p : Profile} : Semiring (HTuple α p) where
   zero := (0 : HTuple α p)
@@ -454,27 +461,26 @@ instance instModuleRefined {α : Type u} {β : Type v} [Semiring α] [AddCommMon
         simp [ih₁, ih₂]
 
 /-- Scaling the right argument of an inner product scales the resulting inner product. -/
-theorem inner_smul_right {I : Type u} {D : Type v} [AddCommMonoid D] [Semiring I] [Module I D]
-    {p : Profile} (idx : HTuple I p) (stride : HTuple D p) (n : Nat) :
-    HTuple.inner idx (n • stride) = n • HTuple.inner idx stride := by
+theorem inner_smul_right {R : Type u} {S : Type v} {D : Type w}
+    [Semiring R] [Monoid S] [AddCommMonoid D] [Module R D] [DistribSMul S D]
+    [SMulCommClass R S D]
+    {p : Profile} (idx : HTuple R p) (stride : HTuple D p) (s : S) :
+    HTuple.inner idx (s • stride) = s • HTuple.inner idx stride := by
   induction p with
   | leaf =>
       cases idx with | leaf i =>
-      cases stride with | leaf s =>
-      simp [HTuple.inner, HTuple.innerWith]
-      induction n with
-      | zero => simp
-      | succ n ih => simp [succ_nsmul, smul_add, ih]
+      cases stride with | leaf stride =>
+      simp [HTuple.inner, HTuple.innerWith, smul_comm]
   | prod p q hp hq =>
       cases idx with | prod idx₀ idx₁ =>
       cases stride with | prod stride₀ stride₁ =>
       calc
-        HTuple.inner (HTuple.prod idx₀ idx₁) (n • HTuple.prod stride₀ stride₁)
-            = HTuple.inner idx₀ (n • stride₀) + HTuple.inner idx₁ (n • stride₁) := by
+        HTuple.inner (HTuple.prod idx₀ idx₁) (s • HTuple.prod stride₀ stride₁)
+            = HTuple.inner idx₀ (s • stride₀) + HTuple.inner idx₁ (s • stride₁) := by
               rfl
-        _ = n • HTuple.inner idx₀ stride₀ + n • HTuple.inner idx₁ stride₁ := by
+        _ = s • HTuple.inner idx₀ stride₀ + s • HTuple.inner idx₁ stride₁ := by
               rw [hp idx₀ stride₀, hq idx₁ stride₁]
-        _ = n • HTuple.inner (HTuple.prod idx₀ idx₁) (HTuple.prod stride₀ stride₁) := by
+        _ = s • HTuple.inner (HTuple.prod idx₀ idx₁) (HTuple.prod stride₀ stride₁) := by
               simp [HTuple.inner, HTuple.innerWith]
 
 @[simp]
@@ -489,6 +495,18 @@ theorem inner_zero_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D]
       cases stride with | prod stride₀ stride₁ =>
       change HTuple.inner (0 : HTuple R p) stride₀ + HTuple.inner (0 : HTuple R q) stride₁ = 0
       rw [hp stride₀, hq stride₁, zero_add]
+
+@[simp]
+theorem inner_zero_right {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
+    {p : Profile} (idx : HTuple R p) :
+    HTuple.inner idx (0 : HTuple D p) = 0 := by
+  induction p with
+  | leaf =>
+      cases idx with | leaf idx => simp [HTuple.inner, HTuple.innerWith]
+  | prod p q hp hq =>
+      cases idx with | prod idx₀ idx₁ =>
+      change HTuple.inner idx₀ (0 : HTuple D p) + HTuple.inner idx₁ (0 : HTuple D q) = 0
+      rw [hp idx₀, hq idx₁, zero_add]
 
 theorem inner_add_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
     {p : Profile} (idx idx' : HTuple R p) (stride : HTuple D p) :
@@ -509,14 +527,16 @@ theorem inner_add_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] 
       rw [hp idx₀ idx'₀ stride₀, hq idx₁ idx'₁ stride₁]
       ac_rfl
 
-theorem inner_smul_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
-    {p : Profile} (n : R) (idx : HTuple R p) (stride : HTuple D p) :
+theorem inner_smul_left {R : Type u} {S : Type v} {D : Type w}
+    [Semiring R] [Semiring S] [AddCommMonoid D]
+    [Module R S] [Module S D] [Module R D] [IsScalarTower R S D]
+    {p : Profile} (n : R) (idx : HTuple S p) (stride : HTuple D p) :
     HTuple.inner (n • idx) stride = n • HTuple.inner idx stride := by
   induction p with
   | leaf =>
       cases idx with | leaf i =>
       cases stride with | leaf s =>
-      simp [HTuple.inner, HTuple.innerWith, mul_smul]
+      simp [HTuple.inner, HTuple.innerWith, smul_assoc]
   | prod p q hp hq =>
       cases idx with | prod idx₀ idx₁ =>
       cases stride with | prod stride₀ stride₁ =>
@@ -524,8 +544,10 @@ theorem inner_smul_left {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D]
         n • (HTuple.inner idx₀ stride₀ + HTuple.inner idx₁ stride₁)
       rw [hp idx₀ stride₀, hq idx₁ stride₁, smul_add]
 
-theorem inner_map_inner {R : Type u} {D : Type v} [Semiring R] [AddCommMonoid D] [Module R D]
-    {p q : Profile} (idx : HTuple R q) (strides : HTuple (HTuple R p) q)
+theorem inner_map_inner {R : Type u} {S : Type v} {D : Type w}
+    [Semiring R] [Semiring S] [AddCommMonoid D]
+    [Module R S] [Module S D] [Module R D] [IsScalarTower R S D]
+    {p q : Profile} (idx : HTuple R q) (strides : HTuple (HTuple S p) q)
     (stride : HTuple D p) :
     HTuple.inner idx (HTuple.map (fun coord => HTuple.inner coord stride) strides) =
       HTuple.inner (HTuple.inner idx strides) stride := by
@@ -580,6 +602,87 @@ theorem inner_map_prod_right {R : Type u} [Semiring R] {p q r : Profile}
         HTuple.prod 0 (HTuple.inner idx₀ strides₀ + HTuple.inner idx₁ strides₁)
       rw [h₀ idx₀ strides₀, h₁ idx₁ strides₁]
       simp
+
+theorem inner_map_prod_fst {R : Type u} {D : Type v} [Zero D] [Add D] [SMul R D]
+    {p q r : Profile} (idx : HTuple R p)
+    (strides : HTuple (HTuple D (.prod q r)) p) :
+    HTuple.inner idx (HTuple.map HTuple.fst strides) = (HTuple.inner idx strides).fst := by
+  induction p with
+  | leaf =>
+      cases idx with | leaf idx =>
+      cases strides with | leaf stride =>
+      cases stride with | prod stride₀ stride₁ =>
+      rfl
+  | prod p₀ p₁ hp₀ hp₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      cases strides with | prod strides₀ strides₁ =>
+      change HTuple.inner idx₀ (HTuple.map HTuple.fst strides₀) +
+          HTuple.inner idx₁ (HTuple.map HTuple.fst strides₁) =
+        (HTuple.inner idx₀ strides₀ + HTuple.inner idx₁ strides₁).fst
+      rw [hp₀ idx₀ strides₀, hp₁ idx₁ strides₁]
+      cases HTuple.inner idx₀ strides₀ with | prod x₀ y₀ =>
+      cases HTuple.inner idx₁ strides₁ with | prod x₁ y₁ =>
+      rfl
+
+theorem inner_map_prod_snd {R : Type u} {D : Type v} [Zero D] [Add D] [SMul R D]
+    {p q r : Profile} (idx : HTuple R p)
+    (strides : HTuple (HTuple D (.prod q r)) p) :
+    HTuple.inner idx (HTuple.map HTuple.snd strides) = (HTuple.inner idx strides).snd := by
+  induction p with
+  | leaf =>
+      cases idx with | leaf idx =>
+      cases strides with | leaf stride =>
+      cases stride with | prod stride₀ stride₁ =>
+      rfl
+  | prod p₀ p₁ hp₀ hp₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      cases strides with | prod strides₀ strides₁ =>
+      change HTuple.inner idx₀ (HTuple.map HTuple.snd strides₀) +
+          HTuple.inner idx₁ (HTuple.map HTuple.snd strides₁) =
+        (HTuple.inner idx₀ strides₀ + HTuple.inner idx₁ strides₁).snd
+      rw [hp₀ idx₀ strides₀, hp₁ idx₁ strides₁]
+      cases HTuple.inner idx₀ strides₀ with | prod x₀ y₀ =>
+      cases HTuple.inner idx₁ strides₁ with | prod x₁ y₁ =>
+      rfl
+
+theorem inner_map₂_prod {R : Type u} {D : Type v} [Zero D] [Add D] [SMul R D]
+    {p q r : Profile} (idx : HTuple R p)
+    (strides₀ : HTuple (HTuple D q) p) (strides₁ : HTuple (HTuple D r) p) :
+    HTuple.inner idx (HTuple.map₂ (fun x y => HTuple.prod x y) strides₀ strides₁) =
+      HTuple.prod (HTuple.inner idx strides₀) (HTuple.inner idx strides₁) := by
+  induction p with
+  | leaf =>
+      cases idx with | leaf idx =>
+      cases strides₀ with | leaf stride₀ =>
+      cases strides₁ with | leaf stride₁ =>
+      rfl
+  | prod p₀ p₁ hp₀ hp₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      cases strides₀ with | prod strides₀₀ strides₀₁ =>
+      cases strides₁ with | prod strides₁₀ strides₁₁ =>
+      change HTuple.inner idx₀ (HTuple.map₂ (fun x y => HTuple.prod x y) strides₀₀ strides₁₀) +
+          HTuple.inner idx₁ (HTuple.map₂ (fun x y => HTuple.prod x y) strides₀₁ strides₁₁) =
+        HTuple.prod (HTuple.inner idx₀ strides₀₀ + HTuple.inner idx₁ strides₀₁)
+          (HTuple.inner idx₀ strides₁₀ + HTuple.inner idx₁ strides₁₁)
+      rw [hp₀ idx₀ strides₀₀ strides₁₀, hp₁ idx₁ strides₀₁ strides₁₁]
+      rfl
+
+theorem inner_map_leaf {R : Type u} {D : Type v} [Zero D] [Add D] [SMul R D]
+    {p : Profile} (idx : HTuple R p) (stride : HTuple D p) :
+    HTuple.inner idx (HTuple.map HTuple.leaf stride) = HTuple.leaf (HTuple.inner idx stride) := by
+  induction p with
+  | leaf =>
+      cases idx with | leaf idx =>
+      cases stride with | leaf stride =>
+      rfl
+  | prod p₀ p₁ hp₀ hp₁ =>
+      cases idx with | prod idx₀ idx₁ =>
+      cases stride with | prod stride₀ stride₁ =>
+      change HTuple.inner idx₀ (HTuple.map HTuple.leaf stride₀) +
+          HTuple.inner idx₁ (HTuple.map HTuple.leaf stride₁) =
+        HTuple.leaf (HTuple.inner idx₀ stride₀ + HTuple.inner idx₁ stride₁)
+      rw [hp₀ idx₀ stride₀, hp₁ idx₁ stride₁]
+      rfl
 
 @[simp]
 theorem inner_basisTuple {R : Type u} [Semiring R] {p : Profile} (idx : HTuple R p) :
