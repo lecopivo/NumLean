@@ -15,6 +15,10 @@ class Fold (ρ : Type u) (α : outParam (Type v))
   fold {β : Type w} (xs : ρ) (init : β) (f : (a : α) → a ∈ xs → β → β) : β
   entries : (xs : ρ) → List {a : α // a ∈ xs}
 
+def entries (ρ : Type u) {α : Type v} {d : Membership α ρ} [inst : Fold ρ α d]
+    (xs : ρ) : List {a : α // a ∈ xs} :=
+  Fold.entries (self := inst) xs
+
 attribute [always_inline, inline, specialize] Fold.fold
 
 theorem List.foldl_append_singleton {α : Type u} (xs acc : List α) :

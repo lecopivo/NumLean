@@ -5,6 +5,7 @@ import Tests.Float32ArrayEval
 import Tests.FoldEmbedding
 import Tests.ForAllNotation
 import Tests.GaussianPivotEval
+import Tests.HasFlatReprDeriving
 import Tests.HTupleCoercions
 import Tests.HTupleGetElemTactic
 import Tests.HTupleProfileRefines

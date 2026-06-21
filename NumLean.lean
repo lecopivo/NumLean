@@ -122,7 +122,10 @@ import NumLean.Interfaces.HasFlatArray.Basic
 import NumLean.Interfaces.HasFlatArray.Float
 import NumLean.Interfaces.HasFlatRepr
 import NumLean.Interfaces.HasFlatRepr.Basic
+import NumLean.Interfaces.HasFlatRepr.Deriving
+import NumLean.Interfaces.HasFlatRepr.Equiv
 import NumLean.Interfaces.HasFlatRepr.Prod
+import NumLean.Interfaces.HasFlatRepr.Sigma
 import NumLean.Interfaces.HasFlatVector
 import NumLean.Interfaces.HasFlatVector.Basic
 import NumLean.Interfaces.IndexType

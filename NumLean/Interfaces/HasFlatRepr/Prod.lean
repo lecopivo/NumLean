@@ -42,12 +42,25 @@ private def prodSet {n : Nat} (ks : Ks n) (off : Nat) (xy : X × Y) (h : off + (
   let ks := HasFlatRepr.set (X := X) ks off xy.1 (by omega)
   HasFlatRepr.set (X := Y) ks (off + nX) xy.2 (by omega)
 
-private def prodPush {n : Nat} (ks : Ks n) (xy : X × Y) : Ks (n + (nX + nY)) :=
-  have h : n + nX + nY = n + (nX + nY) := by omega
-  h ▸ HasFlatRepr.push (X := Y) (HasFlatRepr.push (X := X) ks xy.1) xy.2
-
 private def prodToFlatVector (xy : X × Y) : Ks (nX + nY) :=
   VectorType.append (HasFlatRepr.toFlatVector (Ks := Ks) xy.1) (HasFlatRepr.toFlatVector (Ks := Ks) xy.2)
+
+private theorem prod_get_toFlatVector_eq_getComp (xy : X × Y) (i : Nat) (hi : i < nX + nY) :
+    VectorType.get (prodToFlatVector (Ks := Ks) xy) i hi = prodGetComp (Ks := Ks) xy i hi := by
+  rcases xy with ⟨x, y⟩
+  by_cases hleft : i < nX
+  · rw [prod_getComp_left (Ks := Ks) (x, y) i hi hleft]
+    dsimp [prodToFlatVector]
+    rw [VectorType.get_append_left]
+    rw [HasFlatRepr.get_toFlatVector_eq_getComp]
+  · rw [prod_getComp_right (Ks := Ks) (x, y) i hi hleft]
+    dsimp [prodToFlatVector]
+    rw [VectorType.get_append_right]
+    · rw [HasFlatRepr.get_toFlatVector_eq_getComp]
+    · omega
+
+private def prodPush {n : Nat} (ks : Ks n) (xy : X × Y) : Ks (n + (nX + nY)) :=
+  VectorType.append ks (prodToFlatVector (Ks := Ks) xy)
 
 private def prodReplicate (n : Nat) (xy : X × Y) : Ks (n * (nX + nY)) :=
   VectorType.fromVector (As := Ks) <| Vector.ofFn fun ij : Fin (n * (nX + nY)) =>
@@ -61,12 +74,42 @@ instance : HasFlatRepr (X × Y) Ks (nX + nY) where
   toVector := prodToVector (Ks := Ks)
   fromVector := prodFromVector (Ks := Ks)
   left_inv := by
-    sorry
+    intro xy
+    rcases xy with ⟨x, y⟩
+    apply Prod.ext
+    · change HasFlatRepr.fromVector (Ks := Ks) (X := X)
+        (Vector.ofFn fun i : Fin nX => (prodToVector (Ks := Ks) (x, y))[i.1]) = x
+      rw [← HasFlatRepr.fromVector_toVector (Ks := Ks) x]
+      congr 1
+      apply Vector.ext
+      intro i hi
+      simp [prodToVector]
+    · change HasFlatRepr.fromVector (Ks := Ks) (X := Y)
+        (Vector.ofFn fun i : Fin nY => (prodToVector (Ks := Ks) (x, y))[nX + i.1]) = y
+      rw [← HasFlatRepr.fromVector_toVector (Ks := Ks) y]
+      congr 1
+      apply Vector.ext
+      intro i hi
+      simp [prodToVector]
   right_inv := by
-    sorry
+    intro xy
+    ext i ih
+    by_cases h : i < nX
+    · change (prodToVector (Ks := Ks) (prodFromVector (Ks := Ks) xy))[i] = xy[i]
+      simp [prodToVector, prodFromVector, h]
+    · change (prodToVector (Ks := Ks) (prodFromVector (Ks := Ks) xy))[i] = xy[i]
+      rw [prodToVector, Vector.getElem_append_right ih (by omega)]
+      simp [prodFromVector]
+      have hidx : nX + (i - nX) = i := Nat.add_sub_of_le (Nat.le_of_not_gt h)
+      exact getElem_congr rfl hidx (by omega)
   getComp := prodGetComp (Ks := Ks)
   getComp_spec := by
-    sorry
+    intro xy i h
+    rcases xy with ⟨x, y⟩
+    by_cases hi : i < nX
+    · simp [prodGetComp, prodToVector, hi, HasFlatRepr.getComp_spec, Vector.getElem_append_left hi]
+    · simp [prodGetComp, prodToVector, hi, HasFlatRepr.getComp_spec]
+      rw [Vector.getElem_append_right h (by omega)]
   setComp := prodSetComp (Ks := Ks)
   setComp_spec := by
     intro xy i k h
@@ -74,23 +117,71 @@ instance : HasFlatRepr (X × Y) Ks (nX + nY) where
     rfl
   get := prodGet (Ks := Ks)
   getComp_get_eq_vector_get := by
-    sorry
+    intro n ks off i hoff hi
+    by_cases hleft : i < nX
+    · rw [prod_getComp_left (Ks := Ks) (prodGet (Ks := Ks) ks off hoff) i hi hleft]
+      change HasFlatRepr.getComp (Ks := Ks) (HasFlatRepr.get (X := X) ks off (by omega)) i hleft =
+        VectorType.get ks (off + i) (by grind)
+      rw [HasFlatRepr.getComp_get_eq_vector_get]
+    · rw [prod_getComp_right (Ks := Ks) (prodGet (Ks := Ks) ks off hoff) i hi hleft]
+      change HasFlatRepr.getComp (Ks := Ks) (HasFlatRepr.get (X := Y) ks (off + nX) (by omega))
+          (i - nX) (by omega) = VectorType.get ks (off + i) (by grind)
+      rw [HasFlatRepr.getComp_get_eq_vector_get]
+      congr 1
+      omega
   set := prodSet (Ks := Ks)
   vector_get_set_eq := by
-    sorry
+    intro n ks off i xy hoff hi
+    rcases xy with ⟨x, y⟩
+    dsimp [prodSet]
+    by_cases hleft : i < off + nX
+    · rw [HasFlatRepr.vector_get_set_ne (X := Y)]
+      · rw [HasFlatRepr.vector_get_set_eq (X := X)]
+        rotate_left
+        · exact And.intro (by omega) (by omega)
+        rw [prod_getComp_left (Ks := Ks) (x, y) (i - off) (by omega) (by omega)]
+      · omega
+      · omega
+    · rw [HasFlatRepr.vector_get_set_eq (X := Y)]
+      rotate_left
+      · exact And.intro (by omega) (by omega)
+      rw [prod_getComp_right (Ks := Ks) (x, y) (i - off) (by omega) (by omega)]
+      congr 1
+      omega
   vector_get_set_ne := by
-    sorry
+    intro n ks off i xy hoff hi hi'
+    rcases xy with ⟨x, y⟩
+    dsimp [prodSet]
+    rw [HasFlatRepr.vector_get_set_ne (X := Y)]
+    · rw [HasFlatRepr.vector_get_set_ne (X := X)]
+      · grind
+    · grind
+    · exact hi'
   push := prodPush (Ks := Ks)
   vector_get_push_lt := by
-    sorry
+    intro n ks xy i hi
+    dsimp [prodPush]
+    rw [VectorType.get_append_left]
   vector_get_push_eq := by
-    sorry
+    intro n ks xy i hi
+    dsimp [prodPush]
+    rw [VectorType.get_append_right]
+    · simpa [Nat.add_sub_cancel_left] using prod_get_toFlatVector_eq_getComp (Ks := Ks) xy i hi
+    · omega
   toFlatVector := prodToFlatVector (Ks := Ks)
   get_toFlatVector_eq_getComp := by
-    sorry
+    intro xy i hi
+    exact prod_get_toFlatVector_eq_getComp (Ks := Ks) xy i hi
   replicate := prodReplicate (Ks := Ks)
   get_replicate := by
-    sorry
+    intro n xy i j hi hj
+    rw [prodReplicate]
+    rw [VectorType.get_spec, VectorType.toVector_fromVector]
+    rw [Vector.getElem_ofFn]
+    have hmod : (i * (nX + nY) + j) % (nX + nY) = j := by
+      rw [Nat.mul_add_mod_self_right]
+      exact Nat.mod_eq_of_lt hj
+    simp [hmod]
 
 end HasFlatRepr
 

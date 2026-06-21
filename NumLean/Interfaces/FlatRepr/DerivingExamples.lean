@@ -1,5 +1,6 @@
 import NumLean.Interfaces.FlatRepr.Deriving
 import NumLean.Interfaces.FlatRepr.Float
+import NumLean.Meta.RewriteBy
 
 namespace NumLean
 
@@ -19,6 +20,8 @@ def float3Get' (x : Float3) (i : Fin 3) :=
   | 1 => x.y
   | 2 => x.z
 
+
+
 structure Vec3 (X : Type u) where
   x : X
   y : X
@@ -31,11 +34,15 @@ structure Mat3 (X : Type u) where
   r2 : Vec3 X
 deriving FlatRepr
 
+variable (A : Type)
+
+#check (by infer_instance : FlatRepr (Mat3 (Vec3 A)) A _)
 
 structure SizedVec3 (m : Nat) (X : Type) where
   x : X
   y : X
   z : X
 deriving FlatRepr
+
 
 end NumLean
