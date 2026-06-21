@@ -80,7 +80,7 @@ placed in the flow.
 
 Example after encoding child items to JSON:
 ```lean
-{ items := #[toJson ({ shape := "(2,2)" } : Visualize.ShapeVis)] }
+{ items := #[toJson ({ tree := "(2,2)" } : Visualize.BinaryTreeVis)] }
 ```
 -/
 structure Flow (α : Type u) where
@@ -95,7 +95,7 @@ of the visual data and is preserved by the renderer.
 
 Example after encoding child items to JSON:
 ```lean
-{ rows := #[#[toJson ({ shape := "(2,2)" } : Visualize.ShapeVis)], #[]] }
+{ rows := #[#[toJson ({ tree := "(2,2)" } : Visualize.BinaryTreeVis)], #[]] }
 ```
 -/
 structure Grid (α : Type u) where
@@ -103,26 +103,24 @@ structure Grid (α : Type u) where
   rows : Array (Array α)
 deriving ToJson, FromJson
 
-def shapeString : {p : Cute.Profile} → Cute.Shape p → String
-  | .leaf, .leaf n => toString n
-  | .prod _ _, .prod left right => "(" ++ shapeString left ++ "," ++ shapeString right ++ ")"
+/-- Orientation for product visualizations.
 
-def shapeItem (props : ShapeVis) : Json :=
-  obj [ ("kind", str "shape")
-      , ("shape", str props.shape) ]
+`horizontal` places the left visual item beside the right visual item. `vertical` stacks the left
+visual item above the right visual item, which is useful for titles, captions, or formulas attached
+to diagrams.
 
-/-- Wrapper requesting the recursive high-rank layout visualizer for a CUTE layout. -/
-structure HighRankLayout {p : Cute.Profile} (shape : Cute.Shape p) where
-  layout : Cute.Layout shape Int
-
-def highRankLayout {p : Cute.Profile} {shape : Cute.Shape p}
-    (layout : Cute.Layout shape Int) : HighRankLayout shape where
-  layout := layout
-
-def highRankLayoutValues {p : Cute.Profile} {shape : Cute.Shape p}
-    (layout : Cute.Layout shape Int) : Array Int :=
-  (Array.range (Cute.Shape.size shape)).map fun i =>
-    CuteVis.evalRaw layout (CuteVis.coordOfLinear shape i)
+Examples:
+```lean
+{ direction := .horizontal, weights := (1, 2) }
+{ direction := .vertical, weights := (1, 3) }
+```
+-/
+inductive ProdDirection where
+  /-- Lay out the two children left-to-right. -/
+  | horizontal
+  /-- Lay out the two children top-to-bottom. -/
+  | vertical
+deriving ToJson, FromJson
 
 /-- Layout options for product visualizations.
 
@@ -132,9 +130,21 @@ The string fields are passed through as CSS grid alignment keywords.  Use values
 Example:
 ```lean
 { alignItems := "center", justifyItems := "stretch", gap := 18 }
+{ direction := .vertical
+  weights := (1, 3)
+  aspectRatio? := some (1, 1)
+  alignItems := "stretch"
+  justifyItems := "stretch"
+  gap := 8 }
 ```
 -/
 structure ProdOptions where
+  /-- Whether to place the children beside each other or stack them vertically. -/
+  direction : ProdDirection := .horizontal
+  /-- Relative sizes of the first and second child along `direction`, interpreted as CSS `fr` units. -/
+  weights : Nat × Nat := (1, 1)
+  /-- Optional target aspect ratio `(width, height)` for the product container. -/
+  aspectRatio? : Option (Nat × Nat) := none
   /-- CSS `align-items` value for the two-item product grid. -/
   alignItems : String := "start"
   /-- CSS `justify-items` value for the two-item product grid. -/
@@ -152,7 +162,7 @@ This is the visual representation used for Lean pairs and `Visualize.prodBox`.  
 Example after encoding child items to JSON:
 ```lean
 { options := { alignItems := "start", justifyItems := "stretch", gap := 10 }
-  left := toJson ({ shape := "(2,2)" } : Visualize.ShapeVis)
+  left := toJson ({ tree := "(2,2)" } : Visualize.BinaryTreeVis)
   right := toJson (Visualize.latex "i \\mapsto i + 1") }
 ```
 -/
@@ -176,29 +186,20 @@ def prodBox (left : α) (right : β) (options : ProdOptions := {}) : ProdBox α 
   left := left
   right := right
 
-end Visualize
+/-- Backwards-compatible alias for the original high-rank layout visual data name. -/
+abbrev HighRankLayoutVis := HighRankTensorVis
 
-instance : Visualizer ProfileVisProps where
-  javascript := Visualize.javascript
-  encodeProps props := pure (toJson props)
+end Visualize
 
 instance : Visualizer Visualize.LaTeX where
   javascript := Visualize.javascript
   encodeProps x := pure (toJson x)
 
-instance : Visualizer Visualize.ShapeVis where
+instance : Visualizer Visualize.BinaryTreeVis where
   javascript := Visualize.javascript
   encodeProps props := pure (toJson props)
 
-instance : Visualizer CuteLayoutVisProps where
-  javascript := Visualize.javascript
-  encodeProps props := pure (toJson props)
-
-instance : Visualizer CuteSliceVisProps where
-  javascript := Visualize.javascript
-  encodeProps props := pure (toJson props)
-
-instance : Visualizer Visualize.HighRankLayoutVis where
+instance : Visualizer Visualize.HighRankTensorVis where
   javascript := Visualize.javascript
   encodeProps props := pure (toJson props)
 
@@ -224,28 +225,6 @@ instance {α : Type u} {β : Type v} [va : Visualizer α] [vb : Visualizer β] :
 
 instance (priority := low) {α : Type u} [Visualizer α] : Visualizable α α where
   toVis := id
-
-instance : Visualizable HTuple.Profile ProfileVisProps where
-  toVis profile := ProfileVis.propsOfProfile profile
-
-instance {p : Cute.Profile} : Visualizable (Cute.Shape p) Visualize.ShapeVis where
-  toVis shape := { shape := Visualize.shapeString shape }
-
-instance {α} {β : α → Type u} [inst : ∀ a, Visualizable (β a) vis] :
-    Visualizable ((a : α) × β a) vis where
-  toVis xs := (inst xs.1).toVis xs.2
-
-instance {p : Cute.Profile} {shape : Cute.Shape p} :
-    Visualizable (Cute.Layout shape Int) Visualize.HighRankLayoutVis where
-  toVis layout :=
-    let vals := Visualize.highRankLayoutValues layout
-    { shape := Visualize.shapeString shape, values := vals, labels := vals.map toString }
-
-instance {p : Cute.Profile} {shape : Cute.Shape p} :
-    Visualizable (Visualize.HighRankLayout shape) Visualize.HighRankLayoutVis where
-  toVis x :=
-    let vals := Visualize.highRankLayoutValues x.layout
-    { shape := Visualize.shapeString shape, values := vals, labels := vals.map toString }
 
 instance (priority := low) {α : Type u} {vis : Type v} [Visualizable α vis] :
     Visualizable (Array α) (Visualize.Flow vis) where

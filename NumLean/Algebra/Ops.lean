@@ -20,6 +20,8 @@ class GroupOps (K : Type u) extends
 instance [inst : GroupOps K] : NatPow K := ⟨inst.npow⟩
 instance [inst : GroupOps K] : Pow K Int := ⟨inst.zpow⟩
 
+-- todo: we need RingOps !!!
+
 class FieldOps (K : Type u) extends
   AddGroupOps K, GroupOps K
 

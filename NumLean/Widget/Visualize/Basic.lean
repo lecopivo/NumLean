@@ -17,7 +17,7 @@ class Visualizable (α : Type u) (vis : outParam (Type v)) where
 
 namespace Visualize
 
-def javascript : String := (include_str ".." / "js" / "visualize.js") ++ "\n/* numlean-visualize-v26 */"
+def javascript : String := (include_str ".." / "js" / "visualize.js") ++ "\n/* numlean-visualize-v28 */"
 
 @[widget_module]
 def Component : ProofWidgets.Component Json where

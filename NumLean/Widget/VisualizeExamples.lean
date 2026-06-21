@@ -68,6 +68,16 @@ def shape_4_by_2x2 : Layout h((4 : Nat), ((2 : Nat), (2 : Nat))) Int where
 
 #visualize (hp(•, •), Visualize.latex "(i_1, i_2) \\mapsto i_1\\bullet (1,0) + i_2 \\bullet (0,1)")
 
+#visualize Visualize.prodBox
+  (Visualize.latex "A(i,j) \\mapsto i + n j")
+  (Visualize.highRankLayout blocked4x4)
+  { direction := .vertical
+    weights := (1, 3)
+    aspectRatio? := some (1, 1)
+    alignItems := "stretch"
+    justifyItems := "stretch"
+    gap := 8 }
+
 #visualize profileB
 #visualize shapeB
 #visualize colMajor

@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-const VERSION = 'numlean-visualize-v26'
+const VERSION = 'numlean-visualize-v28'
 const RANK_GAP = 3
 const RANK_BLOCK_GAP = 7
 const RANK_STAMP_BORDER = 2
@@ -537,6 +537,13 @@ function Row({ items }) {
   return React.createElement('div', { className: 'row' }, asArray(items).map((item, i) => React.createElement(Item, { key: i, item })))
 }
 
+function ratioPair(value, fallbackA = 1, fallbackB = 1) {
+  const xs = asArray(value)
+  const a = Math.max(1, asNumber(xs[0] == null ? fallbackA : xs[0]))
+  const b = Math.max(1, asNumber(xs[1] == null ? fallbackB : xs[1]))
+  return [a, b]
+}
+
 function itemKind(item) {
   if (!item || typeof item !== 'object') return null
   if (item.kind) return item.kind
@@ -546,6 +553,7 @@ function itemKind(item) {
   if (item.items != null) return 'flow'
   if (item.left != null && item.right != null) return 'prod'
   if (item.rows != null && item.cols == null) return 'grid'
+  if (item.tree != null) return 'shape'
   if (item.shape != null && item.values != null) return 'highRankLayout'
   if (item.shape != null) return 'shape'
   if (item.rows != null && item.cols != null && item.values != null) return 'layout'
@@ -556,17 +564,24 @@ function Item({ item }) {
   if (!item || typeof item !== 'object') return React.createElement(TreeCard, { text: String(item) })
   const kind = itemKind(item)
   if (kind === 'profile') return React.createElement(TreeCard, { text: item.profile })
-  if (kind === 'shape') return React.createElement(TreeCard, { text: item.shape })
+  if (kind === 'shape') return React.createElement(TreeCard, { text: item.tree || item.shape })
   if (kind === 'layout') return React.createElement(LayoutCard, { item })
   if (kind === 'latex') return React.createElement(LaTeXCard, { source: item.source })
   if (kind === 'highRankLayout') return React.createElement(HighRankLayoutCard, { item })
   if (kind === 'slice') return React.createElement(SliceCard, { item })
   if (kind === 'prod') {
     const options = item.options || {}
+    const direction = item.direction || options.direction || 'horizontal'
+    const weights = ratioPair(item.weights || options.weights, 1, 1)
+    const aspectRatio = item.aspectRatio || options.aspectRatio
+    const aspect = aspectRatio ? ratioPair(aspectRatio, 1, 1) : null
     const style = {
       gap: asNumber(item.gap || options.gap || 10),
       alignItems: item.alignItems || options.alignItems || 'start',
-      justifyItems: item.justifyItems || options.justifyItems || 'stretch'
+      justifyItems: item.justifyItems || options.justifyItems || 'stretch',
+      gridTemplateColumns: direction === 'vertical' ? '1fr' : `${weights[0]}fr ${weights[1]}fr`,
+      gridTemplateRows: direction === 'vertical' ? `${weights[0]}fr ${weights[1]}fr` : undefined,
+      aspectRatio: aspect ? `${aspect[0]} / ${aspect[1]}` : undefined
     }
     return React.createElement('div', { className: 'card' },
       React.createElement('div', { className: 'pair', style },
@@ -584,9 +599,16 @@ function Item({ item }) {
   return React.createElement(TreeCard, { text: JSON.stringify(item) })
 }
 
+function visualPayload(props) {
+  if (props && typeof props === 'object' && props.pos && props.props && typeof props.props === 'object') {
+    return props.props
+  }
+  return props
+}
+
 export default function Visualize(props) {
   return React.createElement('div', { className: 'numlean-vis', 'data-version': VERSION },
     React.createElement(Style),
-    React.createElement(Item, { item: props })
+    React.createElement(Item, { item: visualPayload(props) })
   )
 }

@@ -1,13 +1,14 @@
 import NumLean.Data.FlatVector.Basic
 import NumLean.Interfaces.FlatRepr.Lawful
 import NumLean.Interfaces.UntypedIndex
+import NumLean.Algebra.Ops
 
 namespace NumLean.FlatVector
 
 variable {X : Type u} {I : Type v}
   {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatVector X Ks nX] [IndexType I nI]
 
-
+-- todo: move this
 class BLASOps (Ks : Nat → Type u) (K : outParam (Type v)) where
 
   /-- Computes BLAS operation `axpy`:
@@ -40,6 +41,7 @@ instance [Zero K] : Zero (FlatVector X I) := sorry -- ⟨{ data := HasFlatVector
 
 -- todo: !!! THIS IS NOT THE simp-normal FORM !!!
 -- we need some general notion of index types like: (Fin n, Nat, fun size i => i < size)
+@[simp]
 theorem getElem_zero [Zero K] [Zero X] [FlatRepr.LawfulZero X K] (i : I) :
     (0 : FlatVector X I)[i] = 0 := by
   apply FlatRepr.ext K
@@ -55,6 +57,7 @@ theorem getElem_zero [Zero K] [Zero X] [FlatRepr.LawfulZero X K] (i : I) :
 
 instance [One K] : One (FlatVector X I) := sorry -- ⟨{ data := HasFlatVector.replicate (nI * nX) 1 }⟩
 
+@[simp]
 theorem getElem_one [One K] [One X] [FlatRepr.LawfulOne X K] (i : I) :
     (1 : FlatVector X I)[i] = 1 := by
   sorry
@@ -63,6 +66,7 @@ theorem getElem_one [One K] [One X] [FlatRepr.LawfulOne X K] (i : I) :
 instance [One K] [BLASOps Ks K] : Add (FlatVector X I) := ⟨fun x y =>
   { data := BLASOps.axpy (nI * nX) (1 : K) y.data 0 1 x.data 0 1 (by simp) (by simp)}⟩
 
+@[simp]
 theorem getElem_add [Semiring K] [Add X] [FlatRepr.LawfulAdd X K] [BLASOps Ks K]
     (xs ys : FlatVector X I) (i : I) :
     (xs + ys)[i] = xs[i] + ys[i] := by
@@ -88,9 +92,10 @@ theorem getElem_add [Semiring K] [Add X] [FlatRepr.LawfulAdd X K] [BLASOps Ks K]
 instance [One K] [Neg K] [BLASOps Ks K] : Sub (FlatVector X I) := ⟨fun x y =>
   { data := BLASOps.axpy (nI * nX) (-1 : K) y.data 0 1 x.data 0 1 (by simp) (by simp)}⟩
 
+@[simp]
 theorem getElem_sub [CommRing K] [Sub X] [FlatRepr.LawfulSub X K] [BLASOps Ks K]
     (xs ys : FlatVector X I) (i : I) :
-    (xs + ys)[i] = xs[i] - ys[i] := by
+    (xs - ys)[i] = xs[i] - ys[i] := by
   apply FlatRepr.ext K
   intro j h
   have h' : ∀ xs' : FlatVector X I, FlatRepr.getComp K (xs')[i] j h
@@ -100,7 +105,7 @@ theorem getElem_sub [CommRing K] [Sub X] [FlatRepr.LawfulSub X K] [BLASOps Ks K]
   simp [h']
 
   -- this is consequence of `axpy` definition of subition on `Ks n` !
-  have h'' : VectorType.get (xs + ys).data ((toFin i).1 * nX + j) sorry
+  have h'' : VectorType.get (xs - ys).data ((toFin i).1 * nX + j) sorry
              =
              (-1) * VectorType.get ys.data ((toFin i).1 * nX + j) sorry
              +
@@ -113,6 +118,7 @@ theorem getElem_sub [CommRing K] [Sub X] [FlatRepr.LawfulSub X K] [BLASOps Ks K]
 instance [BLASOps Ks K] : SMul K (FlatVector X I) := ⟨fun s x =>
   { data := BLASOps.scal (nI * nX) s x.data 0 1 (by simp)}⟩
 
+@[simp]
 theorem getElem_smul [Mul K] [SMul K X] [FlatRepr.LawfulSMul K X K] [BLASOps Ks K]
     (k : K) (xs : FlatVector X I) (i : I) :
     (k • xs)[i] = k • xs[i] := by
@@ -134,9 +140,23 @@ theorem getElem_smul [Mul K] [SMul K X] [FlatRepr.LawfulSMul K X K] [BLASOps Ks 
 
 instance [Neg K] [One K] [BLASOps Ks K] : Neg (FlatVector X I) := ⟨fun x => (-1 : K) • x⟩
 
+@[simp]
 theorem getElem_neg [CommRing K] [AddCommGroup X] [Module K X] [FlatRepr.LawfulSMul K X K] [BLASOps Ks K]
     (xs : FlatVector X I) (i : I) :
     (- xs)[i] = - xs[i] := by
   rw[(by rfl : - xs = (-1 : K) • xs)]
   rw[getElem_smul]
   simp
+
+
+-- todo: NatCast and IntCast should be part of some *Ops !!!
+
+-- todo: define RingOps and assume [RingOps K]
+instance [NatCast K] [IntCast K] [AddGroupOps K] [One K] [Mul K] [BLASOps Ks K] :
+    AddGroupOps (FlatVector X I) where
+  nsmul n x := (n : K) • x
+  zsmul n x := (n : K) • x
+
+
+-- instance : RNorm (FlatVector X I) K where
+--   rnorm
