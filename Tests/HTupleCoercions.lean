@@ -166,7 +166,7 @@ section FinHTupleMap
 variable {p q : HTuple.Profile} {src : HTuple Nat p} {dst : HTuple Nat q}
 
 example (f : FinHTupleMap src dst) (i : FinHTuple src) :
-    (f.evalFin i).val = f.evalRaw i.val := by
+    (f.evalFin i).val = f i.val := by
   rfl
 
 example (f : FinHTupleMap src dst) (i : FinHTuple src) :
@@ -174,7 +174,7 @@ example (f : FinHTupleMap src dst) (i : FinHTuple src) :
   rfl
 
 example (f : FinHTupleMap src dst) (i : HTuple Nat p) (hi : i <ₑ src) :
-    (f[i]'hi).val = f.evalRaw i := by
+    (f[i]'hi).val = f i := by
   rfl
 
 example (f : FinHTupleMap src dst) (i : HTuple Nat p) (hi : i <ₑ src) :

@@ -12,9 +12,9 @@ import Tests.HTupleRangeIterators
 import Tests.HVector
 import Tests.OrderInstances
 import Tests.ScalarArrays
+import Tests.TBounds
 import Tests.TensorIndexIteratorCompiler
 import Tests.TensorIndexRangeIterators
-import Tests.TBounds
 import Tests.TupleOrderNotation
 import Tests.VectorRangeIterators
 import Tests.Visualize

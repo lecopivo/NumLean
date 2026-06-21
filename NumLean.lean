@@ -17,7 +17,9 @@ import NumLean.Data.FinHTuple.Basic
 import NumLean.Data.FinHTuple.FinHTupleMap
 import NumLean.Data.FinHTuple.Fold
 import NumLean.Data.FlatArray.Basic
+import NumLean.Data.FlatVector.Algebra
 import NumLean.Data.FlatVector.Basic
+import NumLean.Data.FlatVector.FlatRepr
 import NumLean.Data.FlatVector.Ops
 import NumLean.Data.Float32Array
 import NumLean.Data.FloatArray.TensorOps
@@ -79,6 +81,7 @@ import NumLean.Data.Vector.Algebra
 import NumLean.Data.Vector.Basic
 import NumLean.Data.Vector.Ops
 import NumLean.Data.Vector.RangeIterator
+import NumLean.Data.Vector.RingArrayOps.Basic
 import NumLean.Data.Vector.TensorOps
 import NumLean.Data.Vector.TensorOps.CopySlice
 import NumLean.Data.Vector.TensorOps.Defs
@@ -88,6 +91,7 @@ import NumLean.Data.Vector.TensorOps.SwapSlice
 import NumLean.Data.Vector.TensorOps.TransposeSlice
 import NumLean.Device.Basic
 -- import NumLean.Doodle
+import NumLean.Interfaces.Algebra.RingArrayOps
 import NumLean.Interfaces.ArrayOps.Array
 import NumLean.Interfaces.ArrayOps.Basic
 import NumLean.Interfaces.ArrayOps.ByteArray
@@ -123,6 +127,7 @@ import NumLean.Interfaces.HasFlatVector
 import NumLean.Interfaces.HasFlatVector.Basic
 import NumLean.Interfaces.IndexType
 import NumLean.Interfaces.MachinePrecision
+import NumLean.Interfaces.RealModeal.Basic
 import NumLean.Interfaces.SetElem
 import NumLean.Interfaces.TensorArrayOps
 import NumLean.Interfaces.TensorArrayOps.Basic

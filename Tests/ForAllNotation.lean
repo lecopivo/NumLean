@@ -40,7 +40,7 @@ example : sum2TwoAcc = (36, 6) := by native_decide
 
 def sumMapIndexWithoutNamedProof : Nat := Id.run do
   let shape : Shape _ := h(2, 3)
-  let idxMap := FinHTupleMap.identity shape
+  let idxMap := FinHTupleMap.id shape
   let mut acc := 0
   for_all i in 0...shape do
     let idx := idxMap i

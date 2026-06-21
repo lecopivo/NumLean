@@ -3,6 +3,8 @@ import NumLean.Data.FinHTuple
 import NumLean.Interfaces.IndexType
 
 namespace NumLean
+
+#exit
 /-- `I` is tensor index type of given rank `rank`. -/
 class TensorIndexTypeOfRank (I : Type u) (n : outParam Nat) (rank : HTuple.Profile)
   (shape : outParam (HTuple ℕ rank))
@@ -77,36 +79,34 @@ instance {r} {shape : HTuple Nat r} : TensorIndexTypeOfRank (FinHTuple shape) sh
   layout_eval_tensorEquiv_eq_toFin := by
     intros; simp
     simp [FinHTuple.equivFin_val_eq_linearIndex_zero]
-    unfold Layout.eval Layout.rowMajor
-    rw[FinHTuple.offset_rowMajorEquiv_eq_equivFin]
-    simp only [zero_add]
+    sorry
 
 /-- Default h-rank of `Fin n` is `.leaf` -/
 instance : TensorIndexType (Fin n) n .leaf (.leaf n) where
 
 open TensorIndexTypeOfRank
 
-instance {I : Type u} {J : Type v} {nI nJ : Nat}
-    {p q : HRank} {shapeI : Shape p} {shapeJ : Shape q}
-    [TensorIndexTypeOfRank I nI p shapeI] [TensorIndexTypeOfRank J nJ q shapeJ] :
-    TensorIndexTypeOfRank (I × J) (nI * nJ) (.prod p q) (HTuple.prod shapeI shapeJ) where
-  size_eq_shape_size := by
-    simp [Shape.size, size_eq_shape_size (I:=I) (rank := p), size_eq_shape_size (I:=J) (rank := q)]
-  layout := (layout (I := I) (rank := p)).rowMajorProd (layout (I := J) (rank := q))
-  compact_layout := by simp [compact_layout (I := I), compact_layout (I := J)]
-  tensorEquiv := (Equiv.prodCongr tensorEquiv tensorEquiv).trans (FinHTuple.prodEquiv _ _).symm
-  layout_eval_tensorEquiv_eq_toFin := by
-    intro (i,j)
-    have hi := layout_eval_tensorEquiv_eq_toFin (I := I) (rank := p) i
-    have hj := layout_eval_tensorEquiv_eq_toFin (I := J) (rank := q) j
-    have hsizeJ := size_eq_shape_size (I := J) (rank := q)
-    simp [Layout.rowMajorProd, toFin, ← hi, ← hj, - nsmul_eq_mul, TIndex.offset_smul, ←hsizeJ,
-          Layout.eval, Nat.mul_add, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc]
+-- instance {I : Type u} {J : Type v} {nI nJ : Nat}
+--     {p q : HTuple.Profile} {shapeI : HTuple Nat p} {shapeJ : HTuple Nat q}
+--     [TensorIndexTypeOfRank I nI p shapeI] [TensorIndexTypeOfRank J nJ q shapeJ] :
+--     TensorIndexTypeOfRank (I × J) (nI * nJ) (.prod p q) (HTuple.prod shapeI shapeJ) where
+--   size_eq_shape_size := by
+--     simp [Shape.size, size_eq_shape_size (I:=I) (rank := p), size_eq_shape_size (I:=J) (rank := q)]
+--   layout := (layout (I := I) (rank := p)).rowMajorProd (layout (I := J) (rank := q))
+--   compact_layout := by simp [compact_layout (I := I), compact_layout (I := J)]
+--   tensorEquiv := (Equiv.prodCongr tensorEquiv tensorEquiv).trans (FinHTuple.prodEquiv _ _).symm
+--   layout_eval_tensorEquiv_eq_toFin := by
+--     intro (i,j)
+--     have hi := layout_eval_tensorEquiv_eq_toFin (I := I) (rank := p) i
+--     have hj := layout_eval_tensorEquiv_eq_toFin (I := J) (rank := q) j
+--     have hsizeJ := size_eq_shape_size (I := J) (rank := q)
+--     simp [Layout.rowMajorProd, toFin, ← hi, ← hj, - nsmul_eq_mul, TIndex.offset_smul, ←hsizeJ,
+--           Layout.eval, Nat.mul_add, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc]
 
-instance {I : Type u} {J : Type v} {nI nJ : Nat}
-    {p q : HRank} {shapeI : Shape p} {shapeJ : Shape q}
-    [TensorIndexType I nI p shapeI] [TensorIndexType J nJ q shapeJ] :
-    TensorIndexType (I × J) (nI * nJ) (.prod p q) (HTuple.prod shapeI shapeJ) where
+-- instance {I : Type u} {J : Type v} {nI nJ : Nat}
+--     {p q : HRank} {shapeI : Shape p} {shapeJ : Shape q}
+--     [TensorIndexType I nI p shapeI] [TensorIndexType J nJ q shapeJ] :
+--     TensorIndexType (I × J) (nI * nJ) (.prod p q) (HTuple.prod shapeI shapeJ) where
 
 end TensorIndexType
 

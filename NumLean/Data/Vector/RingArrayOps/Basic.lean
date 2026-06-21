@@ -1,5 +1,4 @@
 import NumLean.Data.Vector.Basic
-import NumLean.Interfaces.Algebra.RingArrayOps
 import NumLean.Interfaces.Fold
 import NumLean.Meta.ForAll
 import NumLean.Tactic.TBounds
@@ -52,20 +51,6 @@ def sumRef [Add K] [Zero K] {xn : Nat} (n : Nat) (xs : Vector K xn) (xoff xinc :
   for h : i in 0...n do
     r := r + xs[xoff + i * xinc]'(by tbounds)
   return r
-
-instance [Ring K] : RingArrayOps (Vector K) where
-  axpy := axpyRef
-  scal := scalRef
-  mul := mulRef
-  dot := dotRef
-  sum := sumRef
-
-instance [Ring K] : LawfulRingArrayOps (Vector K) where
-  axpy_spec _ _ _ _ _ _ _ _ _ _ := rfl
-  scal_spec _ _ _ _ _ _ := rfl
-  mul_spec _ _ _ _ _ _ _ _ _ := rfl
-  dot_spec _ _ _ _ _ _ _ _ _ := rfl
-  sum_spec _ _ _ _ _ := rfl
 
 end Vector
 

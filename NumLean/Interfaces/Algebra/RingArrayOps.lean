@@ -1,6 +1,5 @@
-import NumLean.Data.Vector.Basic
+import NumLean.Data.Vector.RingArrayOps.Basic
 import NumLean.Interfaces.VectorType.Basic
-import NumLean.Tactic.TBounds
 import Mathlib.Algebra.Ring.Defs
 
 namespace NumLean
@@ -85,74 +84,33 @@ class RingArrayOps (Ks : Nat → Type u) {K : Type w} [VectorType Ks K] where
     (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) : K
 
 
-def axpySpec [Add K] [Mul K] {xn yn : Nat} (n : Nat)
-    (a : K) (xs : Vector K xn) (xoff xinc : Nat) (ys : Vector K yn) (yoff yinc : Nat)
-    (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) (hy : yoff + n * yinc ≤ yn ∧ yinc ≠ 0) : Vector K yn := Id.run do
-  let mut ys := ys
-  for h : i in 0...n do
-    ys[yoff + i * yinc]'(by tbounds) := ys[yoff + i * yinc]'(by tbounds) +  a * xs[xoff + i * xinc]'(by tbounds)
-  return ys
-
-def scalSpec [Mul K] {xn : Nat} (n : Nat) (a : K) (xs : Vector K xn) (xoff xinc : Nat)
-    (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) : Vector K xn := Id.run do
-  let mut xs := xs
-  for h : i in 0...n do
-    xs[xoff + i * xinc]'(by tbounds) := a * xs[xoff + i * xinc]'(by tbounds)
-  return xs
-
-def mulSpec [Mul K] {xn yn : Nat} (n : Nat)
-    (xs : Vector K xn) (xoff xinc : Nat) (ys : Vector K yn) (yoff yinc : Nat)
-    (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0)
-    (hy : yoff + n * yinc ≤ yn ∧ yinc ≠ 0) : Vector K yn := Id.run do
-  let mut ys := ys
-  for h : i in 0...n do
-    ys[yoff + i * yinc]'(by tbounds) :=
-      ys[yoff + i * yinc]'(by tbounds) * xs[xoff + i * xinc]'(by tbounds)
-  return ys
-
-def dotSpec [Add K] [Mul K] [Zero K] {xn yn : Nat} (n : Nat)
-    (xs : Vector K xn) (xoff xinc : Nat) (ys : Vector K yn) (yoff yinc : Nat)
-    (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0)
-    (hy : yoff + n * yinc ≤ yn ∧ yinc ≠ 0) : K := Id.run do
-  let mut r := 0
-  for h : i in 0...n do
-    r := r + xs[xoff + i * xinc]'(by tbounds) * ys[yoff + i * yinc]'(by tbounds)
-  return r
-
-def sumSpec [Add K] [Zero K] {xn : Nat} (n : Nat) (xs : Vector K xn) (xoff xinc : Nat)
-    (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) : K := Id.run do
-  let mut r := 0
-  for h : i in 0...n do
-    r := r + xs[xoff + i * xinc]'(by tbounds)
-  return r
-
-open RingArrayOps VectorType in
+open RingArrayOps VectorType Vector in
 class LawfulRingArrayOps (Ks : Nat → Type) {K : Type} [VectorType Ks K]
     [RingArrayOps Ks] [Ring K] where
 
   axpy_spec {xn yn : Nat} (n : Nat) (a : K) (xs : Ks xn) (xoff xinc : Nat) (ys : Ks yn) (yoff yinc : Nat)
     (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) (hy : yoff + n * yinc ≤ yn ∧ yinc ≠ 0) :
-    RingArrayOps.axpy n a xs xoff xinc ys yoff yinc hx hy
+    axpy n a xs xoff xinc ys yoff yinc hx hy
     =
-    fromVector (axpySpec (K:=K) n a (toVector xs) xoff xinc (toVector ys) yoff yinc hx hy)
+    fromVector (axpyRef (K := K) n a (toVector xs) xoff xinc (toVector ys) yoff yinc hx hy)
 
   scal_spec {xn : Nat} (n : Nat) (a : K) (xs : Ks xn) (xoff xinc : Nat)
     (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) :
-    RingArrayOps.scal n a xs xoff xinc hx =
-      fromVector (scalSpec (K := K) n a (toVector xs) xoff xinc hx)
+    scal n a xs xoff xinc hx =
+      fromVector (scalRef (K := K) n a (toVector xs) xoff xinc hx)
 
   mul_spec {xn yn : Nat} (n : Nat) (xs : Ks xn) (xoff xinc : Nat) (ys : Ks yn)
     (yoff yinc : Nat) (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0)
     (hy : yoff + n * yinc ≤ yn ∧ yinc ≠ 0) :
-    RingArrayOps.mul (Ks := Ks) (K := K) n xs xoff xinc ys yoff yinc hx hy =
-      fromVector (mulSpec (K := K) n (toVector xs) xoff xinc (toVector ys) yoff yinc hx hy)
+    mul (Ks := Ks) (K := K) n xs xoff xinc ys yoff yinc hx hy =
+      fromVector (mulRef (K := K) n (toVector xs) xoff xinc (toVector ys) yoff yinc hx hy)
 
   dot_spec {xn yn : Nat} (n : Nat) (xs : Ks xn) (xoff xinc : Nat) (ys : Ks yn)
     (yoff yinc : Nat) (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0)
     (hy : yoff + n * yinc ≤ yn ∧ yinc ≠ 0) :
-    RingArrayOps.dot n xs xoff xinc ys yoff yinc hx hy =
-      dotSpec (K := K) n (toVector xs) xoff xinc (toVector ys) yoff yinc hx hy
+    dot n xs xoff xinc ys yoff yinc hx hy =
+      dotRef (K := K) n (toVector xs) xoff xinc (toVector ys) yoff yinc hx hy
 
   sum_spec {xn : Nat} (n : Nat) (xs : Ks xn) (xoff xinc : Nat)
     (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) :
-    RingArrayOps.sum n xs xoff xinc hx = sumSpec (K := K) n (toVector xs) xoff xinc hx
+    sum n xs xoff xinc hx = sumRef (K := K) n (toVector xs) xoff xinc hx
