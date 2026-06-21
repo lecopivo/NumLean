@@ -35,6 +35,17 @@ def id [Zero K] [One K] (p : HTuple.Profile) : HTupleMap K p p where
 theorem eval_id [Semiring I] (x : HTuple I p) : (id I p).eval x = x := by
   simp [id, eval]
 
+/-- Constant affine map. -/
+def const [Zero K] (p : HTuple.Profile) (x : HTuple K q) : HTupleMap K p q where
+  offset := x
+  stride := 0
+
+@[simp]
+theorem eval_const [Semiring I] [AddCommMonoid K] [Module I K]
+    (x : HTuple K q) (i : HTuple I p) :
+    (const p x).eval i = x := by
+  simp [const, eval]
+
 /-- Compose affine `HTupleMap`s. -/
 def comp [Zero K] [Add K] [SMul J K] (g : HTupleMap K q r) (f : HTupleMap J p q) :
     HTupleMap K p r where
@@ -49,17 +60,6 @@ theorem eval_comp [Semiring I] [Semiring J] [AddCommMonoid K] [Module I J]
   simp [comp, eval]
   rw [HTuple.inner_add_left, HTuple.inner_map_inner]
   simp [add_assoc]
-
-/-- Constant affine map. -/
-def const [Zero K] (p : HTuple.Profile) (x : HTuple K q) : HTupleMap K p q where
-  offset := x
-  stride := 0
-
-@[simp]
-theorem eval_const [Semiring I] [AddCommMonoid K] [Module I K]
-    (x : HTuple K q) (i : HTuple I p) :
-    (const p x).eval i = x := by
-  simp [const, eval]
 
 /-- Project the left component of a product-valued affine map. -/
 def fst (f : HTupleMap K p (.prod q r)) : HTupleMap K p q where

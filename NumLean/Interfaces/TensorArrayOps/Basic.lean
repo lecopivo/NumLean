@@ -9,6 +9,12 @@ The operations mirror the reference implementations in `Vector.ForAll`. The spec
 part of this class: an implementation is required to commute with `VectorType.toVector` and
 `VectorType.fromVector`, rather than satisfying a separate lawful class. -/
 class TensorArrayOps (Ks : Nat → Type u) (K : outParam Type) [VectorType Ks K] where
+  extractSlice {m n : Nat} {r : HTuple.Profile} {shape : HTuple Nat r} (k : Nat)
+    (src : Ks n) (srcMap : FinHTupleMap shape h(n))
+    (dst : Ks m) (dstMap : FinHTupleMap shape h(max m k))
+    (hdst : dstMap.Injective) : Ks (max m k)
+
+
   copySlice {m n : Nat} {r : HTuple.Profile} {shape : HTuple Nat r}
     (src : Ks n) (srcMap : FinHTupleMap shape h(n))
     (dst : Ks m) (dstMap : FinHTupleMap shape h(m))
@@ -39,6 +45,10 @@ class TensorArrayOps (Ks : Nat → Type u) (K : outParam Type) [VectorType Ks K]
     VectorType.toVector (A:=K) (transposeSlice xs map hmap) =
       Vector.ForAll.transposeSlice (VectorType.toVector (A:=K) xs) map hmap
 
+  swapSliceSelf {n : Nat} {r : HTuple.Profile} {shape : HTuple Nat r}
+    (xs : Ks n) (map : FinHTupleMap shape h(n)) (map' : FinHTupleMap shape h(n))
+    (hmap : map.Injective) (hmap' : map'.Injective) (h : Disjoint map.range map'.range) : Ks n
+
   swapSlice {m n : Nat} {r : HTuple.Profile} {shape : HTuple Nat r}
     (xs : Ks m) (xmap : FinHTupleMap shape h(m))
     (ys : Ks n) (ymap : FinHTupleMap shape h(n))
@@ -57,6 +67,7 @@ namespace TensorArrayOps
 variable {Ks : Nat → Type u} {K : Type} [VectorType Ks K] [TensorArrayOps Ks K]
 
 instance {K : Type} : TensorArrayOps (Vector K) K where
+  extractSlice := sorry
   copySlice src srcMap dst dstMap hdst :=
     Vector.ForAll.copySlice src srcMap dst dstMap hdst
   copySlice_spec := by intros; rfl
@@ -66,6 +77,7 @@ instance {K : Type} : TensorArrayOps (Vector K) K where
   transposeSlice xs map hmap :=
     Vector.ForAll.transposeSlice xs map hmap
   transposeSlice_spec := by intros; rfl
+  swapSliceSelf := sorry
   swapSlice xs xmap ys ymap hxmap hymap :=
     Vector.ForAll.swapSlice xs xmap ys ymap hxmap hymap
   swapSlice_spec := by

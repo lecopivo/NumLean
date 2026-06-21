@@ -152,16 +152,15 @@ theorem getElem_ofFn (f : I → X) (i : I) :
     (ofFn f)[i] = f i := by
   sorry
 
+attribute [simp] FinHTupleMap.injective_rowMajorMap
+
 def replicate [TensorArrayOps Ks K] (x : X) : FlatVector X I :=
   let src := HasFlatVector.toFlatVector (Ks := Ks) x
   let dst := VectorType.emptyWithCapacity (As := Ks) (nI * nX)
-  let srcMap : FinHTupleMap h(nI, nX) h(nX) :=
-    -- snd ∘ identity on h(nI, nX)
-    sorry
-  let dstMap : FinHTupleMap h(nI, nX) h(nI * nX) :=
-    -- rowMajor linearize ∘ identity on h(nI, nX)
-    sorry
-  { data := TensorArrayOps.copySlice src srcMap sorry dstMap sorry }
+  let srcMap := FinHTupleMap.sndMap h(nI) h(nX)
+  let dstMap := FinHTupleMap.rowMajorMap h(nI, nX)
+  { data := TensorArrayOps.extractSlice (nI * nX) src srcMap dst dstMap
+              (FinHTupleMap.injective_rowMajorMap (h(nI, nX))) }
 
 @[simp]
 theorem getElem_replicate [TensorArrayOps Ks K] (x : X) (i : I) :
@@ -170,29 +169,55 @@ theorem getElem_replicate [TensorArrayOps Ks K] (x : X) (i : I) :
 
 /-! ### Swapping -/
 
+def _root_.NumLean.FinHTupleMap.pair
+    {p q} {src : HTuple Nat p} {dst : HTuple Nat q}
+    {p' q'} {src' : HTuple Nat p'} {dst' : HTuple Nat q'}
+    (map : FinHTupleMap src dst) (map' : FinHTupleMap src' dst') :
+    FinHTupleMap (src.prod src') (dst.prod dst') := sorry
+
+
+@[grind ←]
+theorem _root_.NumLean.FinHTupleMap.injective_of_pair
+    {p q} {src : HTuple Nat p} {dst : HTuple Nat q}
+    {p' q'} {src' : HTuple Nat p'} {dst' : HTuple Nat q'}
+    (f : FinHTupleMap src dst) (g : FinHTupleMap src' dst')
+    (hf : f.Injective) (hg : g.Injective) :
+    (f.pair g).Injective := sorry
+
+open IndexType in
 @[inline]
-def swap [DecidableEq I] (xs : FlatVector X I) (i j : I) : FlatVector X I :=
-  if i = j then xs else set (set xs i xs[j]) j xs[i]
+def swap [TensorArrayOps Ks K] [DecidableEq I] (xs : FlatVector X I) (i j : I) : FlatVector X I :=
+  if i = j then xs else
+    let i := toFin i
+    let j := toFin j
+    let imap :=
+      (FinHTupleMap.const h(nI) (dst := h(nI)) i (by grind)).pair (FinHTupleMap.id h(nX))
+      |>.linearize
+    let jmap :=
+      (FinHTupleMap.const h(nI) (dst := h(nI)) i (by grind)).pair (FinHTupleMap.id h(nX))
+      |>.linearize
+    { data := TensorArrayOps.swapSliceSelf xs.data imap jmap (by grind) (by grind) sorry }
 
-@[simp, grind =]
-theorem size_swap [DecidableEq I] (xs : FlatVector X I) (i j : I) :
-    (xs.swap i j).size = xs.size := by
-  by_cases h : i = j <;> simp [swap, h]
-  sorry
 
-@[simp]
-theorem getElem_swap_left [DecidableEq I] (xs : FlatVector X I) (i j : I) :
-    (xs.swap i j)[i] = xs[j] := by
-  sorry
+-- @[simp, grind =]
+-- theorem size_swap [DecidableEq I] (xs : FlatVector X I) (i j : I) :
+--     (xs.swap i j).size = xs.size := by
+--   by_cases h : i = j <;> simp [swap, h]
+--   sorry
 
-@[simp]
-theorem getElem_swap_right [DecidableEq I] (xs : FlatVector X I) (i j : I) :
-    (xs.swap i j)[j] = xs[i] := by
-  sorry
+-- @[simp]
+-- theorem getElem_swap_left [DecidableEq I] (xs : FlatVector X I) (i j : I) :
+--     (xs.swap i j)[i] = xs[j] := by
+--   sorry
 
-theorem getElem_swap_of_ne [DecidableEq I] (xs : FlatVector X I) (i j k : I) (hki : k ≠ i) (hkj : k ≠ j) :
-    (xs.swap i j)[k] = xs[k] := by
-  sorry
+-- @[simp]
+-- theorem getElem_swap_right [DecidableEq I] (xs : FlatVector X I) (i j : I) :
+--     (xs.swap i j)[j] = xs[i] := by
+--   sorry
+
+-- theorem getElem_swap_of_ne [DecidableEq I] (xs : FlatVector X I) (i j k : I) (hki : k ≠ i) (hkj : k ≠ j) :
+--     (xs.swap i j)[k] = xs[k] := by
+--   sorry
 
 /-! ### Mutation variants -/
 

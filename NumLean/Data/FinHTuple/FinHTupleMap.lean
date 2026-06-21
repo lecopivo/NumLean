@@ -33,6 +33,11 @@ instance : GetElem (FinHTupleMap src dst) (HTuple Nat p) (FinHTuple dst) (fun _ 
   getElem f i h := f.evalFin ⟨i, h⟩
 
 @[simp]
+theorem eval_mk (f : HTupleMap Nat p q) (hf : ∀ i : HTuple Nat p, i <ₑ src → f.eval i <ₑ dst)
+    (x : HTuple Nat p) :
+    (FinHTupleMap.mk f hf) x = f x := by simp [eval]
+
+@[simp]
 theorem evalFin_val (f : FinHTupleMap src dst) (i : FinHTuple src) :
     (f.evalFin i).val = f.eval i.val := rfl
 
@@ -57,6 +62,21 @@ def id (src : HTuple Nat p) : FinHTupleMap src src where
 @[simp]
 theorem id_eval (src : HTuple Nat p) (i : HTuple Nat p) : id src i = i := by
   simp [id, eval]
+
+/-- Constant bounded affine map. -/
+def const (src : HTuple Nat p) (dst : HTuple Nat q)
+    (x : HTuple Nat q) (hx : x <ₑ dst := by get_elem_tactic) :
+    FinHTupleMap src dst where
+  toHTupleMap := HTupleMap.const p x
+  inBounds := by
+    intro i hi
+    simpa only [HTupleMap.eval_const] using hx
+
+@[simp]
+theorem eval_const (src : HTuple Nat p) {dst : HTuple Nat q}
+    (x : HTuple Nat q) (hx : x <ₑ dst) (i : HTuple Nat p) :
+    const src dst x hx i = x := by
+  simp [const, eval]
 
 /-- Compose bounded affine maps. -/
 def comp {mid : HTuple Nat q} {r : HTuple.Profile} {dst : HTuple Nat r}
@@ -90,16 +110,21 @@ theorem eval_compCast {mid outerSrc : HTuple Nat q} {r : HTuple.Profile} {dst : 
     g.compCast f hcast i = g (f i) := by
   simp [compCast, eval]
 
+
 /-- Project the left component of the bounded destination. -/
 def fst {r : HTuple.Profile} {dst' : HTuple Nat r}
     (f : FinHTupleMap src (HTuple.prod dst dst')) : FinHTupleMap src dst where
-  toHTupleMap := HTupleMap.fst f.toHTupleMap
+  toHTupleMap := f.toHTupleMap.fst
   inBounds := by
     intro i hi
     have h := f.inBounds i hi
     cases hf : f.toHTupleMap.eval i with | prod x y =>
       simp [HTupleMap.eval_fst, hf] at h ⊢
       exact h.1
+
+/-- Canonical bounded projection onto the left component of a product shape. -/
+abbrev fstMap {r : HTuple.Profile} (shape : HTuple Nat p) (shape' : HTuple Nat r) :
+    FinHTupleMap (HTuple.prod shape shape') shape := (id (shape.prod shape')).fst
 
 @[simp]
 theorem eval_fst {r : HTuple.Profile} {dst' : HTuple Nat r}
@@ -110,13 +135,17 @@ theorem eval_fst {r : HTuple.Profile} {dst' : HTuple Nat r}
 /-- Project the right component of the bounded destination. -/
 def snd {r : HTuple.Profile} {dst' : HTuple Nat r}
     (f : FinHTupleMap src (HTuple.prod dst' dst)) : FinHTupleMap src dst where
-  toHTupleMap := HTupleMap.snd f.toHTupleMap
+  toHTupleMap := f.toHTupleMap.snd
   inBounds := by
     intro i hi
     have h := f.inBounds i hi
     cases hf : f.toHTupleMap.eval i with | prod x y =>
       simp [HTupleMap.eval_snd, hf] at h ⊢
       exact h.2
+
+/-- Canonical bounded projection onto the right component of a product shape. -/
+abbrev sndMap {r : HTuple.Profile} (shape : HTuple Nat p) (shape' : HTuple Nat r) :
+    FinHTupleMap (HTuple.prod shape shape') shape' := (id (shape.prod shape')).snd
 
 @[simp]
 theorem eval_snd {r : HTuple.Profile} {dst' : HTuple Nat r}
@@ -139,35 +168,109 @@ theorem eval_prod {r : HTuple.Profile} {dst' : HTuple Nat r}
     f.prod g i = HTuple.prod (f i) (g i) := by
   simp [prod, eval]
 
-/-- Constant bounded affine map. -/
-def const (src : HTuple Nat p) {dst : HTuple Nat q} (x : HTuple Nat q) (hx : x <ₑ dst) :
-    FinHTupleMap src dst where
-  toHTupleMap := HTupleMap.const p x
+/-- Canonical bounded row-major linearization map for a shape. -/
+def rowMajorMap (shape : HTuple Nat p) : FinHTupleMap shape h(shape.numel) where
+  toHTupleMap := HTupleMap.rowMajorMap shape
   inBounds := by
     intro i hi
-    simpa only [HTupleMap.eval_const] using hx
+    exact HTupleMap.eval_rowMajorMap_lt_card hi
 
 @[simp]
-theorem eval_const (src : HTuple Nat p) {dst : HTuple Nat q}
-    (x : HTuple Nat q) (hx : x <ₑ dst) (i : HTuple Nat p) :
-    const src x hx i = x := by
-  simp [const, eval]
+theorem eval_rowMajorMap (shape : HTuple Nat p) (i : HTuple Nat p) :
+    rowMajorMap shape i = h(i.rowMajorIndex shape) := by
+  simp [rowMajorMap, eval]
+
+theorem eval_rowMajorMap_eq_linearIndex (shape : HTuple Nat p) (i : HTuple Nat p) :
+    rowMajorMap shape i = h(HTuple.Range.linearIndex 0 shape i) := by
+  simp [HTuple.Range.linearIndex_zero]
 
 /-- Linearize the bounded destination of a map into its row-major flat index. -/
-def linearize (f : FinHTupleMap src dst) : FinHTupleMap src h(dst.numel) where
-  toHTupleMap := HTupleMap.comp (HTupleMap.rowMajorMap dst) f.toHTupleMap
+abbrev linearize (f : FinHTupleMap src dst) : FinHTupleMap src h(dst.numel) :=
+  (rowMajorMap dst).comp f
+
+def point (shape : HTuple Nat p) (x : HTuple Nat p) (h : x <ₑ shape := by get_elem_tactic) :
+    FinHTupleMap h(1) shape where
+  toHTupleMap := HTupleMap.const .leaf x
   inBounds := by
     intro i hi
-    simpa only [HTupleMap.eval_comp] using HTupleMap.eval_rowMajorMap_lt_card (f.inBounds i hi)
+    simp [h]
 
-theorem eval_linearize (f : FinHTupleMap src dst) (i : HTuple Nat p) :
-   f.linearize i = HTuple.Range.linearIndex 0 dst (f i) := by
-  simp [linearize, eval, HTuple.Range.linearIndex_zero]
+theorem eval_point (shape : HTuple Nat p) (x : HTuple Nat .leaf) (y : HTuple Nat p)
+    (h : y <ₑ shape := by get_elem_tactic) :
+  (point shape y) i = y := by simp [point]
 
+-- theorem comp_rowMajorMap_eq_linearize
 
 /-- A bounded map has no collisions on its bounded domain. -/
 def Injective (f : FinHTupleMap src dst) : Prop :=
-  Function.Injective (fun i : FinHTuple src => f i)
+  Function.Injective f.evalFin
+
+@[grind ←]
+theorem injective_id (src : HTuple Nat p) : (id src).Injective := by
+  intro i j h
+  apply FinHTuple.ext
+  simpa using congrArg FinHTuple.val h
+
+@[grind ←]
+theorem injective_comp {mid : HTuple Nat q} {r : HTuple.Profile} {dst : HTuple Nat r}
+    (g : FinHTupleMap mid dst) (f : FinHTupleMap src mid)
+    (hg : g.Injective) (hf : f.Injective) : (g.comp f).Injective := by
+  intro i j h
+  apply hf
+  apply hg
+  apply FinHTuple.ext
+  simpa using congrArg FinHTuple.val h
+
+@[grind ←]
+theorem injective_of_fst {r : HTuple.Profile} {dst' : HTuple Nat r}
+    (f : FinHTupleMap src dst) (g : FinHTupleMap src dst') (hf : f.Injective) :
+    (f.prod g).Injective := by
+  intro i j h
+  apply hf
+  apply FinHTuple.ext
+  have hval := congrArg FinHTuple.val h
+  simpa using congrArg HTuple.fst hval
+
+@[grind ←]
+theorem injective_of_snd {r : HTuple.Profile} {dst' : HTuple Nat r}
+    (f : FinHTupleMap src dst) (g : FinHTupleMap src dst') (hf : g.Injective) :
+    (f.prod g).Injective := by
+  intro i j h
+  apply hf
+  apply FinHTuple.ext
+  have hval := congrArg FinHTuple.val h
+  simpa using congrArg HTuple.snd hval
+
+@[grind ←]
+theorem injective_rowMajorMap (shape : HTuple Nat p) : (rowMajorMap shape).Injective := by
+  intro i j h
+  apply (FinHTuple.equivFin shape).injective
+  apply Fin.ext
+  have hval := congrArg FinHTuple.val h
+  have hi := FinHTuple.equivFin_val_eq_linearIndex_zero shape i
+  have hj := FinHTuple.equivFin_val_eq_linearIndex_zero shape j
+  simp [evalFin, eval_rowMajorMap] at hval
+  simpa [hi, hj, HTuple.Range.linearIndex_zero] using hval
+
+@[grind ←]
+theorem injective_prod_left {r : HTuple.Profile} {dst' : HTuple Nat r}
+    {f : FinHTupleMap src dst} {g : FinHTupleMap src dst'}
+    (hf : f.Injective) : (f.prod g).Injective := by
+  intro i j h
+  apply hf
+  apply FinHTuple.ext
+  have hval := congrArg FinHTuple.val h
+  simpa using congrArg HTuple.fst hval
+
+@[grind ←]
+theorem injective_prod_right {r : HTuple.Profile} {dst' : HTuple Nat r}
+    {f : FinHTupleMap src dst} {g : FinHTupleMap src dst'}
+    (hg : g.Injective) : (f.prod g).Injective := by
+  intro i j h
+  apply hg
+  apply FinHTuple.ext
+  have hval := congrArg FinHTuple.val h
+  simpa using congrArg HTuple.snd hval
 
 /-- A bounded map has no collisions on its bounded domain. -/
 def Bijective (f : FinHTupleMap src dst) : Prop :=
@@ -258,11 +361,13 @@ theorem eval_rangeNatInv (f : FinHTupleMap src h(m)) (i : Nat) (h : i ∈ f.rang
 theorem rangeInv_eval (f : FinHTupleMap src dst) (i : FinHTuple src) (h : f.Injective) :
     f.rangeInv (f i) (by simp) = i := by
   apply h
+  apply FinHTuple.ext
   exact f.eval_rangeInv (f i) (by simp)
 
 theorem rangeNatInv_eval (f : FinHTupleMap src h(m)) (i : FinHTuple src) (h : f.Injective) :
     f.rangeNatInv (f i) (by simp) = i := by
   apply h
+  apply FinHTuple.ext
   apply HTuple.toScalar_injective
   simpa using f.eval_rangeNatInv (f i) (by simp)
 

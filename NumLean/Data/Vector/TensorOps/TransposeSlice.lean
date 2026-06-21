@@ -1,5 +1,4 @@
 import NumLean.Data.Vector.TensorOps.Defs
-import NumLean.Data.Vector.TensorOps.FoldMap
 import NumLean.Data.TensorIndex.Basic
 
 namespace NumLean

@@ -83,7 +83,6 @@ import NumLean.Data.Vector.TensorOps.CopySlice
 import NumLean.Data.Vector.TensorOps.Defs
 import NumLean.Data.Vector.TensorOps.FoldMap
 import NumLean.Data.Vector.TensorOps.ReverseSlice
-import NumLean.Data.Vector.TensorOps.ShapeEntries
 import NumLean.Data.Vector.TensorOps.SwapSlice
 import NumLean.Data.Vector.TensorOps.TransposeSlice
 import NumLean.Device.Basic
