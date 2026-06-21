@@ -69,6 +69,15 @@ macro (priority:=high) x:ident noWs "[" i:term "]'" h:term " := " xi:term : doEl
   `(doElem| $x:ident := setElem $x $i $xi $h)
 
 
+-- -- a[i] += x
+-- macro (priority:=high) x:ident noWs "[" i:term "]" " += " xi:term : doElem => do
+--   `(doElem| $x:ident := setElem $x $i $xi (by get_elem_tactic))
+
+-- -- a[i] += x
+-- macro (priority:=high) x:ident noWs "[" i:term "]'" h:term " := " xi:term : doElem => do
+--   `(doElem| $x:ident := setElem $x $i $xi $h)
+
+
 local instance {X n} : DefaultIndexOfRank (Vector X n) 1 (Fin n) := ⟨⟩
 
 /-- info: fun i => #v[1, 2, 3, 4][i] : Fin 4 → Nat -/

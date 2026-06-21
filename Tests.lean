@@ -14,6 +14,7 @@ import Tests.OrderInstances
 import Tests.ScalarArrays
 import Tests.TensorIndexIteratorCompiler
 import Tests.TensorIndexRangeIterators
+import Tests.TBounds
 import Tests.TupleOrderNotation
 import Tests.VectorRangeIterators
 import Tests.Visualize

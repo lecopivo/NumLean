@@ -1,5 +1,6 @@
 import NumLean.Interfaces.VectorType.Basic
 import NumLean.Interfaces.FlatRepr.Basic
+import NumLean.Tactic.TBounds
 
 namespace NumLean
 
@@ -53,7 +54,7 @@ class HasFlatVector (X : Type u) (Ks : Nat → Type v) (nX : outParam Nat)
 
   replicate (n : Nat) (x :X) : Ks (n * nX)
   get_replicate (n : Nat) (x : X) (i j : Nat) (hi : i < n) (hj : j < nX) :
-    VectorType.get (replicate n x) (i * nX + j) sorry = getComp x j hj
+    VectorType.get (replicate n x) (i * nX + j) (by tbounds) = getComp x j hj
 
 /-- The default flat vector type for `X`. -/
 class HasDefaultFlatVector (X : Type u) (Ks : outParam (Nat → Type v)) (nX : outParam Nat)
@@ -159,13 +160,12 @@ theorem get_toFlatVector (x : X) :
   apply FlatRepr.ext (K := K)
   intro i hi
   rw [getComp_get_eq_vector_get]
-  simp [Nat.zero_add]
+  simp
 
 @[simp]
 theorem get_replicate_eq (n : Nat) (x : X) (i : Nat) (hi : i < n) :
     get (X := X) (replicate (Ks := Ks) n x) (i * nX) (by
-      have hle := Nat.mul_le_mul_right nX (Nat.succ_le_of_lt hi)
-      simpa [Nat.succ_mul] using hle) = x := by
+      tbounds) = x := by
   apply FlatRepr.ext (K := K)
   intro j hj
   rw [getComp_get_eq_vector_get]

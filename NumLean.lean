@@ -116,6 +116,9 @@ import NumLean.Interfaces.Fold.RcoNative
 import NumLean.Interfaces.HasFlatArray
 import NumLean.Interfaces.HasFlatArray.Basic
 import NumLean.Interfaces.HasFlatArray.Float
+import NumLean.Interfaces.HasFlatRepr
+import NumLean.Interfaces.HasFlatRepr.Basic
+import NumLean.Interfaces.HasFlatRepr.Prod
 import NumLean.Interfaces.HasFlatVector
 import NumLean.Interfaces.HasFlatVector.Basic
 import NumLean.Interfaces.IndexType
@@ -156,5 +159,6 @@ import NumLean.Tactic.ApplyRuleSets.Core
 import NumLean.Tactic.ApplyRuleSets.Elab
 import NumLean.Tactic.ApplyRuleSets.RuleProc
 import NumLean.Tactic.ApplyRuleSets.Types
+import NumLean.Tactic.TBounds
 -- import NumLean.TargetTests
 import NumLean.TestUIntProofs

@@ -63,7 +63,7 @@ instance [One K] [BLASOps Ks K] : Add (FlatVector X I) := ⟨fun x y =>
   { data := BLASOps.axpy (nI * nX) (1 : K) y.data 0 1 x.data 0 1 (by simp) (by simp)}⟩
 
 @[simp]
-theorem getElem_add [Semiring K] [Add X] [FlatRepr.LawfulAdd X K] [BLASOps Ks K]
+theorem getElem_add [Semiring K] [Add X] [FlatRepr.LawfulAdd X K] [BLASOps Ks K] -- [LawfulBLASOps Ks K]
     (xs ys : FlatVector X I) (i : I) :
     (xs + ys)[i] = xs[i] + ys[i] := by
   apply FlatRepr.ext K

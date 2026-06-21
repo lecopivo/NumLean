@@ -4,6 +4,7 @@ import NumLean.Interfaces.VectorType.Basic
 import NumLean.Interfaces.HasFlatVector.Basic
 import NumLean.Interfaces.TensorArrayOps.Basic
 import NumLean.Data.FinHTuple
+import NumLean.Tactic.TBounds
 
 namespace NumLean
 
@@ -31,10 +32,9 @@ theorem size_eq_card (xs : FlatVector X I) : xs.size = nI := rfl
 
 theorem offset_add_width_le_size (_xs : FlatVector X I) (i : I) :
     offset (nX := nX) i + nX ≤ nI * nX := by
-  calc
-    offset (nX := nX) i + nX = ((IndexType.toFin i).1 + 1) * nX := by
-      simp [offset, Nat.succ_mul]
-    _ ≤ nI * nX := Nat.mul_le_mul_right nX (Nat.succ_le_of_lt (IndexType.toFin i).2)
+  have hi := (toFin i).2
+  simp [offset]
+  tbounds
 
 /-! ### Indexing -/
 
@@ -58,19 +58,23 @@ theorem getElem_eq_get (xs : FlatVector X I) (i : I) :
 
 @[simp]
 theorem getElem_mk (xs : Ks (nI * nX)) (i : I) :
-    (FlatVector.mk (X:=X) (I:=I) xs)[i] = HasFlatVector.get xs ((toFin i).1 * nX) sorry := by
+    (FlatVector.mk (X:=X) (I:=I) xs)[i] = HasFlatVector.get xs ((toFin i).1 * nX) (by
+      have hi := (toFin i).2
+      tbounds) := by
   rfl
 
-example (i j nX nI : Nat) (hi : i < nI) (hj : j < nX) : i * nX + j < nI * nX := sorry
-example (i j nX nI : Nat) (hi : i < nI) (hj : j < nX) : i * nX + nX ≤ nI * nX := sorry
+example (i j nX nI : Nat) (hi : i < nI) (hj : j < nX) : i * nX + j < nI * nX := by
+  tbounds
+example (i nX nI : Nat) (hi : i < nI) : i * nX + nX ≤ nI * nX := by
+  tbounds
 
--- todo: make some tactic that can blast `↑(toFin i) * nX + j < nI * nX`
---                                        ↑(toFin i) * nX + nX ≤ nI * nX
 @[simp]
 theorem getComp_getElem_eq_get (xs : FlatVector X I) (i : I) (j : Nat) (hj : j < nX) :
     FlatRepr.getComp K xs[i] j hj
     =
-    VectorType.get xs.data ((IndexType.toFin i).1 * nX + j) sorry := by
+    VectorType.get xs.data ((IndexType.toFin i).1 * nX + j) (by
+      have hi := (toFin i).2
+      tbounds) := by
   rw[getElem_eq_get];
   simp [get, HasFlatVector.getComp_get_eq_vector_get, offset]
   --
