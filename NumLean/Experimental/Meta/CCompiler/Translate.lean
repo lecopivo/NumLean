@@ -1,6 +1,6 @@
-import NumLean.Meta.CCompiler.Basic
+import NumLean.Experimental.Meta.CCompiler.Basic
 
-namespace NumLean.Meta.CCompiler
+namespace NumLean.Experimental.Meta.CCompiler
 
 open Lean Elab Command Lean.Compiler
 
@@ -253,4 +253,4 @@ partial def mergeCaseResult (cond : String) (thenVal elseVal : Val) : CompileM V
   | .erased, .erased => return .erased
   | _, _ => unsupportedControl s!"case branches return incompatible values `{valKind thenVal}` and `{valKind elseVal}`"
 
-end NumLean.Meta.CCompiler
+end NumLean.Experimental.Meta.CCompiler

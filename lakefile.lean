@@ -27,8 +27,12 @@ target libNumLeanNative pkg : Dynlib := do
   buildSharedLib "NumLeanNative" (pkg.sharedLibDir / nameToSharedLib "NumLeanNative")
     objJobs #[] #[] #[] "cc" getLeanTrace
 
-@[default_target]
 lean_lib NumLean where
+
+lean_lib NumLeanExperimental where
+
+@[default_target]
+lean_lib NumLeanAll where
 
 lean_lib NumLean.Data.Float32Array where
   moreLinkLibs := #[libNumLeanNative]

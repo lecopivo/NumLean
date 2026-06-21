@@ -64,6 +64,10 @@ def shape_4_by_2x2 : Layout h((4 : Nat), ((2 : Nat), (2 : Nat))) Int where
 
 /-! Base objects. -/
 
+#visualize Visualize.latex "\\sum_{i=0}^{n-1} x_i^2"
+
+#visualize (hp(•, •), Visualize.latex "(i_1, i_2) \\mapsto i_1\\bullet (1,0) + i_2 \\bullet (0,1)")
+
 #visualize profileB
 #visualize shapeB
 #visualize colMajor

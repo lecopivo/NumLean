@@ -11,7 +11,7 @@ open Lean Server Elab Command ProofWidgets
 
 structure ProfileVisProps where
   profile : String := "(•,(•,(•,•)))"
-  deriving RpcEncodable
+  deriving RpcEncodable, ToJson, FromJson
 
 namespace ProfileVis
 

@@ -1,4 +1,4 @@
-import NumLean.Meta.CCompiler
+import NumLean.Experimental.Meta.CCompiler
 
 set_option backward.do.legacy false
 

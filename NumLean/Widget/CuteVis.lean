@@ -22,7 +22,7 @@ structure CuteLayoutVisProps where
   cols : Nat := 8
   values : Array Int := #[0,4,8,12,16,20,24,28, 1,5,9,13,17,21,25,29, 2,6,10,14,18,22,26,30, 3,7,11,15,19,23,27,31]
   labels : Array String := #[]
-  deriving RpcEncodable
+  deriving RpcEncodable, ToJson, FromJson
 
 /-- Props for a Figure-5-style slicing visualization.
 
@@ -47,7 +47,7 @@ structure CuteSliceVisProps where
   sliceCols : Nat := 12
   sliceValues : Array Int := #[8,10,23,25,38,40,108,110,123,125,138,140]
   sliceLabels : Array String := #[]
-  deriving RpcEncodable
+  deriving RpcEncodable, ToJson, FromJson
 
 namespace CuteVis
 

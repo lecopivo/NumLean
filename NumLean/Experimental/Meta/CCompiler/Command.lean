@@ -1,7 +1,7 @@
-import NumLean.Meta.CCompiler.Extern
+import NumLean.Experimental.Meta.CCompiler.Extern
 import Lean.Elab.Command
 
-namespace NumLean.Meta.CCompiler
+namespace NumLean.Experimental.Meta.CCompiler
 
 open Lean Lean.Elab Lean.Elab.Command Lean.Compiler
 
@@ -19,4 +19,4 @@ syntax (name := compileCCmd) "#compile_c" ident : command
   | .error e => throwError e
 
 
-end NumLean.Meta.CCompiler
+end NumLean.Experimental.Meta.CCompiler

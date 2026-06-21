@@ -73,6 +73,7 @@ theorem getElem_set_eq (xs : FlatVector X I) (i : I) (x : X) (h : True) :
 theorem getElem_set_ne (xs : FlatVector X I) (i j : I) (x : X)
     (hi : True) (hj : True) (h : i ≠ j) :
     (setElem xs i x hi)[j] = xs[j] := by
+  -- todo: this proof should be seriously simplified
   have hfin : (IndexType.toFin i).1 ≠ (IndexType.toFin j).1 := by
     intro heq
     apply h
@@ -135,32 +136,25 @@ def back! [Inhabited X] (xs : FlatVector X I) : X :=
 
 /-! ### Construction -/
 
+set_option backward.do.legacy false
+
+variable [Inhabited K]
+
 def ofFn (f : I → X) : FlatVector X I := Id.run do
-  let data : Ks 0 := VectorType.emptyWithCapacity (nI * nX)
-  { data := VectorType.fromVector <| Vector.ofFn fun k : Fin (nI * nX) =>
-      if hnX : nX = 0 then
-        False.elim (Nat.not_lt_zero k.1 (by simpa [hnX] using k.2))
-      else
-        let hpos : 0 < nX := Nat.pos_of_ne_zero hnX
-        let i : I := IndexType.fromFin ⟨k.1 / nX, by
-          rw [Nat.div_lt_iff_lt_mul hpos]
-          simpa [Nat.mul_comm] using k.2⟩
-        FlatRepr.getComp (X := X) (K := K) (f i) (k.1 % nX) (Nat.mod_lt _ hpos) }
+  -- todo: this is probably not the best implementation
+  --       we probably want to work unsized based ArrayType and do a sequence of `push`
+  let mut r : FlatVector X I := { data := VectorType.replicate (nI * nX) default }
+  for_all h : i in 0...nI do
+    let i : I := fromFin ⟨i, h.2⟩
+    r[i] := f i
+  return r
 
 @[simp]
 theorem getElem_ofFn (f : I → X) (i : I) :
     (ofFn f)[i] = f i := by
   sorry
 
-attribute [simp] FinHTupleMap.injective_rowMajorMap
-
-def replicate [TensorArrayOps Ks K] (x : X) : FlatVector X I :=
-  let src := HasFlatVector.toFlatVector (Ks := Ks) x
-  let dst := VectorType.emptyWithCapacity (As := Ks) (nI * nX)
-  let srcMap := FinHTupleMap.sndMap h(nI) h(nX)
-  let dstMap := FinHTupleMap.rowMajorMap h(nI, nX)
-  { data := TensorArrayOps.extractSlice (nI * nX) src srcMap dst dstMap
-              (FinHTupleMap.injective_rowMajorMap (h(nI, nX))) }
+def replicate [Inhabited K] (x : X) : FlatVector X I := sorry
 
 @[simp]
 theorem getElem_replicate [TensorArrayOps Ks K] (x : X) (i : I) :
@@ -169,35 +163,21 @@ theorem getElem_replicate [TensorArrayOps Ks K] (x : X) (i : I) :
 
 /-! ### Swapping -/
 
-def _root_.NumLean.FinHTupleMap.pair
-    {p q} {src : HTuple Nat p} {dst : HTuple Nat q}
-    {p' q'} {src' : HTuple Nat p'} {dst' : HTuple Nat q'}
-    (map : FinHTupleMap src dst) (map' : FinHTupleMap src' dst') :
-    FinHTupleMap (src.prod src') (dst.prod dst') := sorry
-
-
-@[grind ←]
-theorem _root_.NumLean.FinHTupleMap.injective_of_pair
-    {p q} {src : HTuple Nat p} {dst : HTuple Nat q}
-    {p' q'} {src' : HTuple Nat p'} {dst' : HTuple Nat q'}
-    (f : FinHTupleMap src dst) (g : FinHTupleMap src' dst')
-    (hf : f.Injective) (hg : g.Injective) :
-    (f.pair g).Injective := sorry
-
-open IndexType in
+open IndexType FinHTupleMap in
 @[inline]
-def swap [TensorArrayOps Ks K] [DecidableEq I] (xs : FlatVector X I) (i j : I) : FlatVector X I :=
-  if i = j then xs else
-    let i := toFin i
-    let j := toFin j
-    let imap :=
-      (FinHTupleMap.const h(nI) (dst := h(nI)) i (by grind)).pair (FinHTupleMap.id h(nX))
-      |>.linearize
-    let jmap :=
-      (FinHTupleMap.const h(nI) (dst := h(nI)) i (by grind)).pair (FinHTupleMap.id h(nX))
-      |>.linearize
-    { data := TensorArrayOps.swapSliceSelf xs.data imap jmap (by grind) (by grind) sorry }
-
+def swapSlice [TensorArrayOps Ks K] (xs : FlatVector X I) (len i j : Nat) : FlatVector X I := sorry
+  --   (h : i + len < j ∨ j + len < i) : -- non-overlaping
+  --   FlatVector X I :=
+  -- if h : i = j then xs else
+  --   let i := toFin i
+  --   let j := toFin j
+  --   let imap := (FinHTupleMap.point h(nI) i).pair (FinHTupleMap.id h(nX)) |>.linearize
+  --   have hi : imap.Injective := by grind
+  --   let jmap := (FinHTupleMap.point h(nI) j).pair (FinHTupleMap.id h(nX)) |>.linearize
+  --   have hj : jmap.Injective := by grind
+  --   have hij : i ≠ j := by sorry -- todo: set up IndexType with grind!
+  --   have hdisjoint : Disjoint imap.range jmap.range := by grind
+  --   { data := TensorArrayOps.swapSliceSelf xs.data imap jmap hi hj hdisjoint }
 
 -- @[simp, grind =]
 -- theorem size_swap [DecidableEq I] (xs : FlatVector X I) (i j : I) :

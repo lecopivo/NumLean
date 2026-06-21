@@ -1,10 +1,67 @@
 import * as React from 'react'
 
-const VERSION = 'numlean-visualize-v17'
+const VERSION = 'numlean-visualize-v26'
 const RANK_GAP = 3
 const RANK_BLOCK_GAP = 7
 const RANK_STAMP_BORDER = 2
 const CELL_RADIUS = 4
+const MATHJAX_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
+
+let mathJaxPromise = null
+
+function loadMathJax() {
+  if (globalThis.MathJax && typeof globalThis.MathJax.tex2svgPromise === 'function') {
+    return Promise.resolve(globalThis.MathJax)
+  }
+  if (mathJaxPromise) return mathJaxPromise
+  globalThis.MathJax = {
+    ...(globalThis.MathJax || {}),
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], ...(globalThis.MathJax && globalThis.MathJax.tex) },
+    svg: { fontCache: 'global', ...(globalThis.MathJax && globalThis.MathJax.svg) },
+    startup: { typeset: false, ...(globalThis.MathJax && globalThis.MathJax.startup) }
+  }
+  const ready = () => {
+    const mathjax = globalThis.MathJax
+    if (mathjax && mathjax.startup && mathjax.startup.promise) {
+      return mathjax.startup.promise.then(() => mathjax)
+    }
+    return Promise.resolve(mathjax)
+  }
+  mathJaxPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = MATHJAX_URL
+    script.async = true
+    script.onload = () => ready().then(resolve, reject)
+    script.onerror = () => reject(new Error(`failed to load ${MATHJAX_URL}`))
+    document.head.appendChild(script)
+  })
+  return mathJaxPromise
+}
+
+function trimMathJaxSvg(node) {
+  const svg = node && node.querySelector && node.querySelector('svg')
+  if (!svg || typeof svg.getBBox !== 'function') return
+  try {
+    const box = svg.getBBox()
+    if (!box || box.width <= 0 || box.height <= 0) return
+    const pad = 60
+    const width = box.width + 2 * pad
+    const height = box.height + 2 * pad
+    svg.setAttribute('viewBox', `${box.x - pad} ${box.y - pad} ${width} ${height}`)
+    svg.removeAttribute('width')
+    svg.removeAttribute('height')
+    svg.style.maxWidth = '100%'
+    svg.style.width = '100%'
+    svg.style.height = 'auto'
+    svg.style.aspectRatio = `${width} / ${height}`
+    svg.style.verticalAlign = 'top'
+  } catch (_e) {}
+}
+
+function displayStyleTex(source) {
+  const text = source || ''
+  return text.trimStart().startsWith('\\displaystyle') ? text : `\\displaystyle ${text}`
+}
 
 function asNumber(x) {
   if (typeof x === 'bigint') return Number(x)
@@ -149,6 +206,12 @@ function Style() {
     .numlean-vis .pair > .card { min-width: 0; padding: 8px; }
     .numlean-vis .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .numlean-vis .formula { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 18px; font-weight: 800; color: #f4f7ff; background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .numlean-vis .latex-card { background: rgba(16,22,33,.72); border: 1px solid rgba(255,255,255,.08); border-radius: 13px; padding: 14px; overflow: hidden; flex: 1 1 280px; min-width: 0; }
+    .numlean-vis .latex-formula { display: block; max-width: 100%; overflow: hidden; color: #f8fbff; background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035)); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px 14px; font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", Georgia, serif; font-size: 23px; line-height: 1.35; white-space: pre-wrap; }
+    .numlean-vis .latex-formula.rendered { line-height: 0; }
+    .numlean-vis .latex-formula mjx-container { display: block !important; max-width: 100% !important; overflow: hidden !important; margin: 0 !important; text-align: left !important; }
+    .numlean-vis .latex-formula mjx-container svg { display: block; width: 100% !important; max-width: 100% !important; height: auto !important; vertical-align: 0 !important; }
+    .numlean-vis .latex-error { margin-top: 8px; color: #ffb4b4; font-size: 12px; }
     .numlean-vis .tree-panel { overflow: hidden; }
     .numlean-vis .tree-scale-shell { transform-origin: top left; }
     .numlean-vis svg { display: block; }
@@ -444,22 +507,66 @@ function SliceCard({ item }) {
   )
 }
 
+function LaTeXCard({ source }) {
+  const ref = React.useRef(null)
+  const [error, setError] = React.useState(null)
+  React.useEffect(() => {
+    if (!ref.current) return
+    let cancelled = false
+    setError(null)
+    ref.current.classList.remove('rendered')
+    loadMathJax().then((mathjax) => mathjax.tex2svgPromise(displayStyleTex(source), { display: false })).then((node) => {
+      if (cancelled || !ref.current) return
+      ref.current.classList.add('rendered')
+      ref.current.replaceChildren(node)
+      requestAnimationFrame(() => {
+        if (!cancelled) trimMathJaxSvg(ref.current)
+      })
+    }).catch((err) => {
+      if (!cancelled) setError(err && err.message ? err.message : 'failed to render LaTeX')
+    })
+    return () => { cancelled = true }
+  }, [source])
+  return React.createElement('div', { className: 'latex-card' },
+    React.createElement('div', { ref, className: 'latex-formula' }, source || ''),
+    error ? React.createElement('div', { className: 'latex-error' }, error) : null
+  )
+}
+
 function Row({ items }) {
   return React.createElement('div', { className: 'row' }, asArray(items).map((item, i) => React.createElement(Item, { key: i, item })))
 }
 
+function itemKind(item) {
+  if (!item || typeof item !== 'object') return null
+  if (item.kind) return item.kind
+  if (item.profile != null) return 'profile'
+  if (item.source != null) return 'latex'
+  if (item.sourceRows != null || item.sourceValues != null || item.selected != null) return 'slice'
+  if (item.items != null) return 'flow'
+  if (item.left != null && item.right != null) return 'prod'
+  if (item.rows != null && item.cols == null) return 'grid'
+  if (item.shape != null && item.values != null) return 'highRankLayout'
+  if (item.shape != null) return 'shape'
+  if (item.rows != null && item.cols != null && item.values != null) return 'layout'
+  return null
+}
+
 function Item({ item }) {
   if (!item || typeof item !== 'object') return React.createElement(TreeCard, { text: String(item) })
-  if (item.kind === 'profile') return React.createElement(TreeCard, { text: item.profile })
-  if (item.kind === 'shape') return React.createElement(TreeCard, { text: item.shape })
-  if (item.kind === 'layout') return React.createElement(LayoutCard, { item })
-  if (item.kind === 'highRankLayout') return React.createElement(HighRankLayoutCard, { item })
-  if (item.kind === 'slice') return React.createElement(SliceCard, { item })
-  if (item.kind === 'prod') {
+  const kind = itemKind(item)
+  if (kind === 'profile') return React.createElement(TreeCard, { text: item.profile })
+  if (kind === 'shape') return React.createElement(TreeCard, { text: item.shape })
+  if (kind === 'layout') return React.createElement(LayoutCard, { item })
+  if (kind === 'latex') return React.createElement(LaTeXCard, { source: item.source })
+  if (kind === 'highRankLayout') return React.createElement(HighRankLayoutCard, { item })
+  if (kind === 'slice') return React.createElement(SliceCard, { item })
+  if (kind === 'prod') {
+    const options = item.options || {}
     const style = {
-      gap: asNumber(item.gap || 10),
-      alignItems: item.alignItems || 'start',
-      justifyItems: item.justifyItems || 'stretch'
+      gap: asNumber(item.gap || options.gap || 10),
+      alignItems: item.alignItems || options.alignItems || 'start',
+      justifyItems: item.justifyItems || options.justifyItems || 'stretch'
     }
     return React.createElement('div', { className: 'card' },
       React.createElement('div', { className: 'pair', style },
@@ -468,10 +575,10 @@ function Item({ item }) {
       )
     )
   }
-  if (item.kind === 'flow') {
+  if (kind === 'flow') {
     return React.createElement('div', { className: 'flow' }, asArray(item.items).map((child, i) => React.createElement(Item, { key: i, item: child })))
   }
-  if (item.kind === 'grid') {
+  if (kind === 'grid') {
     return React.createElement('div', { className: 'rows' }, asArray(item.rows).map((row, i) => React.createElement(Row, { key: i, items: row })))
   }
   return React.createElement(TreeCard, { text: JSON.stringify(item) })

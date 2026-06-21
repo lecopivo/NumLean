@@ -102,6 +102,29 @@ theorem eval_prod [Zero K] [Add K] [SMul I K] (f : HTupleMap K p q) (g : HTupleM
   cases g with | mk offset₁ stride₁ =>
   simp [prod, eval, HTuple.inner_map₂_prod]
 
+/-- Cast an affine map across definitionally/simp-equal source and destination profiles. -/
+def cast {p q : HTuple.Profile} (f : HTupleMap K p q) (p' q' : HTuple.Profile)
+    (hp : p' = p := by simp) (hq : q' = q := by simp) : HTupleMap K p' q' := by
+  cases hp
+  cases hq
+  exact f
+
+@[simp]
+theorem eval_cast [Zero J] [Add J] [SMul I J]
+    {p q : HTuple.Profile} (f : HTupleMap J p q) (p' q' : HTuple.Profile)
+    (hp : p' = p) (hq : q' = q) (i : HTuple I p') :
+    (f.cast p' q' hp hq).eval i = hq.symm ▸ f.eval (hp ▸ i) := by
+  cases hp
+  cases hq
+  rfl
+
+/-- Same as `f.cast p' q'` but infers `p'` and `q'` from the expected type after simp-normalizing
+the original profiles. -/
+abbrev simpCast {p q : HTuple.Profile} (f : HTupleMap K p q) {p' q' : HTuple.Profile}
+    (hp : p' = p := by (conv_rhs => simp))
+    (hq : q' = q := by (conv_rhs => simp)) : HTupleMap K p' q' :=
+  f.cast p' q' hp hq
+
 /-- Row-major affine linearization map from `0...shape` into a flat natural coordinate. -/
 def rowMajorMap (shape : HTuple Nat q) : HTupleMap Nat q .leaf where
   offset := .leaf 0

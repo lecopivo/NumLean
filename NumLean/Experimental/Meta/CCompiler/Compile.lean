@@ -1,6 +1,6 @@
-import NumLean.Meta.CCompiler.Translate
+import NumLean.Experimental.Meta.CCompiler.Translate
 
-namespace NumLean.Meta.CCompiler
+namespace NumLean.Experimental.Meta.CCompiler
 
 open Lean Elab Command Lean.Compiler
 
@@ -249,12 +249,12 @@ def renderFunction (fn : CFunction) : String :=
   renderSignature fn.retTy fn.name fn.params ++ " {\n" ++ renderBody fn.lines ++ "\n}"
 
 def traceCompilation (declName : Name) (fn : CFunction) (c : String) : CoreM Unit := do
-  trace[NumLean.Meta.CCompiler] "C compilation for `{declName}` produced `{fn.name}`"
+  trace[NumLean.Experimental.Meta.CCompiler] "C compilation for `{declName}` produced `{fn.name}`"
   for event in fn.events do
-    trace[NumLean.Meta.CCompiler] "{event}"
-  trace[NumLean.Meta.CCompiler] "generated kernel C for `{declName}`:\n{c}"
+    trace[NumLean.Experimental.Meta.CCompiler] "{event}"
+  trace[NumLean.Experimental.Meta.CCompiler] "generated kernel C for `{declName}`:\n{c}"
 
 def compileDecl (decl : LCNF.Decl .pure) : Except String String := do
   return renderFunction (← compileDeclFunction decl)
 
-end NumLean.Meta.CCompiler
+end NumLean.Experimental.Meta.CCompiler

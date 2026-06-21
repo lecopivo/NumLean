@@ -5,12 +5,12 @@ import NumLean.Data.Float32Array
 import NumLean.Data.ScalarArrays
 import NumLean.Meta.ForAll
 
-namespace NumLean.Meta.CCompiler
+namespace NumLean.Experimental.Meta.CCompiler
 
 open Lean Elab Command Lean.Compiler
 
-initialize registerTraceClass `NumLean.Meta.CCompiler
-initialize registerTraceClass `NumLean.Meta.CCompiler.extern_c
+initialize registerTraceClass `NumLean.Experimental.Meta.CCompiler
+initialize registerTraceClass `NumLean.Experimental.Meta.CCompiler.extern_c
 
 
 inductive CType where
@@ -329,4 +329,4 @@ def binOpSymbol : Op → Option String
   | .ne => some "!="
   | _ => none
 
-end NumLean.Meta.CCompiler
+end NumLean.Experimental.Meta.CCompiler

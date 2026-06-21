@@ -18,6 +18,7 @@ import NumLean.Data.FinHTuple.FinHTupleMap
 import NumLean.Data.FinHTuple.Fold
 import NumLean.Data.FlatArray.Basic
 import NumLean.Data.FlatVector.Basic
+import NumLean.Data.FlatVector.Ops
 import NumLean.Data.Float32Array
 import NumLean.Data.FloatArray.TensorOps
 import NumLean.Data.FloatP
@@ -53,8 +54,8 @@ import NumLean.Data.Prod.Fold
 import NumLean.Data.Prod.Order
 import NumLean.Data.Prod.OrderInit
 import NumLean.Data.RangeEnum
-import NumLean.Data.Sigma
 import NumLean.Data.ScalarArrays
+import NumLean.Data.Sigma
 import NumLean.Data.TensorIndex
 import NumLean.Data.TensorIndex.AxisOrder
 import NumLean.Data.TensorIndex.Basic
@@ -122,6 +123,8 @@ import NumLean.Interfaces.MachinePrecision
 import NumLean.Interfaces.SetElem
 import NumLean.Interfaces.TensorArrayOps
 import NumLean.Interfaces.TensorArrayOps.Basic
+import NumLean.Interfaces.TensorIndexType
+import NumLean.Interfaces.UntypedIndex
 import NumLean.Interfaces.VectorType.Basic
 import NumLean.Mathlib.Calculus
 import NumLean.Mathlib.Calculus.TDeriv

@@ -1,6 +1,6 @@
-import NumLean.Meta.CCompiler.Compile
+import NumLean.Experimental.Meta.CCompiler.Compile
 
-namespace NumLean.Meta.CCompiler
+namespace NumLean.Experimental.Meta.CCompiler
 
 open Lean Elab Command Lean.Compiler
 
@@ -218,7 +218,7 @@ initialize
         | .ok wrapper => pure wrapper
         | .error e => throwError e
       let c := fileHeader ++ kernelC ++ "\n\n" ++ wrapper ++ "\n"
-      trace[NumLean.Meta.CCompiler.extern_c] "generated extern_c C for `{declName}` at `c/{relPath}`:\n{c}"
+      trace[NumLean.Experimental.Meta.CCompiler.extern_c] "generated extern_c C for `{declName}` at `c/{relPath}`:\n{c}"
       let path ← writeExternInFile relPath c
       let data : ExternAttrData := { entries := [ExternEntry.standard `all ffiName] }
       match ParametricAttribute.setParam externAttr (← getEnv) declName data with
@@ -227,4 +227,4 @@ initialize
     erase := fun _ => throwError "cannot erase extern_c"
   }
 
-end NumLean.Meta.CCompiler
+end NumLean.Experimental.Meta.CCompiler
