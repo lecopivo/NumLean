@@ -1,7 +1,6 @@
-import NumLean.Widget.Visualize
+import NumLean.Misc.CuTe.Visualize
 
 namespace NumLean
-namespace Widget
 namespace VisualizeExamples
 
 open NumLean.Cute
@@ -155,5 +154,4 @@ def topAlignedPair := Visualize.prodBox shapeB rowMajor
 #visualize topAlignedPair
 
 end VisualizeExamples
-end Widget
 end NumLean

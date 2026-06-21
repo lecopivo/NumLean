@@ -37,31 +37,27 @@ class BLASOps (Ks : Nat → Type u) (K : outParam (Type v)) where
     (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) : Ks xn
 
 
-instance [Zero K] : Zero (FlatVector X I) := sorry -- ⟨{ data := HasFlatVector.replicate (nI * nX) 0 }⟩
+instance [Zero K] : Zero (FlatVector X I) := ⟨{ data := VectorType.replicate (nI * nX) 0 }⟩
 
--- todo: !!! THIS IS NOT THE simp-normal FORM !!!
--- we need some general notion of index types like: (Fin n, Nat, fun size i => i < size)
 @[simp]
 theorem getElem_zero [Zero K] [Zero X] [FlatRepr.LawfulZero X K] (i : I) :
     (0 : FlatVector X I)[i] = 0 := by
   apply FlatRepr.ext K
   intro j h
-  -- this hsould be a simp theorem!
-  have h' : FlatRepr.getComp K (0 : FlatVector X I)[i] j h
-            =
-            VectorType.get (0 : FlatVector X I).data ((toFin i).1 * nX + j) sorry := sorry
+  conv_lhs => simp only [getComp_getElem_eq_get]; simp [Zero.zero, OfNat.ofNat]
   simp [FlatRepr.LawfulZero.getComp_zero]
-  simp [h'] -- make `FlatRepr.LawfulZero.getComp_zero` make this simp theorem
-  sorry -- this is theorem about replicate which should be part of HasFlatVector!
+  rfl
 
-
-instance [One K] : One (FlatVector X I) := sorry -- ⟨{ data := HasFlatVector.replicate (nI * nX) 1 }⟩
+instance [One K] : One (FlatVector X I) := ⟨{ data := VectorType.replicate (nI * nX) 1 }⟩
 
 @[simp]
 theorem getElem_one [One K] [One X] [FlatRepr.LawfulOne X K] (i : I) :
     (1 : FlatVector X I)[i] = 1 := by
-  sorry
-
+  apply FlatRepr.ext K
+  intro j h
+  conv_lhs => simp only [getComp_getElem_eq_get]; simp [One.one, OfNat.ofNat]
+  simp [FlatRepr.LawfulOne.getComp_one]
+  rfl
 
 instance [One K] [BLASOps Ks K] : Add (FlatVector X I) := ⟨fun x y =>
   { data := BLASOps.axpy (nI * nX) (1 : K) y.data 0 1 x.data 0 1 (by simp) (by simp)}⟩
@@ -76,7 +72,6 @@ theorem getElem_add [Semiring K] [Add X] [FlatRepr.LawfulAdd X K] [BLASOps Ks K]
             =
             VectorType.get xs'.data ((toFin i).1 * nX + j) sorry := sorry
   simp [FlatRepr.LawfulAdd.getComp_add]
-  simp [h']
 
   -- this is consequence of `axpy` definition of addition on `Ks n` !
   have h'' : VectorType.get (xs + ys).data ((toFin i).1 * nX + j) sorry
@@ -102,7 +97,6 @@ theorem getElem_sub [CommRing K] [Sub X] [FlatRepr.LawfulSub X K] [BLASOps Ks K]
             =
             VectorType.get xs'.data ((toFin i).1 * nX + j) sorry := sorry
   simp [FlatRepr.LawfulSub.getComp_sub]
-  simp [h']
 
   -- this is consequence of `axpy` definition of subition on `Ks n` !
   have h'' : VectorType.get (xs - ys).data ((toFin i).1 * nX + j) sorry
@@ -128,7 +122,6 @@ theorem getElem_smul [Mul K] [SMul K X] [FlatRepr.LawfulSMul K X K] [BLASOps Ks 
             =
             VectorType.get xs'.data ((toFin i).1 * nX + j) sorry := sorry
   simp [FlatRepr.LawfulSMul.getComp_smul]
-  simp [h']
 
   -- this is consequence of `axpy` definition of subition on `Ks n` !
   have h'' : VectorType.get (k • xs).data ((toFin i).1 * nX + j) sorry

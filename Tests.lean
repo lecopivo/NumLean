@@ -16,6 +16,7 @@ import Tests.TensorIndexIteratorCompiler
 import Tests.TensorIndexRangeIterators
 import Tests.TupleOrderNotation
 import Tests.VectorRangeIterators
+import Tests.Visualize
 
 def main : IO Unit := do
   pure ()

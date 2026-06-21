@@ -45,10 +45,35 @@ def get (xs : FlatVector X I) (i : I) : X :=
 instance : GetElem (FlatVector X I) I X (fun _ _ => True) where
   getElem xs i _ := get xs i
 
-theorem getElem_eq_get (xs : FlatVector X I) (i : I) (h : True) :
+instance : GetElem? (FlatVector X I) I X (fun _ _ => True) where
+  getElem? xs i := some xs[i]
+
+instance : LawfulGetElem (FlatVector X I) I X (fun _ _ => True) where
+  getElem?_def xs i _ := by
+    simp [getElem?]
+
+theorem getElem_eq_get (xs : FlatVector X I) (i : I) :
     xs[i] = get xs i := by
   rfl
 
+@[simp]
+theorem getElem_mk (xs : Ks (nI * nX)) (i : I) :
+    (FlatVector.mk (X:=X) (I:=I) xs)[i] = HasFlatVector.get xs ((toFin i).1 * nX) sorry := by
+  rfl
+
+example (i j nX nI : Nat) (hi : i < nI) (hj : j < nX) : i * nX + j < nI * nX := sorry
+example (i j nX nI : Nat) (hi : i < nI) (hj : j < nX) : i * nX + nX ≤ nI * nX := sorry
+
+-- todo: make some tactic that can blast `↑(toFin i) * nX + j < nI * nX`
+--                                        ↑(toFin i) * nX + nX ≤ nI * nX
+@[simp]
+theorem getComp_getElem_eq_get (xs : FlatVector X I) (i : I) (j : Nat) (hj : j < nX) :
+    FlatRepr.getComp K xs[i] j hj
+    =
+    VectorType.get xs.data ((IndexType.toFin i).1 * nX + j) sorry := by
+  rw[getElem_eq_get];
+  simp [get, HasFlatVector.getComp_get_eq_vector_get, offset]
+  --
 /-! ### Setting -/
 
 @[inline]
@@ -66,8 +91,7 @@ theorem setElem_eq_set (xs : FlatVector X I) (i : I) (x : X) (h : True) :
 @[simp]
 theorem getElem_set_eq (xs : FlatVector X I) (i : I) (x : X) (h : True) :
     (setElem xs i x h)[i] = x := by
-  simpa [setElem_eq_set, get, set, offset] using
-    (HasFlatVector.get_set_eq xs.data (offset (nX := nX) i) x (xs.offset_add_width_le_size i))
+  simp [setElem_eq_set, set, offset]
 
 @[simp]
 theorem getElem_set_ne (xs : FlatVector X I) (i j : I) (x : X)
@@ -113,109 +137,23 @@ instance : LawfulSetElem (FlatVector X I) I where
 
 @[ext]
 theorem ext {xs ys : FlatVector X I} (h : (i : I) → xs[i] = ys[i]) : xs = ys := by
-  sorry
+  have ⟨xs⟩ := xs; have ⟨ys⟩ := ys
+  simp only [mk.injEq]
+  apply VectorType.ext
+  have h := fun i j (hj : j < nX) => congrArg (FlatRepr.getComp K · j hj) (h i)
+  simp at h
+  sorry -- ugh this is annorying we need to split `i = i₁ * nX + i₂`
 
-/-! ### Basic queries -/
-
-instance : GetElem? (FlatVector X I) I X (fun _ _ => True) where
-  getElem? xs i := some xs[i]
-
-instance : LawfulGetElem (FlatVector X I) I X (fun _ _ => True) where
-  getElem?_def xs i _ := by
-    simp [getElem?]
-
-def back? (xs : FlatVector X I) : Option X :=
-  if h : nI = 0 then none else
-    some (get xs (IndexType.fromFin ⟨nI - 1, by omega⟩))
-
-def back (xs : FlatVector X I) (h : 0 < nI) : X :=
-  get xs (IndexType.fromFin ⟨nI - 1, by omega⟩)
-
-def back! [Inhabited X] (xs : FlatVector X I) : X :=
-  if h : 0 < nI then back xs h else default
 
 /-! ### Construction -/
 
-set_option backward.do.legacy false
-
-variable [Inhabited K]
-
-def ofFn (f : I → X) : FlatVector X I := Id.run do
-  -- todo: this is probably not the best implementation
-  --       we probably want to work unsized based ArrayType and do a sequence of `push`
-  let mut r : FlatVector X I := { data := VectorType.replicate (nI * nX) default }
-  for_all h : i in 0...nI do
-    let i : I := fromFin ⟨i, h.2⟩
-    r[i] := f i
-  return r
+def replicate (x : X) : FlatVector X I := { data := HasFlatVector.replicate nI x }
 
 @[simp]
-theorem getElem_ofFn (f : I → X) (i : I) :
-    (ofFn f)[i] = f i := by
-  sorry
-
-def replicate [Inhabited K] (x : X) : FlatVector X I := sorry
-
-@[simp]
-theorem getElem_replicate [TensorArrayOps Ks K] (x : X) (i : I) :
+theorem getElem_replicate (x : X) (i : I) :
     (replicate (X := X) (I := I) x)[i] = x := by
-  sorry
+  simp [replicate]
 
-/-! ### Swapping -/
-
-open IndexType FinHTupleMap in
-@[inline]
-def swapSlice [TensorArrayOps Ks K] (xs : FlatVector X I) (len i j : Nat) : FlatVector X I := sorry
-  --   (h : i + len < j ∨ j + len < i) : -- non-overlaping
-  --   FlatVector X I :=
-  -- if h : i = j then xs else
-  --   let i := toFin i
-  --   let j := toFin j
-  --   let imap := (FinHTupleMap.point h(nI) i).pair (FinHTupleMap.id h(nX)) |>.linearize
-  --   have hi : imap.Injective := by grind
-  --   let jmap := (FinHTupleMap.point h(nI) j).pair (FinHTupleMap.id h(nX)) |>.linearize
-  --   have hj : jmap.Injective := by grind
-  --   have hij : i ≠ j := by sorry -- todo: set up IndexType with grind!
-  --   have hdisjoint : Disjoint imap.range jmap.range := by grind
-  --   { data := TensorArrayOps.swapSliceSelf xs.data imap jmap hi hj hdisjoint }
-
--- @[simp, grind =]
--- theorem size_swap [DecidableEq I] (xs : FlatVector X I) (i j : I) :
---     (xs.swap i j).size = xs.size := by
---   by_cases h : i = j <;> simp [swap, h]
---   sorry
-
--- @[simp]
--- theorem getElem_swap_left [DecidableEq I] (xs : FlatVector X I) (i j : I) :
---     (xs.swap i j)[i] = xs[j] := by
---   sorry
-
--- @[simp]
--- theorem getElem_swap_right [DecidableEq I] (xs : FlatVector X I) (i j : I) :
---     (xs.swap i j)[j] = xs[i] := by
---   sorry
-
--- theorem getElem_swap_of_ne [DecidableEq I] (xs : FlatVector X I) (i j k : I) (hki : k ≠ i) (hkj : k ≠ j) :
---     (xs.swap i j)[k] = xs[k] := by
---   sorry
-
-/-! ### Mutation variants -/
-
-def set! (xs : FlatVector X I) (i : I) (x : X) : FlatVector X I :=
-  set xs i x
-
-def setIfInBounds (xs : FlatVector X I) (i : I) (x : X) : FlatVector X I :=
-  set xs i x
-
-@[simp]
-theorem size_set! (xs : FlatVector X I) (i : I) (x : X) :
-    (xs.set! i x).size = xs.size := by
-  rfl
-
-@[simp]
-theorem size_setIfInBounds (xs : FlatVector X I) (i : I) (x : X) :
-    (xs.setIfInBounds i x).size = xs.size := by
-  rfl
 
 end FlatVector
 

@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-const VERSION = 'numlean-visualize-v28'
+const VERSION = 'numlean-visualize-v32'
 const RANK_GAP = 3
 const RANK_BLOCK_GAP = 7
 const RANK_STAMP_BORDER = 2
@@ -48,12 +48,13 @@ function trimMathJaxSvg(node) {
     const width = box.width + 2 * pad
     const height = box.height + 2 * pad
     svg.setAttribute('viewBox', `${box.x - pad} ${box.y - pad} ${width} ${height}`)
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
     svg.removeAttribute('width')
     svg.removeAttribute('height')
     svg.style.maxWidth = '100%'
     svg.style.width = '100%'
-    svg.style.height = 'auto'
-    svg.style.aspectRatio = `${width} / ${height}`
+    svg.style.maxHeight = '100%'
+    svg.style.height = '100%'
     svg.style.verticalAlign = 'top'
   } catch (_e) {}
 }
@@ -203,14 +204,15 @@ function Style() {
     .numlean-vis .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: start; }
     .numlean-vis .card { background: rgba(16,22,33,.72); border: 1px solid rgba(255,255,255,.08); border-radius: 13px; padding: 12px; overflow: hidden; flex: 1 1 280px; min-width: 0; }
     .numlean-vis .flow > .card { min-width: min(220px, 100%); }
-    .numlean-vis .pair > .card { min-width: 0; padding: 8px; }
-    .numlean-vis .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .numlean-vis .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 0; min-height: 0; overflow: hidden; }
+    .numlean-vis .pair-cell { min-width: 0; min-height: 0; overflow: hidden; display: flex; }
+    .numlean-vis .pair-cell > * { width: 100%; height: 100%; min-width: 0; min-height: 0; }
     .numlean-vis .formula { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 18px; font-weight: 800; color: #f4f7ff; background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-    .numlean-vis .latex-card { background: rgba(16,22,33,.72); border: 1px solid rgba(255,255,255,.08); border-radius: 13px; padding: 14px; overflow: hidden; flex: 1 1 280px; min-width: 0; }
-    .numlean-vis .latex-formula { display: block; max-width: 100%; overflow: hidden; color: #f8fbff; background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035)); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px 14px; font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", Georgia, serif; font-size: 23px; line-height: 1.35; white-space: pre-wrap; }
+    .numlean-vis .latex-card { background: rgba(16,22,33,.72); border: 1px solid rgba(255,255,255,.08); border-radius: 13px; padding: 14px; overflow: hidden; flex: 1 1 280px; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+    .numlean-vis .latex-formula { display: flex; align-items: center; justify-content: center; flex: 1 1 auto; min-height: 0; max-width: 100%; max-height: 100%; overflow: hidden; color: #f8fbff; background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035)); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px 14px; font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", Georgia, serif; font-size: 23px; line-height: 1.35; white-space: pre-wrap; }
     .numlean-vis .latex-formula.rendered { line-height: 0; }
-    .numlean-vis .latex-formula mjx-container { display: block !important; max-width: 100% !important; overflow: hidden !important; margin: 0 !important; text-align: left !important; }
-    .numlean-vis .latex-formula mjx-container svg { display: block; width: 100% !important; max-width: 100% !important; height: auto !important; vertical-align: 0 !important; }
+    .numlean-vis .latex-formula mjx-container { display: flex !important; align-items: center !important; justify-content: center !important; width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; overflow: hidden !important; margin: 0 !important; text-align: left !important; }
+    .numlean-vis .latex-formula mjx-container svg { display: block; width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; vertical-align: 0 !important; }
     .numlean-vis .latex-error { margin-top: 8px; color: #ffb4b4; font-size: 12px; }
     .numlean-vis .tree-panel { overflow: hidden; }
     .numlean-vis .tree-scale-shell { transform-origin: top left; }
@@ -585,8 +587,8 @@ function Item({ item }) {
     }
     return React.createElement('div', { className: 'card' },
       React.createElement('div', { className: 'pair', style },
-        React.createElement(Item, { item: item.left }),
-        React.createElement(Item, { item: item.right })
+        React.createElement('div', { className: 'pair-cell' }, React.createElement(Item, { item: item.left })),
+        React.createElement('div', { className: 'pair-cell' }, React.createElement(Item, { item: item.right }))
       )
     )
   }

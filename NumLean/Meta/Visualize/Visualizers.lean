@@ -1,7 +1,6 @@
-import NumLean.Widget.Visualize.Basic
+import NumLean.Meta.Visualize.Basic
 
 namespace NumLean
-namespace Widget
 
 open Lean Server
 
@@ -249,5 +248,4 @@ instance {α : Type u} {β : Type v} {visα : Type w} {visβ : Type x}
       left := Visualizable.toVis (vis := visα) x.left
       right := Visualizable.toVis (vis := visβ) x.right }
 
-end Widget
 end NumLean

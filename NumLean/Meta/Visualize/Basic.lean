@@ -2,7 +2,6 @@ import Lean.Server.Rpc.Basic
 import ProofWidgets.Component.Basic
 
 namespace NumLean
-namespace Widget
 
 open Lean Server ProofWidgets
 
@@ -17,7 +16,8 @@ class Visualizable (α : Type u) (vis : outParam (Type v)) where
 
 namespace Visualize
 
-def javascript : String := (include_str ".." / "js" / "visualize.js") ++ "\n/* numlean-visualize-v28 */"
+def javascript : String :=
+  (include_str ".." / ".." / ".." / "js" / "visualize.js") ++ "\n/* numlean-visualize-v32 */"
 
 @[widget_module]
 def Component : ProofWidgets.Component Json where
@@ -51,5 +51,4 @@ def javascriptFor {α : Type u} {vis : Type v} [Visualizable α vis] [Visualizer
 
 end Visualizable
 
-end Widget
 end NumLean

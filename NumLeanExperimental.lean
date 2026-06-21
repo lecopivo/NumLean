@@ -1,3 +1,10 @@
+import NumLean.Experimental.Data.DyadicInterval
+import NumLean.Experimental.Data.DyadicInterval.Basic
+import NumLean.Experimental.Data.RatInterval
+import NumLean.Experimental.Data.RatInterval.Basic
+import NumLean.Experimental.Interfaces.Interval
+import NumLean.Experimental.Interfaces.Interval.Basic
+import NumLean.Experimental.Interfaces.Interval.Lawful
 import NumLean.Experimental.Meta.CCompiler
 import NumLean.Experimental.Meta.CCompiler.Basic
 import NumLean.Experimental.Meta.CCompiler.Command

@@ -1,9 +1,8 @@
 import Lean.Elab.Command
 import Qq
-import NumLean.Widget.Visualize.Visualizers
+import NumLean.Meta.Visualize.Visualizers
 
 namespace NumLean
-namespace Widget
 
 open Lean Server Elab Command ProofWidgets
 
@@ -13,8 +12,7 @@ Examples:
 ```lean
 #visualize hp(•,(•,•))
 #visualize #[hp(•,•), hp(•,(•,•))]
-#visualize (hp(•,•), ({ offset := 0, stride := h((1 : Int), (4 : Int)) } :
-  Cute.Layout h((4 : Nat), (8 : Nat)) Int))
+#visualize (Visualize.latex "x + y", Visualize.latex "x - y")
 ```
 -/
 syntax (name := visualizeCmd) "#visualize" term : command
@@ -46,5 +44,4 @@ def elabVisualize : CommandElab := fun stx => do
         stx
   | _ => throwUnsupportedSyntax
 
-end Widget
 end NumLean

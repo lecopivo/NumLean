@@ -143,7 +143,12 @@ import NumLean.Meta.ForAll.Notation
 import NumLean.Meta.ForAll.RcoNat
 import NumLean.Meta.ForAll.RcoNative
 import NumLean.Meta.RewriteBy
+import NumLean.Meta.Visualize
+import NumLean.Meta.Visualize.Basic
+import NumLean.Meta.Visualize.Command
+import NumLean.Meta.Visualize.Visualizers
 import NumLean.Misc.CuTe
+import NumLean.Misc.CuTe.Visualize
 import NumLean.Misc.VerifiedTensor
 import NumLean.Tactic.ApplyRuleSets
 import NumLean.Tactic.ApplyRuleSets.Attr
@@ -153,9 +158,3 @@ import NumLean.Tactic.ApplyRuleSets.RuleProc
 import NumLean.Tactic.ApplyRuleSets.Types
 -- import NumLean.TargetTests
 import NumLean.TestUIntProofs
-import NumLean.Widget.CuteExamples
-import NumLean.Widget.CuteVis
-import NumLean.Widget.LayoutVis
-import NumLean.Widget.ProfileVis
-import NumLean.Widget.Visualize
-import NumLean.Widget.VisualizeExamples
