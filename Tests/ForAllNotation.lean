@@ -1,15 +1,14 @@
 import NumLean.Meta.ForAll
-import NumLean.Data.TensorIndex.Basic
 import NumLean.Data.FinHTuple.FinHTupleMap
 
 set_option backward.do.legacy false
 
-open NumLean TensorIndex
+open NumLean
 
 namespace Tests.ForAllNotation
 
 def sum2 : Nat := Id.run do
-  let shape : Shape _ := h(2, 3)
+  let shape := h((2:Nat), 3)
   let mut acc := 0
   for_all h(i, j) in 0...shape do
     acc := acc + i * 10 + j
@@ -18,7 +17,7 @@ def sum2 : Nat := Id.run do
 example : sum2 = 36 := by native_decide
 
 def sum2WithProof : Nat := Id.run do
-  let shape : Shape _ := h(2, 3)
+  let shape := h((2:Nat), 3)
   let mut acc := 0
   for_all hmem : h(i, j) in 0...shape do
     have _hmem := hmem
@@ -28,7 +27,7 @@ def sum2WithProof : Nat := Id.run do
 example : sum2WithProof = 36 := by native_decide
 
 def sum2TwoAcc : Nat × Nat := Id.run do
-  let shape : Shape _ := h(2, 3)
+  let shape := h((2:Nat), 3)
   let mut sum : Nat := 0
   let mut count : Nat := 0
   for_all h(i, j) in 0...shape do
@@ -39,7 +38,7 @@ def sum2TwoAcc : Nat × Nat := Id.run do
 example : sum2TwoAcc = (36, 6) := by native_decide
 
 def sumMapIndexWithoutNamedProof : Nat := Id.run do
-  let shape : Shape _ := h(2, 3)
+  let shape := h((2:Nat), 3)
   let idxMap := FinHTupleMap.id shape
   let mut acc := 0
   for_all i in 0...shape do

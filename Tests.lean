@@ -15,8 +15,6 @@ import Tests.HasFlatReprDeriving
 import Tests.OrderInstances
 import Tests.ScalarArrays
 import Tests.TBounds
-import Tests.TensorIndexIteratorCompiler
-import Tests.TensorIndexRangeIterators
 import Tests.TupleOrderNotation
 import Tests.VectorRangeIterators
 import Tests.Visualize
