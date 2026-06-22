@@ -36,6 +36,12 @@ deriving FlatRepr
 
 variable (A : Type)
 
+/--
+info: inferInstance : FlatRepr (Mat3 (Vec3 A)) A
+  (1 + (1 + 1) + (1 + (1 + 1) + (1 + (1 + 1))) +
+    (1 + (1 + 1) + (1 + (1 + 1) + (1 + (1 + 1))) + (1 + (1 + 1) + (1 + (1 + 1) + (1 + (1 + 1))))))
+-/
+#guard_msgs in
 #check (by infer_instance : FlatRepr (Mat3 (Vec3 A)) A _)
 
 structure SizedVec3 (m : Nat) (X : Type) where

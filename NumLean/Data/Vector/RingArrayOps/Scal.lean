@@ -1,5 +1,6 @@
 import NumLean.Data.Vector.RingArrayOps.Basic
 import NumLean.Data.Vector.TensorOps.FoldMap
+import NumLean.Interfaces.Algebra.RingArrayOps
 
 set_option backward.do.legacy false
 
@@ -31,8 +32,12 @@ theorem scalRef_in_range {K : Type} [Mul K] {xn : Nat} (n : Nat)
       a * xs[xoff + i * xinc]'(by tbounds) := by
   classical
   unfold scalRef
+  simp only [LawfulFold.fold_eq_foldl (ρ := Std.Rco Nat) (α := Nat)
+    (d := (inferInstance : Membership Nat (Std.Rco Nat)))
+    (xs := (0...n : Std.Rco Nat))]
+  simp only [setElem_nat_eq_set, bind, Id.run, pure]
   rw [FoldMap.foldl_get_eq_foldl_filter_affectors_vector
-      (entries := rcoNativeEntries (0...n : Std.Rco Nat))
+      (entries := Fold.entries.{0,0,0} (0...n : Std.Rco Nat))
       (deps := fun i : Fin xn => {i})
       (hself := by simp)
       (affectors := fun j : Fin xn =>
@@ -73,7 +78,7 @@ theorem scalRef_in_range {K : Type} [Mul K] {xn : Nat} (n : Nat)
       simp [hcond]
       exact hread
   have hEntries :
-      ((rcoNativeEntries (0...n : Std.Rco Nat)).filter fun idx =>
+      ((Fold.entries.{0,0,0} (0...n : Std.Rco Nat)).filter fun idx =>
           @decide (idx ∈ ({idx | xoff + idx.1 * xinc =
             (⟨xoff + i * xinc, by tbounds⟩ : Fin xn).1} :
               Set {i : Nat // i ∈ (0...n : Std.Rco Nat)})) (Classical.propDecidable _)) =
@@ -99,8 +104,12 @@ theorem scalRef_out_range {K : Type} [Mul K] {xn : Nat} (n : Nat)
     (scalRef n a xs xoff xinc hx)[j] = xs[j] := by
   classical
   unfold scalRef
+  simp only [LawfulFold.fold_eq_foldl (ρ := Std.Rco Nat) (α := Nat)
+    (d := (inferInstance : Membership Nat (Std.Rco Nat)))
+    (xs := (0...n : Std.Rco Nat))]
+  simp only [setElem_nat_eq_set, bind, Id.run, pure]
   rw [FoldMap.foldl_get_eq_foldl_filter_affectors_vector
-      (entries := rcoNativeEntries (0...n : Std.Rco Nat))
+      (entries := Fold.entries.{0,0,0} (0...n : Std.Rco Nat))
       (deps := fun i : Fin xn => {i})
       (hself := by simp)
       (affectors := fun j : Fin xn =>
@@ -127,7 +136,7 @@ theorem scalRef_out_range {K : Type} [Mul K] {xn : Nat} (n : Nat)
       simp [hidx]
       exact hread
   have hEntries :
-      ((rcoNativeEntries (0...n : Std.Rco Nat)).filter fun idx =>
+      ((Fold.entries.{0,0,0} (0...n : Std.Rco Nat)).filter fun idx =>
           @decide (idx ∈ ({idx | xoff + idx.1 * xinc = (⟨j, hj⟩ : Fin xn).1} :
             Set {i : Nat // i ∈ (0...n : Std.Rco Nat)})) (Classical.propDecidable _)) = [] := by
     apply List.eq_nil_iff_forall_not_mem.2
@@ -148,6 +157,40 @@ theorem scalRef_full_eq_ofFn {K : Type} [Mul K] {n : Nat} (a : K) (xs : Vector K
     scalRef n a xs 0 1 (by simp) = Vector.ofFn (fun i : Fin n => a * xs[i]) := by
   ext i hi
   simpa using scalRef_full_ext a xs ⟨i, hi⟩
+
+theorem scal_get_in_range {Ks : Nat → Type} {K : Type} [VectorType Ks K]
+    [RingArrayOps Ks] [Ring K] [LawfulRingArrayOps Ks] {xn : Nat} (n : Nat)
+    (a : K) (xs : Ks xn) (xoff xinc : Nat)
+    (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0)
+    (i : Nat) (hi : i ∈ (0...n : Std.Rco Nat)) :
+    VectorType.get (RingArrayOps.scal n a xs xoff xinc hx)
+        (xoff + i * xinc) (by tbounds) =
+      a * VectorType.get xs (xoff + i * xinc) (by tbounds) := by
+  rw [LawfulRingArrayOps.scal_spec]
+  rw [VectorType.get_eq_getElem, VectorType.toVector_fromVector]
+  simpa [VectorType.get_eq_getElem] using
+    scalRef_in_range n a (VectorType.toVector xs) xoff xinc hx i hi
+
+theorem scal_get_out_range {Ks : Nat → Type} {K : Type} [VectorType Ks K]
+    [RingArrayOps Ks] [Ring K] [LawfulRingArrayOps Ks] {xn : Nat} (n : Nat)
+    (a : K) (xs : Ks xn) (xoff xinc : Nat)
+    (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0)
+    (j : Nat) (hj : j < xn) (hjout : ∀ i, i ∈ (0...n : Std.Rco Nat) → j ≠ xoff + i * xinc) :
+    VectorType.get (RingArrayOps.scal n a xs xoff xinc hx) j hj = VectorType.get xs j hj := by
+  rw [LawfulRingArrayOps.scal_spec]
+  rw [VectorType.get_eq_getElem, VectorType.toVector_fromVector]
+  simpa [VectorType.get_eq_getElem] using
+    scalRef_out_range n a (VectorType.toVector xs) xoff xinc hx j hj hjout
+
+theorem scal_full_get {Ks : Nat → Type} {K : Type} [VectorType Ks K]
+    [RingArrayOps Ks] [Ring K] [LawfulRingArrayOps Ks] {n : Nat}
+    (a : K) (xs : Ks n) (i : Nat) (hi : i < n) :
+    VectorType.get (RingArrayOps.scal n a xs 0 1 (by simp)) i hi =
+      a * VectorType.get xs i hi := by
+  have hmem : i ∈ (0...n : Std.Rco Nat) := by
+    rw [Std.Rco.mem_iff]
+    exact ⟨Nat.zero_le i, hi⟩
+  simpa using scal_get_in_range n a xs 0 1 (by simp) i hmem
 
 end Vector
 

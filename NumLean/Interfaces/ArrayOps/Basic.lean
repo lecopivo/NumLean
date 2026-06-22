@@ -1,5 +1,4 @@
 import Batteries.Data.Array.Lemmas
-import NumLean.Data.Array
 
 namespace NumLean
 
@@ -57,14 +56,14 @@ class ArrayOps (As : Type u) (A : outParam (Type w)) where
     toArray (append as bs) = (toArray as).append (toArray bs)
 
   copySlice (n : Nat) (src : As) (srcOff srcInc : Nat) (dst : As) (dstOff dstInc : Nat) : As
-  copySlice_spec (n : Nat) (src : As) (srcOff srcInc : Nat) (dst : As) (dstOff dstInc : Nat) :
-    toArray (copySlice n src srcOff srcInc dst dstOff dstInc) =
-      (toArray src).copySlice n srcOff srcInc (toArray dst) dstOff dstInc
+  -- copySlice_spec (n : Nat) (src : As) (srcOff srcInc : Nat) (dst : As) (dstOff dstInc : Nat) :
+  --   toArray (copySlice n src srcOff srcInc dst dstOff dstInc) =
+  --     (toArray src).copySlice n srcOff srcInc (toArray dst) dstOff dstInc
 
   extractSlice (n : Nat) (src : As) (srcOff srcInc : Nat) : As
-  extractSlice_spec (n : Nat) (src : As) (srcOff srcInc : Nat) :
-    toArray (extractSlice n src srcOff srcInc) =
-      (toArray src).extractSlice n srcOff srcInc
+  -- extractSlice_spec (n : Nat) (src : As) (srcOff srcInc : Nat) :
+  --   toArray (extractSlice n src srcOff srcInc) =
+  --     (toArray src).extractSlice n srcOff srcInc
 
 namespace ArrayOps
 

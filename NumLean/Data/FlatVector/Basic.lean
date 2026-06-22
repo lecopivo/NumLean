@@ -141,12 +141,22 @@ instance : LawfulSetElem (FlatVector X I) I where
 
 @[ext]
 theorem ext {xs ys : FlatVector X I} (h : (i : I) → xs[i] = ys[i]) : xs = ys := by
-  have ⟨xs⟩ := xs; have ⟨ys⟩ := ys
+  rcases xs with ⟨xs⟩
+  rcases ys with ⟨ys⟩
   simp only [mk.injEq]
   apply VectorType.ext
-  have h := fun i j (hj : j < nX) => congrArg (FlatRepr.getComp K · j hj) (h i)
-  simp at h
-  sorry -- ugh this is annorying we need to split `i = i₁ * nX + i₂`
+  intro k hk
+  by_cases hnX : nX = 0
+  · simp [hnX] at hk
+  · have hnXpos : 0 < nX := Nat.pos_of_ne_zero hnX
+    have hi : k / nX < nI := by
+      rw [Nat.div_lt_iff_lt_mul hnXpos]
+      simpa [Nat.mul_comm] using hk
+    have hj : k % nX < nX := Nat.mod_lt k hnXpos
+    let i : I := IndexType.fromFin ⟨k / nX, hi⟩
+    have hcomp := congrArg (fun x => FlatRepr.getComp K x (k % nX) hj) (h i)
+    simpa [i, getElem_eq_get, get, offset, HasFlatVector.getComp_get_eq_vector_get,
+      Nat.div_add_mod, Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc] using hcomp
 
 
 /-! ### Construction -/

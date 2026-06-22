@@ -1,6 +1,6 @@
 import NumLean.Algebra.Ops
+import NumLean.Interfaces.Algebra.RingArrayOps
 import NumLean.Interfaces.VectorType.Basic
-
 import NumLean.Data.FlatVector.Ops
 
 namespace NumLean
@@ -10,7 +10,7 @@ open FlatVector
 -- todo: move this!
 
 class RealModelOps (R : Type) (Rs : outParam (Nat → Type)) extends
-  ROps R, VectorType Rs R, TensorArrayOps Rs R, BLASOps Rs R where
+  ROps R, VectorType Rs R, TensorArrayOps Rs R, RingArrayOps Rs where
 
 -- if you introduce RealModelOps, we attach Rs to R as the default vector type!
 instance [RealModelOps R Rs] : HasDefaultFlatVector R Rs 1 where

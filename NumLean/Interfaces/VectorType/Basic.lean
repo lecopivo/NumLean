@@ -1,5 +1,4 @@
 import Batteries.Data.Array.Lemmas
-import NumLean.Data.Array
 
 namespace NumLean
 

@@ -44,6 +44,7 @@ instance : DiscreteTopology Int32 := ⟨rfl⟩
 instance : TopologicalSpace Int64 := ⊥
 instance : DiscreteTopology Int64 := ⟨rfl⟩
 
+@[reducible]
 def unitFiberedAddTorsor (I : Type*) : FiberedAddTorsor Unit I where
   vadd := fun _ i => i
   zero_vadd _ := rfl

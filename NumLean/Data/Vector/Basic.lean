@@ -9,7 +9,7 @@ instance : SetElem (Vector α n) Nat α (fun _ i => i < n) where
   setElem xs i x h := xs.set i x h
   setElem_valid := by intros; simp
 
-instance : SetElem (Vector α n) (Fin n) α (fun _ i => True) where
+instance : SetElem (Vector α n) (Fin n) α (fun _ _ => True) where
   setElem xs i x h := xs.set i.1 x i.2
   setElem_valid := by intros; simp
 

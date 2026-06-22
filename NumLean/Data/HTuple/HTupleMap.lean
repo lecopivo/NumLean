@@ -142,20 +142,6 @@ theorem eval_rowMajorMap_lt_card {shape : HTuple Nat q} {i : HTuple Nat q}
   rw [eval_rowMajorMap]
   simpa using HTuple.rowMajorIndex_lt_numel hi
 
-/-- Row-major affine linearization map from `0...shape` into a flat natural coordinate. -/
-@[deprecated "please use rowMajorMap" (since := "20-06-2026")]
-abbrev linearize (shape : HTuple Nat q) : HTupleMap Nat q .leaf := rowMajorMap shape
-
-/-- `linearize` computes the row-major range index. -/
-@[simp]
-theorem eval_linearize (shape : HTuple Nat q) (i : HTuple Nat q) :
-    linearize shape i = h(i.rowMajorIndex shape) := eval_rowMajorMap shape i
-
-/-- `linearize` maps bounded coordinates into `0...shape.numel`. -/
-theorem eval_linearize_lt_card {shape : HTuple Nat q} {i : HTuple Nat q}
-    (hi : i <ₑ shape) : (linearize shape).eval i <ₑ h(shape.numel) := by
-  exact eval_rowMajorMap_lt_card hi
-
 /-- Move a nested output coefficient profile into the output profile. -/
 def joinEquiv (I : Type u) (r p q : HTuple.Profile) :
     HTupleMap (HTuple I r) p q ≃ HTupleMap I p (r.tmul q) where

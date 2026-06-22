@@ -1,5 +1,4 @@
 import NumLean.Data.Vector.TensorOps.Defs
-import NumLean.Data.TensorIndex.Basic
 
 namespace NumLean
 
@@ -7,10 +6,8 @@ namespace Vector
 
 namespace ForAll
 
-open TensorIndex
-
 theorem transposeSlice_in_map_range
-    {K n r} {shape : Shape r}
+    {K n r} {shape : HTuple Nat r}
     (xs : Vector K n) (map : FinHTupleMap (.prod shape shape) h(n))
     (h : map.Injective) (i : Nat) (hi : h(i) ∈ map.range) :
     (transposeSlice xs map h)[i] =
@@ -84,7 +81,7 @@ theorem transposeSlice_in_map_range
       sorry
 
 theorem transposeSlice_out_map_range
-    {K n r} {shape : Shape r}
+    {K n r} {shape : HTuple Nat r}
     (xs : Vector K n) (map : FinHTupleMap (.prod shape shape) h(n))
     (h : map.Injective) (i : Nat) (hi : h(i) ∉ map.range) (hi' : i < n) :
     (transposeSlice xs map h)[i] = xs[i] := by

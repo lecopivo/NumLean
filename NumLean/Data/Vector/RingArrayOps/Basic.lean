@@ -20,11 +20,11 @@ def axpyRef [Add K] [Mul K] {xn yn : Nat} (n : Nat)
   return ys
 
 def scalRef [Mul K] {xn : Nat} (n : Nat) (a : K) (xs : Vector K xn) (xoff xinc : Nat)
-    (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) : Vector K xn :=
-  (rcoNativeEntries (0...n : Std.Rco Nat)).foldl (fun xs i =>
-    xs.set (xoff + i.1 * xinc)
-      (a * xs[xoff + i.1 * xinc]'(TBounds.stride_lt_rco_of_bound hx i.2))
-      (TBounds.stride_lt_rco_of_bound hx i.2)) xs
+    (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) : Vector K xn := Id.run do
+  let mut xs := xs
+  for_all h : i in 0...n do
+    xs[xoff + i * xinc]'(by tbounds) := a * xs[xoff + i * xinc]'(by tbounds)
+  return xs
 
 def mulRef [Mul K] {xn yn : Nat} (n : Nat)
     (xs : Vector K xn) (xoff xinc : Nat) (ys : Vector K yn) (yoff yinc : Nat)

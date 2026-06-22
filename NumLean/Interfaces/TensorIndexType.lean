@@ -1,5 +1,4 @@
 import NumLean.Data.FinHTuple
--- import NumLean.Data.TensorIndex.FinTIndex
 import NumLean.Interfaces.IndexType
 
 namespace NumLean

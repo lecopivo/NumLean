@@ -199,6 +199,7 @@ instance : EmptyCollection (FlatArray X) where
 instance : Inhabited (FlatArray X) where
   default := ∅
 
+#exit
 @[simp]
 theorem size_emptyWithCapacity (c : Nat) :
     (emptyWithCapacity (X := X) c).size = 0 := by

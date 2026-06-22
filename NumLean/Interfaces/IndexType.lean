@@ -82,6 +82,7 @@ theorem enum_complete [DecidableEq I] :
   exact ⟨toFin x, by simp⟩
 
 /-- Transport an `IndexType` structure along an equivalence `e : I ≃ J`. -/
+@[reducible]
 def ofEquiv {J : Type*} (I : Type*) {n} [IndexType I n] (e : I ≃ J) : IndexType J n where
   toFintype := Fintype.ofEquiv I e
   toIdx y := toIdx (e.symm y)

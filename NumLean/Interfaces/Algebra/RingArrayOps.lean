@@ -58,7 +58,7 @@ class RingArrayOps (Ks : Nat → Type u) {K : Type w} [VectorType Ks K] where
 
   We forbid `yinc = 0` such that implementation can execute the loop in parallel without any synchronization or atomics.
   -/
-  mul {xn yn : Nat} (n : Nat) (xs : Ks xn) (xoff xinc : Nat) (ys : Ks yn) (yoff yinc : Nat)
+  mul' {xn yn : Nat} (n : Nat) (xs : Ks xn) (xoff xinc : Nat) (ys : Ks yn) (yoff yinc : Nat)
     (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0) (hy : yoff + n * yinc ≤ yn ∧ yinc ≠ 0) : Ks yn
 
   /-- Computes the dot product of two strided slices:
@@ -102,7 +102,7 @@ class LawfulRingArrayOps (Ks : Nat → Type) {K : Type} [VectorType Ks K]
   mul_spec {xn yn : Nat} (n : Nat) (xs : Ks xn) (xoff xinc : Nat) (ys : Ks yn)
     (yoff yinc : Nat) (hx : xoff + n * xinc ≤ xn ∧ xinc ≠ 0)
     (hy : yoff + n * yinc ≤ yn ∧ yinc ≠ 0) :
-    mul (Ks := Ks) (K := K) n xs xoff xinc ys yoff yinc hx hy =
+    mul' (Ks := Ks) (K := K) n xs xoff xinc ys yoff yinc hx hy =
       fromVector (mulRef (K := K) n (toVector xs) xoff xinc (toVector ys) yoff yinc hx hy)
 
   dot_spec {xn yn : Nat} (n : Nat) (xs : Ks xn) (xoff xinc : Nat) (ys : Ks yn)
