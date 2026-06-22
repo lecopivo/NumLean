@@ -93,8 +93,8 @@ The intended decomposition is
 The concrete range type is deferred until the Sum/tail range design is settled. -/
 opaque TileTailRange : Nat → Nat → Type
 
-theorem scalar_tile_fullBlocks_tail_target (n k : Nat) : Nonempty (TileTailRange n k) := by
-  sorry
+-- theorem scalar_tile_fullBlocks_tail_target (n k : Nat) : Nonempty (TileTailRange n k) := by
+--   sorry
 
 /-- Placeholder for padded rectangular tiling.
 

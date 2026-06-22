@@ -11,4 +11,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+      - name: Check import boundaries
+        run: scripts/lint-import-boundaries.sh
       - uses: leanprover/lean-action@v1

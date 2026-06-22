@@ -1,5 +1,5 @@
 import NumLean.Data.HTuple.Order
-import NumLean.Data.HList.Ops
+import NumLean.Experimental.Data.HList.Ops
 
 open NumLean
 open NumLean.HList

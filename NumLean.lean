@@ -8,30 +8,17 @@ import NumLean.Algebra.Instances
 import NumLean.Algebra.Ops
 import NumLean.Algebra.Order
 import NumLean.Algebra.Sigma
-import NumLean.Basic
-import NumLean.Data.BTuple
-import NumLean.Data.BTuple.Basic
-import NumLean.Data.BTuple.Fold
-import NumLean.Data.BTuple.Order
-import NumLean.Data.BTuple.Range
 import NumLean.Data.Complex
 import NumLean.Data.FinHTuple
 import NumLean.Data.FinHTuple.Basic
 import NumLean.Data.FinHTuple.FinHTupleMap
 import NumLean.Data.FinHTuple.Fold
-import NumLean.Data.FlatArray.Basic
 import NumLean.Data.FlatVector.Algebra
 import NumLean.Data.FlatVector.Basic
 import NumLean.Data.FlatVector.FlatRepr
 import NumLean.Data.FlatVector.Ops
 import NumLean.Data.Float32Array
 import NumLean.Data.FloatArray.TensorOps
-import NumLean.Data.FloatP
-import NumLean.Data.HList
-import NumLean.Data.HList.Basic
-import NumLean.Data.HList.Notation
-import NumLean.Data.HList.Ops
-import NumLean.Data.HList.RangeIterator
 import NumLean.Data.HTuple
 import NumLean.Data.HTuple.Algebra
 import NumLean.Data.HTuple.Basic
@@ -45,15 +32,7 @@ import NumLean.Data.HTuple.Range
 import NumLean.Data.HTuple.RangeIterator
 import NumLean.Data.HTuple.RangeIteratorSpec
 import NumLean.Data.HTuple.RangeNotation
-import NumLean.Data.HVector
-import NumLean.Data.HVector.Basic
-import NumLean.Data.HVector.Ops
 import NumLean.Data.Idx
--- import NumLean.Data.IdxP
-import NumLean.Data.KernelExpr
-import NumLean.Data.KernelExpr.Basic
-import NumLean.Data.KernelExpr.HasKernelExpr
-import NumLean.Data.KernelExpr.Register
 import NumLean.Data.Prod
 import NumLean.Data.Prod.Fold
 import NumLean.Data.Prod.Order
@@ -80,7 +59,6 @@ import NumLean.Data.Vector.TensorOps.FoldMap
 import NumLean.Data.Vector.TensorOps.ReverseSlice
 import NumLean.Data.Vector.TensorOps.SwapSlice
 import NumLean.Data.Vector.TensorOps.TransposeSlice
-import NumLean.Device.Basic
 -- import NumLean.Doodle
 import NumLean.Interfaces.Algebra.RingArrayOps
 import NumLean.Interfaces.ArrayOps.Basic
@@ -150,5 +128,3 @@ import NumLean.Tactic.ApplyRuleSets.Elab
 import NumLean.Tactic.ApplyRuleSets.RuleProc
 import NumLean.Tactic.ApplyRuleSets.Types
 import NumLean.Tactic.TBounds
--- import NumLean.TargetTests
-import NumLean.TestUIntProofs

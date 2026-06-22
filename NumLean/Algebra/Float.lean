@@ -1,5 +1,4 @@
 import NumLean.Algebra.Ops
-import NumLean.Data.FloatP
 
 namespace NumLean
 

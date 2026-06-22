@@ -1,4 +1,4 @@
-import NumLean.Data.HList.Notation
+import NumLean.Experimental.Data.HList.Notation
 import NumLean.Algebra.Order
 
 namespace NumLean

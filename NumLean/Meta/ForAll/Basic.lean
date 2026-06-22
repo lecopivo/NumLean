@@ -48,43 +48,5 @@ class LawfulForAllIn' (ρ : Type u) (α : outParam (Type v)) (β : Type w)
     ForAllIn'.forAllIn' xs init f =
       (entries xs).foldl (fun acc a => f a.1 a.2 acc) init
 
-/-- Reference semantics for `ForAllSimple`.
-
-`entries xs` is a concrete fold order, and `entryEquiv xs` states that the entries of each
-range are in bijection with `Fin (card xs)`. -/
-class LawfulForAllSimple (ρ : Type u) (α : outParam (Type v))
-    (d : outParam (Membership α ρ)) [ForAllSimple ρ α d] where
-  card : ρ → Nat
-  entries : (xs : ρ) → List {a : α // a ∈ xs}
-  entryEquiv : (xs : ρ) → Equiv (Fin (card xs)) ({a : α // a ∈ xs})
-  entries_eq_finRange : ∀ xs,
-    entries xs = (List.finRange (card xs)).map (entryEquiv xs)
-  forAllSimple_eq_foldl : ∀ {β : Type w} (xs : ρ) (init : β)
-    (f : (a : α) → a ∈ xs → β → β),
-      ForAllSimple.forAllSimple xs init f =
-        (entries xs).foldl (fun acc a => f a.1 a.2 acc) init
-
-theorem LawfulForAllSimple.mem_entries {ρ : Type u} {α : Type v}
-    {d : Membership α ρ} [ForAllSimple ρ α d] [LawfulForAllSimple ρ α d]
-    {xs : ρ} {a : α} (h : a ∈ xs) :
-    ⟨a, h⟩ ∈ LawfulForAllSimple.entries (ρ := ρ) (α := α) xs := by
-  classical
-  let e := LawfulForAllSimple.entryEquiv (ρ := ρ) (α := α) xs
-  rw [LawfulForAllSimple.entries_eq_finRange (ρ := ρ) (α := α) xs]
-  rw [List.mem_map]
-  refine ⟨e.symm ⟨a, h⟩, List.mem_finRange _, ?_⟩
-  simp [e]
-
-theorem LawfulForAllSimple.entries_nodup {ρ : Type u} {α : Type v}
-    {d : Membership α ρ} [ForAllSimple ρ α d] [LawfulForAllSimple ρ α d]
-    (xs : ρ) :
-    (LawfulForAllSimple.entries (ρ := ρ) (α := α) xs).Nodup := by
-  classical
-  rw [LawfulForAllSimple.entries_eq_finRange (ρ := ρ) (α := α) xs]
-  apply List.Nodup.map
-  · intro a b h
-    exact (LawfulForAllSimple.entryEquiv (ρ := ρ) (α := α) xs).injective h
-  · exact List.nodup_finRange _
-
 end Meta.ForAll
 end NumLean

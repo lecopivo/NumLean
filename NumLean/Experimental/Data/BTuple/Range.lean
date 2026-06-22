@@ -1,4 +1,4 @@
-import NumLean.Data.BTuple.Order
+import NumLean.Experimental.Data.BTuple.Order
 
 /-!
 # Unbundled ranges for `BTuple`

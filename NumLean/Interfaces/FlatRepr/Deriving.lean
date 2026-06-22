@@ -174,7 +174,7 @@ private def mkFlatReprInstanceOneTypeParam
   let indType ← mkInductiveApp indVal argNames
   let proxyEquivName := indVal.name.mkStr "proxyTypeEquiv"
   let n ← forallBoundedTelescope indVal.type indVal.numParams fun params _ => do
-    withLocalDeclD kName (mkSort levelOne) fun k => do
+    withLocalDeclD kName (mkSort Level.one) fun k => do
       withLocalDeclD nName (mkConst ``Nat) fun nX => do
         let x := params[typeParamIdx]!
         let instType ← mkAppM ``FlatRepr #[x, k, nX]

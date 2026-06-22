@@ -1,6 +1,6 @@
 import Batteries.Data.FloatArray
-import NumLean.Data.KernelExpr.Basic
-import NumLean.Data.KernelExpr.Register
+import NumLean.Experimental.Data.KernelExpr.Basic
+import NumLean.Experimental.Data.KernelExpr.Register
 import NumLean.Tactic.ApplyRuleSets
 import NumLean.Tactic.ApplyRuleSets.RuleProc
 import Mathlib.Logic.Equiv.Basic

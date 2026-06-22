@@ -1,4 +1,4 @@
-import NumLean.Data.HList.Notation
+import NumLean.Experimental.Data.HList.Notation
 import NumLean.Data.RangeEnum
 import Std.Data.Iterators.Producers.Range
 import Mathlib.Tactic

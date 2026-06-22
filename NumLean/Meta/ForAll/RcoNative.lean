@@ -259,22 +259,6 @@ decreasing_by exact RcoNativeStep.measure_next_lt (by assumption)
   forAllIn' xs init f :=
     forAllInRcoNativeLoop xs xs.lower (RcoNativeStep.le_refl xs.lower) init f
 
-@[always_inline, inline, default_instance low] instance instForAllSimpleRcoNative {α : Type u}
-    [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] :
-    ForAllSimple (Std.Rco α) α inferInstance where
-  forAllSimple xs init f :=
-    forAllInRcoNativeLoop xs xs.lower (RcoNativeStep.le_refl xs.lower) init f
-
-@[always_inline, inline, default_instance low] instance instLawfulForAllSimpleRcoNative {α : Type u}
-    [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] [LawfulRcoNativeStep α] :
-    LawfulForAllSimple (Std.Rco α) α inferInstance where
-  card := LawfulRcoNativeStep.card
-  entries := rcoNativeEntries
-  entryEquiv := LawfulRcoNativeStep.entryEquiv
-  entries_eq_finRange := LawfulRcoNativeStep.entries_eq_finRange
-  forAllSimple_eq_foldl xs init f :=
-    forAllInRcoNativeLoop_eq_foldl xs xs.lower (RcoNativeStep.le_refl xs.lower) init f
-
 @[always_inline, inline, default_instance low] instance instLawfulForAllIn'RcoNative {α : Type u}
     {β : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α]
     [LawfulRcoNativeStep α] :
