@@ -208,9 +208,10 @@ def point (shape : HTuple Nat p) (x : HTuple Nat p) (h : x <ₑ shape := by get_
     intro i hi
     simp [h]
 
+@[simp]
 theorem eval_point (shape : HTuple Nat p) (x : HTuple Nat .leaf) (y : HTuple Nat p)
     (h : y <ₑ shape := by get_elem_tactic) :
-  (point shape y) i = y := by simp [point]
+  (point shape y) x = y := by simp [point]
 
 def cast {p q} {src : HTuple Nat p} {dst : HTuple Nat q}
     (f : FinHTupleMap src dst) (src') (dst')

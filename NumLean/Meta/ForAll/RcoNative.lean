@@ -49,9 +49,12 @@ class LawfulRcoNativeStep (α : Type u) [LE α] [LT α] [DecidableLT α]
     rcoNativeEntries xs = (List.finRange (card xs)).map (entryEquiv xs)
 
 theorem mem_rcoNativeEntries {α : Type u} [LE α] [LT α] [DecidableLT α]
-    [RcoNativeStep α] {xs : Std.Rco α} {j : α} (hj : j ∈ xs) :
+    [RcoNativeStep α] [LawfulRcoNativeStep α] {xs : Std.Rco α} {j : α} (hj : j ∈ xs) :
     ⟨j, hj⟩ ∈ rcoNativeEntries xs := by
-  sorry
+  let e := LawfulRcoNativeStep.entryEquiv xs
+  rw [LawfulRcoNativeStep.entries_eq_finRange]
+  rw [List.mem_map]
+  exact ⟨e.symm ⟨j, hj⟩, by simp only [List.mem_finRange], e.right_inv ⟨j, hj⟩⟩
 
 @[always_inline, inline, specialize] def forAllInRcoNativeLoop {α : Type u} {β : Type v}
     [LE α] [LT α] [DecidableLT α] [RcoNativeStep α]
@@ -273,7 +276,8 @@ decreasing_by exact RcoNativeStep.measure_next_lt (by assumption)
     forAllInRcoNativeLoop_eq_foldl xs xs.lower (RcoNativeStep.le_refl xs.lower) init f
 
 @[always_inline, inline, default_instance low] instance instLawfulForAllIn'RcoNative {α : Type u}
-    {β : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] :
+    {β : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α]
+    [LawfulRcoNativeStep α] :
     LawfulForAllIn' (Std.Rco α) α β inferInstance where
   entries := rcoNativeEntries
   mem_entries h := mem_rcoNativeEntries h
@@ -287,7 +291,8 @@ decreasing_by exact RcoNativeStep.measure_next_lt (by assumption)
     forAllInRcoNativeMProd2Loop xs xs.lower (RcoNativeStep.le_refl xs.lower) init.fst init.snd f
 
 @[always_inline, inline, default_instance 100] instance instLawfulForAllIn'RcoNativeMProd2 {α : Type u}
-    {β γ : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] :
+    {β γ : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α]
+    [LawfulRcoNativeStep α] :
     LawfulForAllIn' (Std.Rco α) α (MProd β γ) inferInstance where
   entries := rcoNativeEntries
   mem_entries h := mem_rcoNativeEntries h
@@ -302,7 +307,8 @@ decreasing_by exact RcoNativeStep.measure_next_lt (by assumption)
     forAllInRcoNativeMProd3Loop xs xs.lower (RcoNativeStep.le_refl xs.lower) init.fst init.snd.fst init.snd.snd f
 
 @[always_inline, inline, default_instance 200] instance instLawfulForAllIn'RcoNativeMProd3 {α : Type u}
-    {β γ δ : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] :
+    {β γ δ : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α]
+    [LawfulRcoNativeStep α] :
     LawfulForAllIn' (Std.Rco α) α (MProd β (MProd γ δ)) inferInstance where
   entries := rcoNativeEntries
   mem_entries h := mem_rcoNativeEntries h
@@ -317,7 +323,8 @@ decreasing_by exact RcoNativeStep.measure_next_lt (by assumption)
     forAllInRcoNativeMProd4Loop xs xs.lower (RcoNativeStep.le_refl xs.lower) init.fst init.snd.fst init.snd.snd.fst init.snd.snd.snd f
 
 @[always_inline, inline, default_instance 300] instance instLawfulForAllIn'RcoNativeMProd4 {α : Type u}
-    {β γ δ ε : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] :
+    {β γ δ ε : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α]
+    [LawfulRcoNativeStep α] :
     LawfulForAllIn' (Std.Rco α) α (MProd β (MProd γ (MProd δ ε))) inferInstance where
   entries := rcoNativeEntries
   mem_entries h := mem_rcoNativeEntries h
@@ -332,7 +339,8 @@ decreasing_by exact RcoNativeStep.measure_next_lt (by assumption)
     forAllInRcoNativeMProd5Loop xs xs.lower (RcoNativeStep.le_refl xs.lower) init.fst init.snd.fst init.snd.snd.fst init.snd.snd.snd.fst init.snd.snd.snd.snd f
 
 @[always_inline, inline, default_instance 400] instance instLawfulForAllIn'RcoNativeMProd5 {α : Type u}
-    {β γ δ ε ζ : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] :
+    {β γ δ ε ζ : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α]
+    [LawfulRcoNativeStep α] :
     LawfulForAllIn' (Std.Rco α) α (MProd β (MProd γ (MProd δ (MProd ε ζ)))) inferInstance where
   entries := rcoNativeEntries
   mem_entries h := mem_rcoNativeEntries h
@@ -348,7 +356,8 @@ decreasing_by exact RcoNativeStep.measure_next_lt (by assumption)
     forAllInRcoNativeMProd6Loop xs xs.lower (RcoNativeStep.le_refl xs.lower) init.fst init.snd.fst init.snd.snd.fst init.snd.snd.snd.fst init.snd.snd.snd.snd.fst init.snd.snd.snd.snd.snd f
 
 @[always_inline, inline, default_instance 500] instance instLawfulForAllIn'RcoNativeMProd6 {α : Type u}
-    {β γ δ ε ζ η : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] :
+    {β γ δ ε ζ η : Type v} [LE α] [LT α] [DecidableLT α] [RcoNativeStep α]
+    [LawfulRcoNativeStep α] :
     LawfulForAllIn' (Std.Rco α) α (MProd β (MProd γ (MProd δ (MProd ε (MProd ζ η))))) inferInstance where
   entries := rcoNativeEntries
   mem_entries h := mem_rcoNativeEntries h
@@ -479,6 +488,31 @@ private theorem rcoNativeEntries_nat_nodup (xs : Std.Rco Nat) :
     (rcoNativeEntries xs).Nodup :=
   rcoNativeEntriesFrom_nat_nodup xs xs.lower (RcoNativeStep.le_refl xs.lower)
 
+private theorem rcoNativeEntriesFrom_nat_mem (xs : Std.Rco Nat)
+    (i : Nat) (hlo : xs.lower ≤ i) {j : Nat}
+    (hij : i ≤ j) (hjhi : j < xs.upper) :
+    ⟨j, by exact ⟨Nat.le_trans hlo hij, hjhi⟩⟩ ∈ rcoNativeEntriesFrom xs i hlo := by
+  unfold rcoNativeEntriesFrom
+  split
+  · rename_i hhi
+    by_cases hji : j = i
+    · subst hji
+      simp
+    · simp only [List.mem_cons]
+      right
+      exact rcoNativeEntriesFrom_nat_mem xs (i + 1) (RcoNativeStep.lower_le_next hlo hhi)
+        (by omega) hjhi
+  · rename_i hhi
+    omega
+termination_by xs.upper - i
+decreasing_by omega
+
+private theorem rcoNativeEntries_nat_mem {xs : Std.Rco Nat} {j : Nat} (hj : j ∈ xs) :
+    ⟨j, hj⟩ ∈ rcoNativeEntries xs := by
+  rw [Std.Rco.mem_iff] at hj
+  simpa [rcoNativeEntries] using
+    rcoNativeEntriesFrom_nat_mem xs xs.lower (RcoNativeStep.le_refl xs.lower) hj.1 hj.2
+
 private theorem rcoNativeEntriesFrom_int_ge (xs : Std.Rco Int)
     (i : Int) (hlo : xs.lower ≤ i) {a : {a : Int // a ∈ xs}}
     (ha : a ∈ rcoNativeEntriesFrom xs i hlo) : i ≤ a.1 := by
@@ -518,6 +552,31 @@ decreasing_by omega
 private theorem rcoNativeEntries_int_nodup (xs : Std.Rco Int) :
     (rcoNativeEntries xs).Nodup :=
   rcoNativeEntriesFrom_int_nodup xs xs.lower (RcoNativeStep.le_refl xs.lower)
+
+private theorem rcoNativeEntriesFrom_int_mem (xs : Std.Rco Int)
+    (i : Int) (hlo : xs.lower ≤ i) {j : Int}
+    (hij : i ≤ j) (hjhi : j < xs.upper) :
+    ⟨j, by exact ⟨Int.le_trans hlo hij, hjhi⟩⟩ ∈ rcoNativeEntriesFrom xs i hlo := by
+  unfold rcoNativeEntriesFrom
+  split
+  · rename_i hhi
+    by_cases hji : j = i
+    · subst hji
+      simp
+    · simp only [List.mem_cons]
+      right
+      exact rcoNativeEntriesFrom_int_mem xs (i + 1) (RcoNativeStep.lower_le_next hlo hhi)
+        (by omega) hjhi
+  · rename_i hhi
+    omega
+termination_by (xs.upper - i).toNat
+decreasing_by omega
+
+private theorem rcoNativeEntries_int_mem {xs : Std.Rco Int} {j : Int} (hj : j ∈ xs) :
+    ⟨j, hj⟩ ∈ rcoNativeEntries xs := by
+  rw [Std.Rco.mem_iff] at hj
+  simpa [rcoNativeEntries] using
+    rcoNativeEntriesFrom_int_mem xs xs.lower (RcoNativeStep.le_refl xs.lower) hj.1 hj.2
 
 private theorem rcoNativeEntriesFrom_uint64_ge (xs : Std.Rco UInt64)
     (i : UInt64) (hlo : xs.lower ≤ i) {a : {a : UInt64 // a ∈ xs}}
@@ -571,6 +630,46 @@ private theorem rcoNativeEntries_uint64_nodup (xs : Std.Rco UInt64) :
     (rcoNativeEntries xs).Nodup :=
   rcoNativeEntriesFrom_uint64_nodup xs xs.lower (RcoNativeStep.le_refl xs.lower)
 
+private theorem rcoNativeEntriesFrom_uint64_mem (xs : Std.Rco UInt64)
+    (i : UInt64) (hlo : xs.lower ≤ i) {j : UInt64}
+    (hij : i ≤ j) (hjhi : j < xs.upper) :
+    ⟨j, by exact ⟨UInt64.le_iff_toNat_le.mpr
+      (Nat.le_trans (UInt64.le_iff_toNat_le.mp hlo) (UInt64.le_iff_toNat_le.mp hij)), hjhi⟩⟩ ∈
+      rcoNativeEntriesFrom xs i hlo := by
+  unfold rcoNativeEntriesFrom
+  split
+  · rename_i hhi
+    by_cases hji : j = i
+    · subst hji
+      simp
+    · simp only [List.mem_cons]
+      right
+      have hnext : i + 1 ≤ j := by
+        rw [UInt64.le_iff_toNat_le]
+        rw [UInt64.toNat_add_one_of_lt hhi]
+        have hijNat := UInt64.le_iff_toNat_le.mp hij
+        have hneNat : i.toNat ≠ j.toNat := by
+          intro h
+          apply hji
+          exact UInt64.toNat_inj.mp h.symm
+        omega
+      exact rcoNativeEntriesFrom_uint64_mem xs (i + 1)
+        (RcoNativeStep.lower_le_next hlo hhi) hnext hjhi
+  · rename_i hhi
+    exact False.elim (hhi (UInt64.lt_iff_toNat_lt.mpr
+      (Nat.lt_of_le_of_lt (UInt64.le_iff_toNat_le.mp hij) (UInt64.lt_iff_toNat_lt.mp hjhi))))
+termination_by xs.upper.toNat - i.toNat
+decreasing_by
+  rw [UInt64.toNat_add_one_of_lt (by assumption)]
+  have hlt := UInt64.lt_iff_toNat_lt.mp (by assumption)
+  omega
+
+private theorem rcoNativeEntries_uint64_mem {xs : Std.Rco UInt64} {j : UInt64} (hj : j ∈ xs) :
+    ⟨j, hj⟩ ∈ rcoNativeEntries xs := by
+  rw [Std.Rco.mem_iff] at hj
+  simpa [rcoNativeEntries] using
+    rcoNativeEntriesFrom_uint64_mem xs xs.lower (RcoNativeStep.le_refl xs.lower) hj.1 hj.2
+
 @[always_inline, inline] instance instLawfulRcoNativeStepNat : LawfulRcoNativeStep Nat where
   card xs := (rcoNativeEntries xs).length
   entryEquiv xs :=
@@ -580,14 +679,14 @@ private theorem rcoNativeEntries_uint64_nodup (xs : Std.Rco UInt64) :
       invFun := fun a =>
         ⟨entries.idxOf a, by
           rw [List.idxOf_lt_length_iff]
-          exact mem_rcoNativeEntries a.2⟩
+          exact rcoNativeEntries_nat_mem a.2⟩
       left_inv := by
         intro i
         apply Fin.ext
         exact List.get_idxOf nd i
       right_inv := by
         intro a
-        exact List.idxOf_get (List.idxOf_lt_length_iff.2 (mem_rcoNativeEntries a.2)) }
+        exact List.idxOf_get (List.idxOf_lt_length_iff.2 (rcoNativeEntries_nat_mem a.2)) }
   entries_eq_finRange := by
     classical
     intro xs
@@ -604,14 +703,14 @@ private theorem rcoNativeEntries_uint64_nodup (xs : Std.Rco UInt64) :
       invFun := fun a =>
         ⟨entries.idxOf a, by
           rw [List.idxOf_lt_length_iff]
-          exact mem_rcoNativeEntries a.2⟩
+          exact rcoNativeEntries_int_mem a.2⟩
       left_inv := by
         intro i
         apply Fin.ext
         exact List.get_idxOf nd i
       right_inv := by
         intro a
-        exact List.idxOf_get (List.idxOf_lt_length_iff.2 (mem_rcoNativeEntries a.2)) }
+        exact List.idxOf_get (List.idxOf_lt_length_iff.2 (rcoNativeEntries_int_mem a.2)) }
   entries_eq_finRange := by
     classical
     intro xs
@@ -628,14 +727,14 @@ private theorem rcoNativeEntries_uint64_nodup (xs : Std.Rco UInt64) :
       invFun := fun a =>
         ⟨entries.idxOf a, by
           rw [List.idxOf_lt_length_iff]
-          exact mem_rcoNativeEntries a.2⟩
+          exact rcoNativeEntries_uint64_mem a.2⟩
       left_inv := by
         intro i
         apply Fin.ext
         exact List.get_idxOf nd i
       right_inv := by
         intro a
-        exact List.idxOf_get (List.idxOf_lt_length_iff.2 (mem_rcoNativeEntries a.2)) }
+        exact List.idxOf_get (List.idxOf_lt_length_iff.2 (rcoNativeEntries_uint64_mem a.2)) }
   entries_eq_finRange := by
     classical
     intro xs

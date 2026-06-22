@@ -37,14 +37,14 @@ theorem transposeSlice_in_map_range
       (a : {idx : HTuple Nat (.prod r r) //
         idx ∈ (((0 : HTuple Nat r).prod (0 : HTuple Nat r))...(shape.prod shape))}) =>
     let ij := map a.1
-    let ji := map (transposeIndex' (shape := shape) a.1)
+    let ji := map (transposeIndex' a.1)
     if ij.toScalar < ji.toScalar then
       acc.swap ij.toScalar ji.toScalar (by sorry) (by sorry)
     else acc
   have hExt :
       (List.foldl outerStep xs outerEntries)[i] =
       (List.foldl step xs (entries.filter
-        (fun a => map a.1 = h(i) ∨ map (transposeIndex' (shape := shape) a.1) = h(i))))[i] := by
+        (fun a => map a.1 = h(i) ∨ map (transposeIndex' a.1) = h(i))))[i] := by
     -- Transport the nested square fold to the product entries and keep only entries touching `i`.
     sorry
   rw [hExt]
@@ -58,10 +58,10 @@ theorem transposeSlice_in_map_range
     ⟨targetT.val, by sorry⟩
   have hEntries :
       (entries.filter
-        (fun a : Subtype _ => map a.1 = h(i) ∨ map (transposeIndex' (shape := shape) a.1) = h(i))) =
+        (fun a : Subtype _ => map a.1 = h(i) ∨ map (transposeIndex' a.1) = h(i))) =
           [targetEntry, targetTEntry] ∨
       (entries.filter
-        (fun a : Subtype _ => map a.1 = h(i) ∨ map (transposeIndex' (shape := shape) a.1) = h(i))) =
+        (fun a : Subtype _ => map a.1 = h(i) ∨ map (transposeIndex' a.1) = h(i))) =
           [targetTEntry, targetEntry] := by
     sorry
   rcases hEntries with hEntries | hEntries
@@ -109,20 +109,20 @@ theorem transposeSlice_out_map_range
       (a : {idx : HTuple Nat (.prod r r) //
         idx ∈ (((0 : HTuple Nat r).prod (0 : HTuple Nat r))...(shape.prod shape))}) =>
     let ij := map a.1
-    let ji := map (transposeIndex' (shape := shape) a.1)
+    let ji := map (transposeIndex' a.1)
     if ij.toScalar < ji.toScalar then
       acc.swap ij.toScalar ji.toScalar (by sorry) (by sorry)
     else acc
   have hExt :
       (List.foldl outerStep xs outerEntries)[i] =
       (List.foldl step xs (entries.filter
-        (fun a => map a.1 = h(i) ∨ map (transposeIndex' (shape := shape) a.1) = h(i))))[i] := by
+        (fun a => map a.1 = h(i) ∨ map (transposeIndex' a.1) = h(i))))[i] := by
     -- Transport the nested square fold to the product entries and keep only entries touching `i`.
     sorry
   rw [hExt]
   have hEntries :
       (entries.filter
-        (fun a : Subtype _ => map a.1 = h(i) ∨ map (transposeIndex' (shape := shape) a.1) = h(i))) = [] := by
+        (fun a : Subtype _ => map a.1 = h(i) ∨ map (transposeIndex' a.1) = h(i))) = [] := by
     sorry
   rw [hEntries]
   simp only [List.foldl_nil]

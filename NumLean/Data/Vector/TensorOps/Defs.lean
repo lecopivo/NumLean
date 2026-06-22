@@ -22,7 +22,7 @@ def transposeIndex {r : HTuple.Profile} {shape : HTuple Nat r} :
   fun ⟨.prod i j, _h⟩ => ⟨.prod j i, by grind⟩
 
 /-- Swap the two coordinates in a square product domain. -/
-def transposeIndex' {r : HTuple.Profile} {shape : HTuple Nat r} :
+def transposeIndex' {r : HTuple.Profile} :
     HTuple Nat (.prod r r) → HTuple Nat (.prod r r) :=
   fun (.prod i j) => .prod j i
 
