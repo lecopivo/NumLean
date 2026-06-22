@@ -141,11 +141,11 @@ def eval {R : Type} [ROps R] [DecidableRel (· < · : R -> R -> Prop)]
   | _, sqrt x =>
     ROps.sqrt (x.eval boundVars ctx (by simpa [WellFormed] using hk))
   | _, sin x =>
-    RCOps.sin (x.eval boundVars ctx (by simpa [WellFormed] using hk))
+    ROps.sin (x.eval boundVars ctx (by simpa [WellFormed] using hk))
   | _, cos x =>
-    RCOps.cos (x.eval boundVars ctx (by simpa [WellFormed] using hk))
+    ROps.cos (x.eval boundVars ctx (by simpa [WellFormed] using hk))
   | _, exp x =>
-    RCOps.exp (x.eval boundVars ctx (by simpa [WellFormed] using hk))
+    ROps.exp (x.eval boundVars ctx (by simpa [WellFormed] using hk))
   | _, log x =>
     ROps.log (x.eval boundVars ctx (by simpa [WellFormed] using hk))
   | _, fma x y z =>

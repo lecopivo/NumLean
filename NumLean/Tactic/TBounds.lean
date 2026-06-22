@@ -81,7 +81,14 @@ private def isNatVar (decl : LocalDecl) : MetaM Bool := do
   else
     return false
 
-elab "tbounds" : tactic => do
+private def finBoundSource? (decl : LocalDecl) : MetaM (Option Expr) := do
+  if decl.isImplementationDetail then
+    return none
+  if decl.type.getAppFn.isConstOf ``Fin && decl.type.getAppNumArgs == 1 then
+    return some decl.toExpr
+  return none
+
+private def tboundsCore (sources : Array Expr) : TacticM Unit := do
   try
     evalTactic (← `(tactic| first
       | omega
@@ -96,8 +103,7 @@ elab "tbounds" : tactic => do
       | apply TBounds.row_lt <;> assumption
       | apply TBounds.row_next_le <;> assumption
       | simp only [Std.Rco.mem_iff] at *; ring_nf; omega
-      | ring_nf; omega
-      | ring_nf; nlinarith))
+      | ring_nf; omega))
     return
   catch _ => pure ()
 
@@ -107,6 +113,10 @@ elab "tbounds" : tactic => do
       return acc.push decl.toExpr
     else
       return acc
+  let finHs ← lctx.foldlM (init := #[]) fun acc decl => do
+    match ← finBoundSource? decl with
+    | some i => return acc.push (← mkAppM ``Fin.isLt #[i])
+    | none => return acc
   let ns ← lctx.foldlM (init := #[]) fun acc decl => do
     if ← isNatVar decl then
       return acc.push decl.toExpr
@@ -114,9 +124,14 @@ elab "tbounds" : tactic => do
       return acc
 
   let mut facts : Array Expr := #[]
+  for i in sources do
+    facts := facts.push (← mkAppM ``Fin.isLt #[i])
+  for h in finHs do
+    facts := facts.push h
   for h in hs do
     for n in ns do
       facts := facts.push (← mkAppOptM ``TBounds.row_next_le #[none, none, some n, some h])
+  let hs := hs ++ finHs
   for a in [:hs.size] do
     for b in [a + 1:hs.size] do
       let h₁ := hs[a]!
@@ -141,10 +156,17 @@ elab "tbounds" : tactic => do
 
   let mut g ← getMainGoal
   for fact in facts do
+    let fact ← instantiateMVars fact
     g ← g.assert (← mkFreshUserName `hbound) (← inferType fact) fact
     let (_, g') ← g.intro1P
     g := g'
   replaceMainGoal [g]
-  evalTactic (← `(tactic| ring_nf; nlinarith))
+  evalTactic (← `(tactic| first | assumption | ring_nf at *; nlinarith))
+
+elab "tbounds" : tactic => tboundsCore #[]
+
+elab "tbounds" " using " xs:term,* : tactic => do
+  let sources ← xs.getElems.mapM fun x => Term.elabTerm x none
+  tboundsCore sources
 
 end NumLean

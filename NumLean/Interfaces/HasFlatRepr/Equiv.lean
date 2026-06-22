@@ -6,8 +6,7 @@ namespace NumLean
 
 /-- Move a `HasFlatRepr` instance from `X` to `Y` along an equivalence.
 
-This is intended to support derived instances for structures and representation-equivalent
-types during the migration from `FlatRepr`/`HasFlatVector`. -/
+This supports derived instances for structures and representation-equivalent types. -/
 @[reducible, inline]
 def HasFlatRepr.ofEquiv (Ks : Nat → Type v) (equiv : X ≃ Y)
     [VectorType Ks K] [inst : HasFlatRepr X Ks n] : HasFlatRepr Y Ks n where

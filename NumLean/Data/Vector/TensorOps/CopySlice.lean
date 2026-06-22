@@ -1,5 +1,5 @@
 import NumLean.Data.Vector.TensorOps.Defs
-import NumLean.Data.Vector.TensorOps.FoldMap
+import NumLean.Interfaces.Fold.Filter
 import NumLean.Data.FinHTuple
 import NumLean.Data.Vector.Basic
 import Std.Tactic.Do

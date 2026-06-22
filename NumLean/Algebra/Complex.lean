@@ -1,7 +1,20 @@
 import NumLean.Algebra.Float
+import NumLean.Interfaces.Algebra.RCLike.Basic
 import NumLean.Data.Complex
 
 namespace NumLean
+
+instance : NatCast Complex32 where
+  natCast n := ⟨n.toFloat32, 0⟩
+
+instance : IntCast Complex32 where
+  intCast n := ⟨n.toInt32.toFloat32, 0⟩
+
+instance : NNRatCast Complex32 where
+  nnratCast q := ⟨(q : Float32), 0⟩
+
+instance : RatCast Complex32 where
+  ratCast q := ⟨(q : Float32), 0⟩
 
 namespace Complex32
 
@@ -54,6 +67,15 @@ instance : Div Complex32 where
 instance : Star Complex32 where
   star := fun ⟨a, b⟩ => ⟨a, -b⟩
 
+instance : PartialOrder Complex32 where
+  le x y := x = y
+  lt _ _ := False
+  le_refl _ := rfl
+  le_trans _ _ _ hxy hyz := Eq.trans hxy hyz
+  lt_iff_le_not_ge := by simp
+  le_antisymm x y hxy hyx := by
+    exact hxy
+
 private def npowRecComplex32 : Complex32 → Nat → Complex32
   | _, 0 => 1
   | z, n + 1 => npowRecComplex32 z n * z
@@ -74,29 +96,35 @@ instance : SMul Nat Complex32 where
 instance : SMul Int Complex32 where
   smul n z := ⟨n • z.re, n • z.im⟩
 
+instance : SMul Float32 Complex32 where
+  smul r z := ⟨r * z.re, r * z.im⟩
+
 instance : AddGroupOps Complex32 where
   nsmul n z := n • z
   zsmul n z := n • z
 
 instance : GroupOps Complex32 where
-  npow z n := z ^ n
-  zpow z n := z ^ n
+  npow n z := z ^ n
+  zpow n z := z ^ n
 
 instance : FieldOps Complex32 where
+  nnqsmul q z := (q : Complex32) * z
+  qsmul q z := (q : Complex32) * z
 
 instance : RNorm Complex32 Float32 where
   rnorm := Complex32.abs
 
-instance : RCLikeOps Complex32 Float32 where
+instance : RCOps Float32 Complex32 where
+  smul r z := ⟨r * z.re, r * z.im⟩
+  algebraMap r := ⟨r, 0⟩
   make re im := ⟨re, im⟩
   re := Complex32.re
   im := Complex32.im
-
-instance : RCOps Complex32 Float32 where
-  exp := Complex32.exp
-  sin := Complex32.sin
-  cos := Complex32.cos
-  pow z w := Complex32.exp (w * Complex32.log z)
+  I := ⟨0, 1⟩
+  cexp := Complex32.exp
+  csin := Complex32.sin
+  ccos := Complex32.cos
+  cpow z w := Complex32.exp (w * Complex32.log z)
 
 namespace Complex64
 
@@ -119,6 +147,18 @@ protected def cos (z : Complex64) : Complex64 :=
     -(Float.sin z.re * Float.sinh z.im)⟩
 
 end Complex64
+
+instance : NatCast Complex64 where
+  natCast n := ⟨n.toFloat, 0⟩
+
+instance : IntCast Complex64 where
+  intCast n := ⟨n.toInt64.toFloat, 0⟩
+
+instance : NNRatCast Complex64 where
+  nnratCast q := ⟨(q : Float), 0⟩
+
+instance : RatCast Complex64 where
+  ratCast q := ⟨(q : Float), 0⟩
 
 instance : Add Complex64 where
   add := fun ⟨x, y⟩ ⟨x', y'⟩ => ⟨x + x', y + y'⟩
@@ -149,6 +189,15 @@ instance : Div Complex64 where
 instance : Star Complex64 where
   star := fun ⟨a, b⟩ => ⟨a, -b⟩
 
+instance : PartialOrder Complex64 where
+  le x y := x = y
+  lt _ _ := False
+  le_refl _ := rfl
+  le_trans _ _ _ hxy hyz := Eq.trans hxy hyz
+  lt_iff_le_not_ge := by simp
+  le_antisymm x y hxy hyx := by
+    exact hxy
+
 private def npowRecComplex64 : Complex64 → Nat → Complex64
   | _, 0 => 1
   | z, n + 1 => npowRecComplex64 z n * z
@@ -169,28 +218,34 @@ instance : SMul Nat Complex64 where
 instance : SMul Int Complex64 where
   smul n z := ⟨n • z.re, n • z.im⟩
 
+instance : SMul Float Complex64 where
+  smul r z := ⟨r * z.re, r * z.im⟩
+
 instance : AddGroupOps Complex64 where
   nsmul n z := n • z
   zsmul n z := n • z
 
 instance : GroupOps Complex64 where
-  npow z n := z ^ n
-  zpow z n := z ^ n
+  npow n z := z ^ n
+  zpow n z := z ^ n
 
 instance : FieldOps Complex64 where
+  nnqsmul q z := (q : Complex64) * z
+  qsmul q z := (q : Complex64) * z
 
 instance : RNorm Complex64 Float where
   rnorm := Complex64.abs
 
-instance : RCLikeOps Complex64 Float where
+instance : RCOps Float Complex64 where
+  smul r z := ⟨r * z.re, r * z.im⟩
+  algebraMap r := ⟨r, 0⟩
   make re im := ⟨re, im⟩
   re := Complex64.re
   im := Complex64.im
-
-instance : RCOps Complex64 Float where
-  exp := Complex64.exp
-  sin := Complex64.sin
-  cos := Complex64.cos
-  pow z w := Complex64.exp (w * Complex64.log z)
+  I := ⟨0, 1⟩
+  cexp := Complex64.exp
+  csin := Complex64.sin
+  ccos := Complex64.cos
+  cpow z w := Complex64.exp (w * Complex64.log z)
 
 end NumLean

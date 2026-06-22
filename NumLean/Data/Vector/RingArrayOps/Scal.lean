@@ -1,5 +1,5 @@
 import NumLean.Data.Vector.RingArrayOps.Basic
-import NumLean.Data.Vector.TensorOps.FoldMap
+import NumLean.Interfaces.Fold.Filter
 import NumLean.Interfaces.Algebra.RingArrayOps
 
 set_option backward.do.legacy false

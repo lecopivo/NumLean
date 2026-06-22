@@ -20,4 +20,4 @@ import Tests.VectorRangeIterators
 import Tests.Visualize
 
 def main : IO Unit := do
-  pure ()
+  IO.println "tests done!"

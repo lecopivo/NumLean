@@ -121,6 +121,18 @@ instance {bits : Option Nat} : Sub (DyadicInterval bits) where
 instance {bits : Option Nat} : One (DyadicInterval bits) where
   one := ⟨some 1, some 1, 0⟩
 
+instance {bits : Option Nat} : NatCast (DyadicInterval bits) where
+  natCast n := ⟨some n, some n, 0⟩
+
+instance {bits : Option Nat} : IntCast (DyadicInterval bits) where
+  intCast n := ⟨some n, some n, 0⟩
+
+instance {bits : Option Nat} : NNRatCast (DyadicInterval bits) where
+  nnratCast _ := ⊤
+
+instance {bits : Option Nat} : RatCast (DyadicInterval bits) where
+  ratCast _ := ⊤
+
 instance {bits : Option Nat} : Mul (DyadicInterval bits) where
   mul _ _ := ⊤
 
@@ -147,10 +159,12 @@ instance {bits : Option Nat} : AddGroupOps (DyadicInterval bits) where
     | _, _ => ⊤
 
 instance {bits : Option Nat} : GroupOps (DyadicInterval bits) where
-  npow x n := x ^ n
-  zpow x n := x ^ n
+  npow n x := x ^ n
+  zpow n x := x ^ n
 
 instance {bits : Option Nat} : FieldOps (DyadicInterval bits) where
+  nnqsmul _ _ := ⊤
+  qsmul _ _ := ⊤
 
 theorem mem_top {bits : Option Nat} (x : ℝ) : x ∈ (⊤ : DyadicInterval bits) := by
   constructor

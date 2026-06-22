@@ -89,8 +89,8 @@ namespace GroupOps
 
 @[reducible, inline]
 def ofEquiv (e : X ≃ Y) [GroupOps X] [Mul Y] [Div Y] [Inv Y] [One Y] : GroupOps Y where
-  npow y n := e (e.symm y ^ n)
-  zpow y n := e (e.symm y ^ n)
+  npow n y := e (e.symm y ^ n)
+  zpow n y := e (e.symm y ^ n)
 
 end GroupOps
 

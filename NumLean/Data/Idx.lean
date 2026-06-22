@@ -126,15 +126,6 @@ def _root_.UInt64.equivFin : UInt64 ≃ Fin UInt64.size where
   left_inv := UInt64.ofFin_toFin
   right_inv := UInt64.toFin_ofFin
 
-/-- `UInt64` is a finite type (it has `2 ^ 64` elements). Computable, but never force `univ`. -/
-instance : Fintype UInt64 :=
-  Fintype.ofEquiv (Fin UInt64.size) UInt64.equivFin.symm
-
-/-- `Idx n` is a finite type for every `n`, with no condition on `n`: it is a `UInt64` subtype. -/
-instance instFintypeIdx {n} : Fintype (Idx n) :=
-  Fintype.ofEquiv {v : UInt64 // v.toNat < n}
-    ⟨fun v => ⟨v.1, v.2⟩, fun i => ⟨i.val, i.isLt⟩, fun _ => rfl, fun _ => rfl⟩
-
 /-- Reducing a `UInt64` modulo a positive `Nat` always lands below that `Nat`. This is the
 key totality fact for clamping out-of-range decoded indices back in range. -/
 theorem UInt64.toNat_mod_toUInt64_lt (x : UInt64) {k : Nat} (hk : 0 < k) :

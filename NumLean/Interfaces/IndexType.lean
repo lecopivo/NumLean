@@ -153,6 +153,7 @@ instance : IndexType (Fin n) n where
   toSize := ⟨⟩
 
 instance [Fact (n < 2 ^ 64)] : IndexType (Idx n) n where
+  toFintype := Fintype.ofEquiv (Fin n) (Idx.equivFin Fact.out).symm
   toIdx x := x
   fromIdx x := x
   toFin x := Idx.toFin x

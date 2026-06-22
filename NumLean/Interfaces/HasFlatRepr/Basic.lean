@@ -5,9 +5,8 @@ namespace NumLean
 
 /-- Type `X` has a flat scalar representation stored in vector type `Ks`.
 
-This is intended as the merged replacement for `FlatRepr` and `HasFlatVector`. It is
-currently a migration stub: existing classes and instances are left unchanged while this
-interface is developed. -/
+It combines the specification-level vector equivalence with operations for reading and writing
+packed scalar storage. -/
 class HasFlatRepr (X : Type u) (Ks : Nat → Type v) (nX : outParam Nat)
     {K : outParam (Type w)} [VectorType Ks K] where
 
@@ -58,6 +57,11 @@ class HasFlatRepr (X : Type u) (Ks : Nat → Type v) (nX : outParam Nat)
   replicate (n : Nat) (x : X) : Ks (n * nX)
   get_replicate (n : Nat) (x : X) (i j : Nat) (hi : i < n) (hj : j < nX) :
     VectorType.get (replicate n x) (i * nX + j) (by tbounds) = getComp x j hj
+
+/-- The default flat vector representation for `X`. -/
+class HasDefaultFlatRepr (X : Type u) (Ks : outParam (Nat → Type v)) (nX : outParam Nat)
+    {K : outParam (Type w)} [VectorType Ks K]
+    extends HasFlatRepr X Ks nX
 
 namespace HasFlatRepr
 

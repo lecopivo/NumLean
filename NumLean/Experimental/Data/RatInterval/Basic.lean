@@ -42,6 +42,18 @@ instance : Zero RatInterval where
 instance : One RatInterval where
   one := ⟨some 1, some 1⟩
 
+instance : NatCast RatInterval where
+  natCast n := ⟨some n, some n⟩
+
+instance : IntCast RatInterval where
+  intCast n := ⟨some n, some n⟩
+
+instance : NNRatCast RatInterval where
+  nnratCast q := ⟨some q, some q⟩
+
+instance : RatCast RatInterval where
+  ratCast q := ⟨some q, some q⟩
+
 instance : Add RatInterval where
   add i j := ⟨addEndpoint i.lo j.lo, addEndpoint i.hi j.hi⟩
 
@@ -76,10 +88,12 @@ instance : AddGroupOps RatInterval where
     | _, _ => ⊤
 
 instance : GroupOps RatInterval where
-  npow x n := x ^ n
-  zpow x n := x ^ n
+  npow n x := x ^ n
+  zpow n x := x ^ n
 
 instance : FieldOps RatInterval where
+  nnqsmul _ _ := ⊤
+  qsmul _ _ := ⊤
 
 theorem mem_top (x : ℚ) : x ∈ (⊤ : RatInterval) := by
   constructor

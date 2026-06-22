@@ -5,7 +5,6 @@ import NumLean.Experimental.Data.BTuple.Order
 import NumLean.Experimental.Data.BTuple.Range
 import NumLean.Experimental.Data.DyadicInterval
 import NumLean.Experimental.Data.DyadicInterval.Basic
-import NumLean.Experimental.Data.FlatArray.Basic
 import NumLean.Experimental.Data.FloatP
 import NumLean.Experimental.Data.HList
 import NumLean.Experimental.Data.HList.Basic

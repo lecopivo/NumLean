@@ -32,29 +32,29 @@ class LawfulForInProfile (p : Profile) [ForInProfile p] : Prop where
         (inv.1 (⟨[], toList xs.lower xs.upper, rfl⟩, init))
         (fun b => inv.1 (⟨toList xs.lower xs.upper, [], by simp⟩, b), inv.2)
 
-instance : HTuple.Range.LawfulForInProfile .leaf where
-  forIn'_spec {β} {m} {ps} _ _ _ {xs} {init} {f} inv step := by
-    cases xs with
-    | mk lower upper =>
-      cases lower with | leaf lo =>
-      cases upper with | leaf hi =>
-      -- TODO: reduce `ForInProfile.forInRangeStep` to the scalar `Std.Rco Nat` spec.
-      -- The executable leaf loop delegates to `Rco.Internal.iter`; the proof needs the bridge
-      -- between that iterator-level loop and `Spec.forIn'_rco`'s `toList` model.
-      sorry
+-- instance : HTuple.Range.LawfulForInProfile .leaf where
+--   forIn'_spec {β} {m} {ps} _ _ _ {xs} {init} {f} inv step := by
+--     cases xs with
+--     | mk lower upper =>
+--       cases lower with | leaf lo =>
+--       cases upper with | leaf hi =>
+--       -- TODO: reduce `ForInProfile.forInRangeStep` to the scalar `Std.Rco Nat` spec.
+--       -- The executable leaf loop delegates to `Rco.Internal.iter`; the proof needs the bridge
+--       -- between that iterator-level loop and `Spec.forIn'_rco`'s `toList` model.
+--       sorry
 
-instance {p q : Profile} [ForInProfile p] [ForInProfile q]
-    [HTuple.Range.LawfulForInProfile p] [HTuple.Range.LawfulForInProfile q] :
-    HTuple.Range.LawfulForInProfile (.prod p q) where
-  forIn'_spec {β} {m} {ps} _ _ _ {xs} {init} {f} inv step := by
-    cases xs with
-    | mk lower upper =>
-      cases lower with | prod lo₀ lo₁ =>
-      cases upper with | prod hi₀ hi₁ =>
-      -- TODO: compose the recursive laws for `p` and `q` using a flattened cursor invariant over
-      -- `(toList lo₀ hi₀).flatMap fun idx₀ => (toList lo₁ hi₁).map (HTuple.prod idx₀ ·)`.
-      -- This is the product analogue of the executable nested loop in `ForInProfile`.
-      sorry
+-- instance {p q : Profile} [ForInProfile p] [ForInProfile q]
+--     [HTuple.Range.LawfulForInProfile p] [HTuple.Range.LawfulForInProfile q] :
+--     HTuple.Range.LawfulForInProfile (.prod p q) where
+--   forIn'_spec {β} {m} {ps} _ _ _ {xs} {init} {f} inv step := by
+--     cases xs with
+--     | mk lower upper =>
+--       cases lower with | prod lo₀ lo₁ =>
+--       cases upper with | prod hi₀ hi₁ =>
+--       -- TODO: compose the recursive laws for `p` and `q` using a flattened cursor invariant over
+--       -- `(toList lo₀ hi₀).flatMap fun idx₀ => (toList lo₁ hi₁).map (HTuple.prod idx₀ ·)`.
+--       -- This is the product analogue of the executable nested loop in `ForInProfile`.
+--       sorry
 
 end Range
 

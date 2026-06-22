@@ -1,4 +1,5 @@
 import NumLean.Tactic.TBounds
+import NumLean.Interfaces.IndexType
 
 namespace NumLean.Tests.TBounds
 
@@ -50,5 +51,14 @@ example (xoff xinc xn n i : Nat) (hx : xoff + n * xinc ≤ xn) (hxinc : xinc ≠
     (hi : i ∈ (0...n : Std.Rco Nat)) :
     xoff + i * xinc < xn := by
   tbounds
+
+
+example (nX nI : Nat) (i : Fin nI) (j : Fin nX) :
+    i.1 * nX + j.1 < nI * nX := by
+  tbounds
+
+example (nX nI : Nat) {I : Type} [IndexType I nI] (i : I) (j : Fin nX) :
+    (toFin i).1 * nX + j.1 < nI * nX := by
+  tbounds using (toFin i)
 
 end NumLean.Tests.TBounds

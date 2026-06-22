@@ -52,8 +52,8 @@ lean_exe forAllBenchmark where
   supportInterpreter := true
 
 @[test_driver]
-lean_lib tests where
-  roots := #[`Tests]
+lean_exe tests where
+  root := `Tests
   moreLinkLibs := #[libNumLeanNative]
 
 lean_lib Tests.Float32ArrayEval where

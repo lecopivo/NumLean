@@ -112,7 +112,7 @@ instance {X Y : Type _} [AddGroupOps X] [AddGroupOps Y] :
 
 instance {X Y : Type _} [GroupOps X] [GroupOps Y] :
     GroupOps ((_ : X) × Y) where
-  npow xy n := xy ^ n
-  zpow xy n := xy ^ n
+  npow n xy := xy ^ n
+  zpow n xy := xy ^ n
 
 end NumLean
