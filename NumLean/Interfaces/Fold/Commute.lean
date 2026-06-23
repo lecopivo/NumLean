@@ -40,7 +40,7 @@ theorem List.foldl_eq_of_perm_of_pairwise_commutes {entries entries' : List α}
 
 /-- `LawfulFold` can be evaluated with any permutation of its entries when the step commutes. -/
 theorem LawfulFold.fold_eq_foldl_perm {ρ : Type u} {α : Type v} {β : Type w}
-    {d : Membership α ρ} [Fold ρ α d] [LawfulFold ρ α d]
+    {d : Membership α ρ} [FoldEntries ρ α d] [Fold ρ] [LawfulFold ρ α d]
     (xs : ρ) (init : β) (f : (a : α) → a ∈ xs → β → β)
     {entries' : List {a : α // a ∈ xs}}
     (hperm : (LawfulFold.entries (ρ := ρ) (α := α) xs).Perm entries')
@@ -64,7 +64,7 @@ theorem List.foldl_eq_of_perm_of_nodup_pairwise_commutes {entries entries' : Lis
 
 /-- `LawfulFold` version of nodup permutation-invariance. -/
 theorem LawfulFold.fold_eq_foldl_perm_of_pairwise_commutes {ρ : Type u} {α : Type v} {β : Type w}
-    {d : Membership α ρ} [Fold ρ α d] [LawfulFold ρ α d]
+    {d : Membership α ρ} [FoldEntries ρ α d] [Fold ρ] [LawfulFold ρ α d]
     (xs : ρ) (init : β) (f : (a : α) → a ∈ xs → β → β)
     {entries' : List {a : α // a ∈ xs}}
     (hperm : (LawfulFold.entries (ρ := ρ) (α := α) xs).Perm entries')

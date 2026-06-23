@@ -37,7 +37,8 @@ This is the executable fold, not a replay of `foldShapeEntries`. Leaves delegate
 `Std.Rco Nat` fold. Product nodes are nested row-major loops, with the right child innermost. Sum
 nodes traverse the left summand block first, then the right summand block. -/
 @[always_inline, inline, specialize] def foldShape {β : Type v}
-    [Fold (Std.Rco Nat) Nat inferInstance] : {p : Profile} → (r : Std.Rco (Shape p)) →
+    [FoldEntries (Std.Rco Nat) Nat inferInstance] [Fold (Std.Rco Nat)] :
+    {p : Profile} → (r : Std.Rco (Shape p)) →
     (init : β) → ((idx : BTuple Nat p) → idx ∈ r → β → β) → β
   | .leaf, ⟨.leaf lo, .leaf hi⟩, init, f =>
       Fold.fold (lo...hi) init fun idx hidx acc =>
@@ -68,10 +69,13 @@ nodes traverse the left summand block first, then the right summand block. -/
             change Range.InBounds lo₁ hi₁ idx₁
             exact hidx₁) acc
 
-instance {p : Profile} [Fold (Std.Rco Nat) Nat inferInstance] :
-    Fold (Std.Rco (Shape p)) (BTuple Nat p) Range.instMembershipRcoShape where
-  fold r init f := foldShape r init f
+instance {p : Profile} [FoldEntries (Std.Rco Nat) Nat inferInstance] [Fold (Std.Rco Nat)] :
+    FoldEntries (Std.Rco (Shape p)) (BTuple Nat p) Range.instMembershipRcoShape where
   entries := foldShapeEntries
+
+instance {p : Profile} [FoldEntries (Std.Rco Nat) Nat inferInstance] [Fold (Std.Rco Nat)] :
+    Fold (Std.Rco (Shape p)) where
+  fold r init f := foldShape r init f
 
 theorem entries_shape_rco {p : Profile} (lo hi : Shape p) :
     foldShapeEntries (lo...hi : Std.Rco (Shape p)) =

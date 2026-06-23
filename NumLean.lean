@@ -45,6 +45,11 @@ import NumLean.Data.Prod.OrderInit
 import NumLean.Data.RangeEnum
 import NumLean.Data.ScalarArrays
 import NumLean.Data.Sigma
+import NumLean.Data.Tensor
+import NumLean.Data.Tensor.Index
+import NumLean.Data.Tensor.Layout
+import NumLean.Data.Tensor.Rank
+import NumLean.Data.Tensor.Shape
 import NumLean.Data.Vector
 import NumLean.Data.Vector.Algebra
 import NumLean.Data.Vector.Basic
@@ -63,6 +68,12 @@ import NumLean.Data.Vector.TensorOps.Defs
 import NumLean.Data.Vector.TensorOps.ReverseSlice
 import NumLean.Data.Vector.TensorOps.SwapSlice
 import NumLean.Data.Vector.TensorOps.TransposeSlice
+import NumLean.Data.Vector.TensorAlgebra
+import NumLean.Data.Vector.TensorAlgebra.AddOps
+import NumLean.Data.Vector.TensorAlgebra.FieldOps
+import NumLean.Data.Vector.TensorAlgebra.MulOps
+import NumLean.Data.Vector.TensorAlgebra.RingOps
+import NumLean.Data.Vector.TensorAlgebra.SemiringOps
 -- import NumLean.Doodle
 import NumLean.Interfaces.Algebra.Field
 import NumLean.Interfaces.Algebra.Field.Basic
@@ -88,13 +99,13 @@ import NumLean.Interfaces.Algebra.RCLike.Lawful
 import NumLean.Interfaces.Algebra.Ring
 import NumLean.Interfaces.Algebra.Ring.Basic
 import NumLean.Interfaces.Algebra.Ring.Lawful
-import NumLean.Interfaces.Algebra.RingArrayOps
 import NumLean.Interfaces.ArrayOps.Basic
 import NumLean.Interfaces.Fold
 import NumLean.Interfaces.Fold.Basic
 import NumLean.Interfaces.Fold.Commute
 import NumLean.Interfaces.Fold.Embedding
 import NumLean.Interfaces.Fold.Filter
+import NumLean.Interfaces.Fold.Lemmas
 import NumLean.Interfaces.Fold.RangeIso
 import NumLean.Interfaces.Fold.RcoNative
 import NumLean.Interfaces.HasFlatRepr
@@ -110,9 +121,17 @@ import NumLean.Interfaces.Module
 import NumLean.Interfaces.Module.Basic
 import NumLean.Interfaces.Module.Lawful
 import NumLean.Interfaces.RealModeal.Basic
+import NumLean.Interfaces.RingArrayOps
 import NumLean.Interfaces.SetElem
 import NumLean.Interfaces.TensorArrayOps
 import NumLean.Interfaces.TensorArrayOps.Basic
+import NumLean.Interfaces.TensorAlgebra
+import NumLean.Interfaces.TensorAlgebra.AddOps
+import NumLean.Interfaces.TensorAlgebra.FieldOps
+import NumLean.Interfaces.TensorAlgebra.MulOps
+import NumLean.Interfaces.TensorAlgebra.NormedOps
+import NumLean.Interfaces.TensorAlgebra.RingOps
+import NumLean.Interfaces.TensorAlgebra.SemiringOps
 import NumLean.Interfaces.TensorIndexType
 import NumLean.Interfaces.UntypedIndex
 import NumLean.Interfaces.VectorType.Basic

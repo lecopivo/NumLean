@@ -1,0 +1,9 @@
+import NumLean.Interfaces.TensorAlgebra.AddOps
+import NumLean.Interfaces.TensorAlgebra.FieldOps
+import NumLean.Interfaces.TensorAlgebra.MulOps
+import NumLean.Interfaces.TensorAlgebra.NormedOps
+import NumLean.Interfaces.TensorAlgebra.RingOps
+import NumLean.Interfaces.TensorAlgebra.SemiringOps
+import NumLean.Interfaces.TensorAlgebra.LawfulMulOps
+import NumLean.Interfaces.TensorAlgebra.LawfulSemiringOps
+import NumLean.Interfaces.TensorAlgebra.LawfulRingOps

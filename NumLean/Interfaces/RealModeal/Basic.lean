@@ -1,7 +1,7 @@
 import NumLean.Algebra.Ops
 import NumLean.Interfaces.Algebra.RCLike.Basic
 import NumLean.Interfaces.Algebra.RCLike.Lawful
-import NumLean.Interfaces.Algebra.RingArrayOps
+import NumLean.Interfaces.RingArrayOps
 import NumLean.Interfaces.VectorType.Basic
 import NumLean.Data.FlatVector.Ops
 

@@ -36,7 +36,7 @@ theorem mulRef_in_range {K : Type} [Mul K] {xn yn : Nat} (n : Nat)
     (xs := (0...n : Std.Rco Nat))]
   simp only [setElem_nat_eq_set, bind, Id.run, pure]
   rw [FoldMap.foldl_get_eq_foldl_filter_affectors_vector
-      (entries := Fold.entries.{0,0,0} (0...n : Std.Rco Nat))
+      (entries := NumLean.entries (0...n : Std.Rco Nat))
       (deps := fun i : Fin yn => {i})
       (hself := by simp)
       (affectors := fun j : Fin yn =>
@@ -78,7 +78,7 @@ theorem mulRef_in_range {K : Type} [Mul K] {xn yn : Nat} (n : Nat)
       simp [hcond]
       exact hread
   have hEntries :
-      ((Fold.entries.{0,0,0} (0...n : Std.Rco Nat)).filter fun idx =>
+      ((NumLean.entries (0...n : Std.Rco Nat)).filter fun idx =>
           @decide (idx ∈ ({idx | yoff + idx.1 * yinc =
             (⟨yoff + i * yinc, by tbounds⟩ : Fin yn).1} :
               Set {i : Nat // i ∈ (0...n : Std.Rco Nat)})) (Classical.propDecidable _)) =
@@ -109,7 +109,7 @@ theorem mulRef_out_range {K : Type} [Mul K] {xn yn : Nat} (n : Nat)
     (xs := (0...n : Std.Rco Nat))]
   simp only [setElem_nat_eq_set, bind, Id.run, pure]
   rw [FoldMap.foldl_get_eq_foldl_filter_affectors_vector
-      (entries := Fold.entries.{0,0,0} (0...n : Std.Rco Nat))
+      (entries := NumLean.entries (0...n : Std.Rco Nat))
       (deps := fun i : Fin yn => {i})
       (hself := by simp)
       (affectors := fun j : Fin yn =>
@@ -137,7 +137,7 @@ theorem mulRef_out_range {K : Type} [Mul K] {xn yn : Nat} (n : Nat)
       simp [hidx]
       exact hread
   have hEntries :
-      ((Fold.entries.{0,0,0} (0...n : Std.Rco Nat)).filter fun idx =>
+      ((NumLean.entries (0...n : Std.Rco Nat)).filter fun idx =>
           @decide (idx ∈ ({idx | yoff + idx.1 * yinc = (⟨j, hj⟩ : Fin yn).1} :
             Set {i : Nat // i ∈ (0...n : Std.Rco Nat)})) (Classical.propDecidable _)) = [] := by
     apply List.eq_nil_iff_forall_not_mem.2

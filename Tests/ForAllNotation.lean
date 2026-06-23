@@ -228,15 +228,27 @@ example :
   inferInstance
 
 example :
-    NumLean.Fold (Std.Rco Nat) Nat inferInstance := by
+    NumLean.FoldEntries (Std.Rco Nat) Nat inferInstance := by
   infer_instance
 
 example :
-    NumLean.Fold (Std.Rco UInt64) UInt64 inferInstance := by
+    NumLean.Fold (Std.Rco Nat) := by
   infer_instance
 
 example :
-    NumLean.Fold (Std.Rco Int) Int inferInstance := by
+    NumLean.FoldEntries (Std.Rco UInt64) UInt64 inferInstance := by
+  infer_instance
+
+example :
+    NumLean.Fold (Std.Rco UInt64) := by
+  infer_instance
+
+example :
+    NumLean.FoldEntries (Std.Rco Int) Int inferInstance := by
+  infer_instance
+
+example :
+    NumLean.Fold (Std.Rco Int) := by
   infer_instance
 
 example :
@@ -258,9 +270,14 @@ example {α : Type} [LE α] [LT α] [DecidableLT α]
   infer_instance
 
 example :
-    NumLean.Fold
+    NumLean.FoldEntries
       (Std.Rco (HTuple Nat (.prod .leaf .leaf)))
       (HTuple Nat (.prod .leaf .leaf)) HTuple.Range.instMembershipRcoHTuple := by
+  infer_instance
+
+example :
+    NumLean.Fold
+      (Std.Rco (HTuple Nat (.prod .leaf .leaf))) := by
   infer_instance
 
 example :

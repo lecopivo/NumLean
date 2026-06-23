@@ -31,16 +31,16 @@ def prodEntry {α : Type u} {β : Type v}
 
 def prodEntries {α : Type u} {β : Type v}
     [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
-    [Fold (Std.Rco α) α inferInstance] [Fold (Std.Rco β) β inferInstance]
-    [LawfulFold (Std.Rco α) α inferInstance] [LawfulFold (Std.Rco β) β inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
     (xs : Std.Rco α) (ys : Std.Rco β) :
     List {p : α × β // p ∈ ((xs.lower, ys.lower)...(xs.upper, ys.upper) : Std.Rco (α × β))} :=
-  (LawfulFold.entries (ρ := Std.Rco α) (α := α) xs).flatMap fun a =>
-    (LawfulFold.entries (ρ := Std.Rco β) (α := β) ys).map fun b => prodEntry xs ys a b
+  (NumLean.entries xs).flatMap fun a =>
+    (NumLean.entries ys).map fun b => prodEntry xs ys a b
 
 private theorem mem_prodEntries {α : Type u} {β : Type v}
     [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
-    [Fold (Std.Rco α) α inferInstance] [Fold (Std.Rco β) β inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
+    [Fold (Std.Rco α)] [Fold (Std.Rco β)]
     [LawfulFold (Std.Rco α) α inferInstance] [LawfulFold (Std.Rco β) β inferInstance]
     {xs : Std.Rco α} {ys : Std.Rco β}
     (p : {p : α × β // p ∈ ((xs.lower, ys.lower)...(xs.upper, ys.upper) : Std.Rco (α × β))}) :
@@ -55,7 +55,8 @@ private theorem mem_prodEntries {α : Type u} {β : Type v}
 
 private theorem prodEntries_nodup {α : Type u} {β : Type v}
     [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
-    [Fold (Std.Rco α) α inferInstance] [Fold (Std.Rco β) β inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
+    [Fold (Std.Rco α)] [Fold (Std.Rco β)]
     [LawfulFold (Std.Rco α) α inferInstance] [LawfulFold (Std.Rco β) β inferInstance]
     (xs : Std.Rco α) (ys : Std.Rco β) :
     (prodEntries xs ys).Nodup := by
@@ -78,23 +79,30 @@ private theorem prodEntries_nodup {α : Type u} {β : Type v}
       exact (congrArg (fun p : {p : α × β // p ∈ ((xs.lower, ys.lower)...(xs.upper, ys.upper) : Std.Rco (α × β))} => p.1.1) hp_b_eq).symm
 
 /-- Row-major fold over a product range: first component is outer, second component is inner. -/
+@[always_inline, inline, default_instance low] instance instFoldEntriesRcoProd {α : Type u} {β : Type v}
+    [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
+    :
+    FoldEntries (Std.Rco (α × β)) (α × β) inferInstance where
+  entries xs := prodEntries (xs.lower.1...xs.upper.1 : Std.Rco α)
+    (xs.lower.2...xs.upper.2 : Std.Rco β)
+
 @[always_inline, inline, default_instance low] instance instFoldRcoProd {α : Type u} {β : Type v}
     [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
-    [Fold (Std.Rco α) α inferInstance] [Fold (Std.Rco β) β inferInstance]
-    [LawfulFold (Std.Rco α) α inferInstance] [LawfulFold (Std.Rco β) β inferInstance] :
-    Fold (Std.Rco (α × β)) (α × β) inferInstance where
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
+    [Fold (Std.Rco α)] [Fold (Std.Rco β)] :
+    Fold (Std.Rco (α × β)) where
   fold xs init f :=
     Fold.fold (xs.lower.1...xs.upper.1 : Std.Rco α) init fun a ha acc =>
       Fold.fold (xs.lower.2...xs.upper.2 : Std.Rco β) acc fun b hb acc =>
         f (a, b) (by
           rw [mem_rco_prod_iff]
           exact ⟨ha, hb⟩) acc
-  entries xs := prodEntries (xs.lower.1...xs.upper.1 : Std.Rco α)
-    (xs.lower.2...xs.upper.2 : Std.Rco β)
 
 theorem fold_rco_prod_eq_outer_inner {α : Type u} {β : Type v} {γ : Type w}
     [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
-    [Fold (Std.Rco α) α inferInstance] [Fold (Std.Rco β) β inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
+    [Fold (Std.Rco α)] [Fold (Std.Rco β)]
     [LawfulFold (Std.Rco α) α inferInstance] [LawfulFold (Std.Rco β) β inferInstance]
     (lo hi : α × β) (init : γ)
     (f : (x : α × β) → x ∈ (lo...hi : Std.Rco (α × β)) → γ → γ) :
@@ -108,7 +116,8 @@ theorem fold_rco_prod_eq_outer_inner {α : Type u} {β : Type v} {γ : Type w}
 
 theorem fold_rco_outer_inner_eq_prod {α : Type u} {β : Type v} {γ : Type w}
     [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
-    [Fold (Std.Rco α) α inferInstance] [Fold (Std.Rco β) β inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
+    [Fold (Std.Rco α)] [Fold (Std.Rco β)]
     [LawfulFold (Std.Rco α) α inferInstance] [LawfulFold (Std.Rco β) β inferInstance]
     (lo hi : α) (lo' hi' : β) (init : γ)
     (f : (a : α) → (b : β) → (a ∈ lo...hi) → (b ∈ lo'...hi') → γ → γ) :
@@ -124,7 +133,8 @@ theorem fold_rco_outer_inner_eq_prod {α : Type u} {β : Type v} {γ : Type w}
 
 instance (priority := low) instLawfulFoldRcoProd {α : Type u} {β : Type v}
     [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
-    [Fold (Std.Rco α) α inferInstance] [Fold (Std.Rco β) β inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
+    [Fold (Std.Rco α)] [Fold (Std.Rco β)]
     [LawfulFold (Std.Rco α) α inferInstance] [LawfulFold (Std.Rco β) β inferInstance] :
     LawfulFold (Std.Rco (α × β)) (α × β) inferInstance where
   mem_entries {xs} {a} h := by

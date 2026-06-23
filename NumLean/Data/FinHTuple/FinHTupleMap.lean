@@ -78,6 +78,47 @@ theorem eval_const (src : HTuple Nat p) {dst : HTuple Nat q}
     const src dst x hx i = x := by
   simp [const, eval]
 
+/-- Rank-1 strided map `i ↦ off + i * inc`. -/
+def strided1D {len n : Nat} (off inc : Nat)
+    (hb : off + len * inc ≤ n ∧ inc ≠ 0) : FinHTupleMap h(len) h(n) where
+  toHTupleMap := ⟨h(off), h(h(inc))⟩
+  inBounds := by
+    intro i hi
+    cases i with | leaf i =>
+    simp only [HTuple.elementwiseLT_leaf] at hi ⊢
+    have hinc : 0 < inc := Nat.pos_of_ne_zero hb.2
+    have hidx : i * inc < len * inc := Nat.mul_lt_mul_of_pos_right hi hinc
+    simp [HTupleMap.eval, HTuple.inner, HTuple.innerWith]
+    omega
+
+/-- Rank-1 contiguous map `i ↦ off + i`. -/
+def contiguous1D {len n : Nat} (off : Nat) (h : off + len ≤ n) : FinHTupleMap h(len) h(n) :=
+  strided1D off 1 (by omega)
+
+/-- Rank-1 broadcast map `i ↦ idx`. The source index is ignored. -/
+def broadcast1D {len n : Nat} (idx : Nat) (hidx : idx < n) : FinHTupleMap h(len) h(n) :=
+  const h(len) h(n) h(idx) (by simpa)
+
+@[simp]
+theorem eval_strided1D {len n : Nat} (off inc : Nat)
+    (hb : off + len * inc ≤ n ∧ inc ≠ 0) (i : HTuple Nat .leaf) :
+    strided1D off inc hb i = h(off + i.toScalar * inc) := by
+  cases i
+  simp [strided1D, eval, HTupleMap.eval, HTuple.inner, HTuple.innerWith, nsmul_eq_mul]
+
+@[simp]
+theorem eval_contiguous1D {len n : Nat} (off : Nat) (hb : off + len ≤ n)
+    (i : HTuple Nat .leaf) :
+    contiguous1D off hb i = h(off + i.toScalar) := by
+  cases i
+  simp [contiguous1D, eval_strided1D]
+
+@[simp]
+theorem eval_broadcast1D {len n : Nat} (idx : Nat) (hidx : idx < n)
+    (i : HTuple Nat .leaf) :
+    broadcast1D (len := len) idx hidx i = h(idx) := by
+  simp [broadcast1D]
+
 /-- Compose bounded affine maps. -/
 def comp {mid : HTuple Nat q} {r : HTuple.Profile} {dst : HTuple Nat r}
     (g : FinHTupleMap mid dst) (f : FinHTupleMap src mid) : FinHTupleMap src dst where
@@ -213,6 +254,20 @@ theorem eval_point (shape : HTuple Nat p) (x : HTuple Nat .leaf) (y : HTuple Nat
     (h : y <ₑ shape := by get_elem_tactic) :
   (point shape y) x = y := by simp [point]
 
+-- do we need this? It might be handy
+-- abbrev cast' {p q} {src : HTuple Nat p} {dst : HTuple Nat q}
+--     (f : FinHTupleMap src dst) (p' q') (src' : HTuple Nat p') (dst' : HTuple Nat q')
+--     (hp : p' = p := by conv_rhs => simp)
+--     (hq : q' = q := by conv_rhs => simp)
+--     (hsrc : src' = hp ▸ src := by (conv_rhs => simp))
+--     (hdst : dst' = hq ▸ dst := by (conv_rhs => simp)) :
+--     FinHTupleMap src' dst' where
+--   toHTupleMap := f.toHTupleMap.cast p' q' hp hq
+--   inBounds := by
+--     intros
+--     have := f.inBounds
+--     sorry
+
 def cast {p q} {src : HTuple Nat p} {dst : HTuple Nat q}
     (f : FinHTupleMap src dst) (src') (dst')
     (hsrc : src' = src := by simp)
@@ -238,6 +293,14 @@ abbrev simpCast {p q} {src : HTuple Nat p} {dst : HTuple Nat q}
     (hsrc : src' = src := by (conv_rhs => simp))
     (hdst : dst' = dst := by (conv_rhs => simp)) :
     FinHTupleMap src' dst' := f.cast src' dst' hsrc hdst
+
+-- abbrev simpCast' {p q} {src : HTuple Nat p} {dst : HTuple Nat q}
+--     (f : FinHTupleMap src dst) {p' q'} {src' : HTuple Nat p'} {dst' : HTuple Nat q'}
+--     (hp : p' = p := by conv_rhs => simp)
+--     (hq : q' = q := by conv_rhs => simp)
+--     (hsrc : src' = hp ▸ src := by (conv_rhs => simp))
+--     (hdst : dst' = hq ▸ dst := by (conv_rhs => simp)) :
+--     FinHTupleMap src' dst' := f.cast' p' q' src' dst' hp hq hsrc hdst
 
 /-- A bounded map has no collisions on its bounded domain. -/
 def Injective (f : FinHTupleMap src dst) : Prop :=

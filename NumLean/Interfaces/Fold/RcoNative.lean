@@ -75,12 +75,16 @@ theorem foldRcoNativeLoop_eq_foldl {α : Type u} {β : Type v}
 termination_by RcoNativeStep.measure xs i
 decreasing_by exact RcoNativeStep.measure_next_lt (by assumption)
 
+@[always_inline, inline, default_instance low] instance instFoldEntriesRcoNative {α : Type u}
+    [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] :
+    FoldEntries (Std.Rco α) α inferInstance where
+  entries := rcoNativeEntries
+
 @[always_inline, inline, default_instance low] instance instFoldRcoNative {α : Type u}
     [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] :
-    Fold (Std.Rco α) α inferInstance where
+    Fold (Std.Rco α) where
   fold xs init f :=
     foldRcoNativeLoop xs xs.lower (RcoNativeStep.le_refl xs.lower) init f
-  entries := rcoNativeEntries
 
 instance (priority := low) instLawfulFoldRcoNative {α : Type u}
     [LE α] [LT α] [DecidableLT α] [RcoNativeStep α] [LawfulRcoNativeStep α] :

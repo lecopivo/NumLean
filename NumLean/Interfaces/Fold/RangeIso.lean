@@ -9,7 +9,7 @@ namespace Fold
 /-- Unordered isomorphism between two lawful folded ranges. -/
 structure RangeEquiv {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     (xs : ρ) (ys : σ) extends {a : α // a ∈ xs} ≃ {b : β // b ∈ ys} where
   entries_perm :
@@ -19,7 +19,7 @@ structure RangeEquiv {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
 /-- Order-preserving isomorphism between two lawful folded ranges. -/
 structure RangeIso {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     (xs : ρ) (ys : σ) extends RangeEquiv xs ys where
   entries_eq :
@@ -30,7 +30,7 @@ namespace RangeEquiv
 
 def ofSubtypeEquiv {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ}
     (e : {a : α // a ∈ xs} ≃ {b : β // b ∈ ys})
@@ -43,7 +43,7 @@ def ofSubtypeEquiv {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
 
 def ofSubtypeEquivAll {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ}
     (e : {a : α // a ∈ xs} ≃ {b : β // b ∈ ys}) :
@@ -68,14 +68,14 @@ def ofSubtypeEquivAll {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
           exact LawfulFold.mem_entries (ρ := σ) (α := β) (xs := ys) b.2)
 
 def refl {ρ : Type u} {α : Type v}
-    {d : Membership α ρ} [Fold ρ α d] [LawfulFold ρ α d]
+    {d : Membership α ρ} [FoldEntries ρ α d] [Fold ρ] [LawfulFold ρ α d]
     (xs : ρ) : RangeEquiv xs xs where
   toEquiv := Equiv.refl _
   entries_perm := by simp
 
 def symm {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : RangeEquiv xs ys) : RangeEquiv ys xs where
   toEquiv := e.toEquiv.symm
@@ -86,7 +86,8 @@ def symm {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
 
 def trans {ρ : Type u} {σ : Type v} {τ : Type w} {α : Type x} {β : Type y} {γ : Type z}
     {dρ : Membership α ρ} {dσ : Membership β σ} {dτ : Membership γ τ}
-    [Fold ρ α dρ] [Fold σ β dσ] [Fold τ γ dτ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [FoldEntries τ γ dτ]
+    [Fold ρ] [Fold σ] [Fold τ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ] [LawfulFold τ γ dτ]
     {xs : ρ} {ys : σ} {zs : τ} (e : RangeEquiv xs ys) (f : RangeEquiv ys zs) :
     RangeEquiv xs zs where
@@ -99,7 +100,7 @@ def trans {ρ : Type u} {σ : Type v} {τ : Type w} {α : Type x} {β : Type y} 
 
 theorem fold_eq_of_pairwise_commutes {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {γ : Type y} {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : RangeEquiv xs ys) (init : γ)
     (f : (b : β) → b ∈ ys → γ → γ) (hcomm : PairwiseCommutes ys f) :
@@ -129,7 +130,7 @@ namespace RangeIso
 
 def ofSubtypeEquiv {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ}
     (e : {a : α // a ∈ xs} ≃ {b : β // b ∈ ys})
@@ -142,7 +143,7 @@ def ofSubtypeEquiv {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
   entries_eq := hentries
 
 def refl {ρ : Type u} {α : Type v}
-    {d : Membership α ρ} [Fold ρ α d] [LawfulFold ρ α d]
+    {d : Membership α ρ} [FoldEntries ρ α d] [Fold ρ] [LawfulFold ρ α d]
     (xs : ρ) : RangeIso xs xs where
   toEquiv := Equiv.refl _
   entries_perm := by simp
@@ -150,7 +151,7 @@ def refl {ρ : Type u} {α : Type v}
 
 def symm {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : RangeIso xs ys) : RangeIso ys xs where
   toEquiv := e.toEquiv.symm
@@ -161,7 +162,8 @@ def symm {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
 
 def trans {ρ : Type u} {σ : Type v} {τ : Type w} {α : Type x} {β : Type y} {γ : Type z}
     {dρ : Membership α ρ} {dσ : Membership β σ} {dτ : Membership γ τ}
-    [Fold ρ α dρ] [Fold σ β dσ] [Fold τ γ dτ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [FoldEntries τ γ dτ]
+    [Fold ρ] [Fold σ] [Fold τ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ] [LawfulFold τ γ dτ]
     {xs : ρ} {ys : σ} {zs : τ} (e : RangeIso xs ys) (f : RangeIso ys zs) :
     RangeIso xs zs where
@@ -173,7 +175,7 @@ def trans {ρ : Type u} {σ : Type v} {τ : Type w} {α : Type x} {β : Type y} 
 
 theorem fold_eq {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {γ : Type y} {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : RangeIso xs ys) (init : γ)
     (f : (b : β) → b ∈ ys → γ → γ) :
@@ -183,8 +185,11 @@ theorem fold_eq {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
   rw [LawfulFold.fold_eq_foldl (xs := ys) (init := init) (f := f)]
   rw [LawfulFold.fold_eq_foldl (xs := xs) (init := init)
     (f := fun a ha acc => f (e.toEquiv ⟨a, ha⟩).1 (e.toEquiv ⟨a, ha⟩).2 acc)]
-  rw [show Fold.entries (self := inferInstanceAs (Fold σ β dσ)) ys =
-      (Fold.entries (self := inferInstanceAs (Fold ρ α dρ)) xs).map e.toEquiv from e.entries_eq]
+  change (LawfulFold.entries (ρ := σ) (α := β) ys).foldl
+      (fun acc a => f a.1 a.2 acc) init =
+    (LawfulFold.entries (ρ := ρ) (α := α) xs).foldl
+      (fun acc a => f (e.toEquiv a).1 (e.toEquiv a).2 acc) init
+  rw [e.entries_eq]
   simp [List.foldl_map]
 
 end RangeIso

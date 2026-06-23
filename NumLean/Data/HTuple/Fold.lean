@@ -12,7 +12,7 @@ For product profiles the left coordinate is the outer loop and the right coordin
 inner loop, so the right-most coordinate changes fastest. -/
 @[always_inline, inline, specialize] def foldHTuple {α : Type u} {β : Type v}
     [LE α] [LT α] [DecidableLT α]
-    [Fold (Std.Rco α) α inferInstance] :
+    [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)] :
     {p : HTuple.Profile} → (r : Std.Rco (HTuple α p)) → (init : β) →
       ((idx : HTuple α p) → idx ∈ r → β → β) → β
   | .leaf, ⟨.leaf lo, .leaf hi⟩, init, f =>
@@ -31,12 +31,11 @@ inner loop, so the right-most coordinate changes fastest. -/
 
 /-- Recursive reference enumeration for HTuple range traversal. -/
 def foldHTupleEntries {α : Type u} [LE α] [LT α] [DecidableLT α]
-    [Fold (Std.Rco α) α inferInstance]
-    [LawfulFold (Std.Rco α) α inferInstance] :
+    [FoldEntries (Std.Rco α) α inferInstance] :
     {p : HTuple.Profile} → (r : Std.Rco (HTuple α p)) →
       List {idx : HTuple α p // idx ∈ r}
   | .leaf, ⟨.leaf lo, .leaf hi⟩ =>
-      (LawfulFold.entries (ρ := Std.Rco α) (α := α) (lo...hi)).map fun idx =>
+      (NumLean.entries (lo...hi : Std.Rco α)).map fun idx =>
         ⟨.leaf idx.1, HTuple.Range.mem_iff_Valid.2 idx.2⟩
   | .prod p q, ⟨.prod lo₀ lo₁, .prod hi₀ hi₁⟩ =>
       let r₀ : Std.Rco (HTuple α p) := lo₀...hi₀
@@ -50,15 +49,19 @@ def foldHTupleEntries {α : Type u} [LE α] [LT α] [DecidableLT α]
               exact ⟨HTuple.Range.mem_iff_Valid.1 idx₀.2, HTuple.Range.mem_iff_Valid.1 idx₁.2⟩⟩
 
 instance {α : Type u} [LE α] [LT α] [DecidableLT α]
-    {p : HTuple.Profile} [Fold (Std.Rco α) α inferInstance]
-    [LawfulFold (Std.Rco α) α inferInstance] :
-    Fold (Std.Rco (HTuple α p)) (HTuple α p) HTuple.Range.instMembershipRcoHTuple where
-  fold xs init f :=
-    foldHTuple (r := xs) init f
+    {p : HTuple.Profile} [FoldEntries (Std.Rco α) α inferInstance] :
+    FoldEntries (Std.Rco (HTuple α p)) (HTuple α p) HTuple.Range.instMembershipRcoHTuple where
   entries := foldHTupleEntries
 
+instance {α : Type u} [LE α] [LT α] [DecidableLT α]
+    {p : HTuple.Profile} [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
+    :
+    Fold (Std.Rco (HTuple α p)) where
+  fold xs init f :=
+    foldHTuple (r := xs) init f
+
 private theorem mem_foldHTupleEntries {α : Type u} [LE α] [LT α] [DecidableLT α]
-    [Fold (Std.Rco α) α inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
     [LawfulFold (Std.Rco α) α inferInstance] :
     {p : HTuple.Profile} → (r : Std.Rco (HTuple α p)) →
       (idx : {idx : HTuple α p // idx ∈ r}) → idx ∈ foldHTupleEntries r
@@ -79,7 +82,7 @@ private theorem mem_foldHTupleEntries {α : Type u} [LE α] [LT α] [DecidableLT
       rfl
 
 private theorem foldHTupleEntries_nodup {α : Type u} [LE α] [LT α] [DecidableLT α]
-    [Fold (Std.Rco α) α inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
     [LawfulFold (Std.Rco α) α inferInstance] :
     {p : HTuple.Profile} → (r : Std.Rco (HTuple α p)) → (foldHTupleEntries r).Nodup
   | .leaf, ⟨.leaf lo, .leaf hi⟩ => by
@@ -114,7 +117,7 @@ private theorem foldHTupleEntries_nodup {α : Type u} [LE α] [LT α] [Decidable
 
 theorem foldHTuple_eq_foldl {α : Type u} {β : Type v}
     [LE α] [LT α] [DecidableLT α]
-    [Fold (Std.Rco α) α inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
     [LawfulFold (Std.Rco α) α inferInstance] :
     {p : HTuple.Profile} → (r : Std.Rco (HTuple α p)) → (init : β) →
       (f : (idx : HTuple α p) → idx ∈ r → β → β) →
@@ -125,7 +128,7 @@ theorem foldHTuple_eq_foldl {α : Type u} {β : Type v}
         (fun idx hidx acc => f (.leaf idx) (HTuple.Range.mem_iff_Valid.2 hidx) acc) = _
       rw [LawfulFold.fold_eq_foldl (xs := lo...hi) (init := init)
         (f := fun idx hidx acc => f (.leaf idx) (HTuple.Range.mem_iff_Valid.2 hidx) acc)]
-      simp [foldHTupleEntries, LawfulFold.entries, List.foldl_map]
+      simp [foldHTupleEntries, List.foldl_map]
   | .prod p q, ⟨.prod lo₀ lo₁, .prod hi₀ hi₁⟩, init, f => by
       change foldHTuple (r := (lo₀...hi₀ : Std.Rco (HTuple α p))) init
         (fun idx₀ hidx₀ acc =>
@@ -148,7 +151,7 @@ theorem foldHTuple_eq_foldl {α : Type u} {β : Type v}
 /-- Row-major entries for a product HTuple range are outer entries flat-mapped over inner entries. -/
 theorem entries_htuple_prod {α : Type u} [LE α] [LT α] [DecidableLT α]
     {p q : HTuple.Profile}
-    [Fold (Std.Rco α) α inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
     [LawfulFold (Std.Rco α) α inferInstance]
     (lo₀ hi₀ : HTuple α p) (lo₁ hi₁ : HTuple α q) :
     foldHTupleEntries ((lo₀.prod lo₁)...(hi₀.prod hi₁) : Std.Rco (HTuple α (.prod p q))) =
@@ -165,7 +168,7 @@ theorem entries_htuple_prod {α : Type u} [LE α] [LT α] [DecidableLT α]
 theorem fold_htuple_prod_eq_outer_inner {α : Type u} {β : Type v}
     [LE α] [LT α] [DecidableLT α]
     {p q : HTuple.Profile}
-    [Fold (Std.Rco α) α inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
     [LawfulFold (Std.Rco α) α inferInstance]
     (lo₀ hi₀ : HTuple α p) (lo₁ hi₁ : HTuple α q) (init : β)
     (f : (idx : HTuple α (.prod p q)) →
@@ -183,7 +186,7 @@ theorem fold_htuple_prod_eq_outer_inner {α : Type u} {β : Type v}
 theorem fold_htuple_outer_inner_eq_prod {α : Type u} {β : Type v}
     [LE α] [LT α] [DecidableLT α]
     {p q : HTuple.Profile}
-    [Fold (Std.Rco α) α inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
     [LawfulFold (Std.Rco α) α inferInstance]
     (lo₀ hi₀ : HTuple α p) (lo₁ hi₁ : HTuple α q) (init : β)
     (f : (idx : HTuple α (.prod p q)) →
@@ -201,7 +204,7 @@ theorem fold_htuple_outer_inner_eq_prod {α : Type u} {β : Type v}
   rw [fold_htuple_prod_eq_outer_inner]
 
 instance {α : Type u} [LE α] [LT α] [DecidableLT α]
-    {p : HTuple.Profile} [Fold (Std.Rco α) α inferInstance]
+    {p : HTuple.Profile} [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
     [LawfulFold (Std.Rco α) α inferInstance] :
     LawfulFold (Std.Rco (HTuple α p)) (HTuple α p)
       HTuple.Range.instMembershipRcoHTuple where
@@ -215,7 +218,7 @@ instance {α : Type u} [LE α] [LT α] [DecidableLT α]
 /-- Ordered range isomorphism between product ranges of HTuples and HTuple product ranges. -/
 noncomputable def htupleProdRangeIso {α : Type u} [LE α] [LT α] [DecidableLT α]
     {p q : HTuple.Profile}
-    [Fold (Std.Rco α) α inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
     [LawfulFold (Std.Rco α) α inferInstance]
     (lo₀ hi₀ : HTuple α p) (lo₁ hi₁ : HTuple α q) :
     Fold.RangeIso

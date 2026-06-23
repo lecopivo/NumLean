@@ -169,4 +169,6 @@ elab "tbounds" " using " xs:term,* : tactic => do
   let sources ← xs.getElems.mapM fun x => Term.elabTerm x none
   tboundsCore sources
 
+macro_rules | `(tactic| get_elem_tactic_extensible) => `(tactic| tbounds)
+
 end NumLean

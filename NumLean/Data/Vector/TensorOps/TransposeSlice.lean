@@ -16,8 +16,8 @@ theorem transposeSlice_in_map_range
   unfold transposeSlice
   simp only [Id.run, bind_pure]
   simp only [LawfulFold.fold_eq_foldl]
-  let outerEntries := Fold.entries ((0 : HTuple Nat r)...shape)
-  let innerEntries := Fold.entries ((0 : HTuple Nat r)...shape)
+  let outerEntries := NumLean.entries ((0 : HTuple Nat r)...shape)
+  let innerEntries := NumLean.entries ((0 : HTuple Nat r)...shape)
   let outerStep := fun (acc : Vector K n)
       (a : {idx : HTuple Nat r // idx ∈ ((0 : HTuple Nat r)...shape)}) =>
     List.foldl
@@ -89,8 +89,8 @@ theorem transposeSlice_out_map_range
   unfold transposeSlice
   simp only [Id.run, bind_pure]
   simp only [LawfulFold.fold_eq_foldl]
-  let outerEntries := Fold.entries ((0 : HTuple Nat r)...shape)
-  let innerEntries := Fold.entries ((0 : HTuple Nat r)...shape)
+  let outerEntries := NumLean.entries ((0 : HTuple Nat r)...shape)
+  let innerEntries := NumLean.entries ((0 : HTuple Nat r)...shape)
   let outerStep := fun (acc : Vector K n)
       (a : {idx : HTuple Nat r // idx ∈ ((0 : HTuple Nat r)...shape)}) =>
     List.foldl

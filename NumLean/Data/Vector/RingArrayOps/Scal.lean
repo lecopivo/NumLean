@@ -1,6 +1,6 @@
 import NumLean.Data.Vector.RingArrayOps.Basic
 import NumLean.Interfaces.Fold.Filter
-import NumLean.Interfaces.Algebra.RingArrayOps
+import NumLean.Interfaces.RingArrayOps
 
 set_option backward.do.legacy false
 
@@ -37,7 +37,7 @@ theorem scalRef_in_range {K : Type} [Mul K] {xn : Nat} (n : Nat)
     (xs := (0...n : Std.Rco Nat))]
   simp only [setElem_nat_eq_set, bind, Id.run, pure]
   rw [FoldMap.foldl_get_eq_foldl_filter_affectors_vector
-      (entries := Fold.entries.{0,0,0} (0...n : Std.Rco Nat))
+      (entries := NumLean.entries (0...n : Std.Rco Nat))
       (deps := fun i : Fin xn => {i})
       (hself := by simp)
       (affectors := fun j : Fin xn =>
@@ -78,7 +78,7 @@ theorem scalRef_in_range {K : Type} [Mul K] {xn : Nat} (n : Nat)
       simp [hcond]
       exact hread
   have hEntries :
-      ((Fold.entries.{0,0,0} (0...n : Std.Rco Nat)).filter fun idx =>
+      ((NumLean.entries (0...n : Std.Rco Nat)).filter fun idx =>
           @decide (idx ∈ ({idx | xoff + idx.1 * xinc =
             (⟨xoff + i * xinc, by tbounds⟩ : Fin xn).1} :
               Set {i : Nat // i ∈ (0...n : Std.Rco Nat)})) (Classical.propDecidable _)) =
@@ -109,7 +109,7 @@ theorem scalRef_out_range {K : Type} [Mul K] {xn : Nat} (n : Nat)
     (xs := (0...n : Std.Rco Nat))]
   simp only [setElem_nat_eq_set, bind, Id.run, pure]
   rw [FoldMap.foldl_get_eq_foldl_filter_affectors_vector
-      (entries := Fold.entries.{0,0,0} (0...n : Std.Rco Nat))
+      (entries := NumLean.entries (0...n : Std.Rco Nat))
       (deps := fun i : Fin xn => {i})
       (hself := by simp)
       (affectors := fun j : Fin xn =>
@@ -136,7 +136,7 @@ theorem scalRef_out_range {K : Type} [Mul K] {xn : Nat} (n : Nat)
       simp [hidx]
       exact hread
   have hEntries :
-      ((Fold.entries.{0,0,0} (0...n : Std.Rco Nat)).filter fun idx =>
+      ((NumLean.entries (0...n : Std.Rco Nat)).filter fun idx =>
           @decide (idx ∈ ({idx | xoff + idx.1 * xinc = (⟨j, hj⟩ : Fin xn).1} :
             Set {i : Nat // i ∈ (0...n : Std.Rco Nat)})) (Classical.propDecidable _)) = [] := by
     apply List.eq_nil_iff_forall_not_mem.2

@@ -13,7 +13,7 @@ namespace RangeTransport
 
 theorem rangeIso_fold_eq {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {γ : Type y} {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : Fold.RangeIso xs ys) (init : γ)
     (f : (b : β) → b ∈ ys → γ → γ) :
@@ -24,7 +24,7 @@ theorem rangeIso_fold_eq {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
 
 theorem rangeEquiv_fold_eq_of_commutes {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {γ : Type y} {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : Fold.RangeEquiv xs ys) (init : γ)
     (f : (b : β) → b ∈ ys → γ → γ) (hcomm : Fold.PairwiseCommutes ys f) :
@@ -35,7 +35,7 @@ theorem rangeEquiv_fold_eq_of_commutes {ρ : Type u} {σ : Type v} {α : Type w}
 
 theorem rangeMonoEmbedding_fold_eq_guarded {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {γ : Type y} {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : Fold.RangeMonoEmbedding xs ys) (init : γ)
     (f : (a : α) → a ∈ xs → γ → γ) :
@@ -54,7 +54,8 @@ namespace ProductFold
 
 theorem product_fold_merge {α : Type u} {β : Type v} {γ : Type w}
     [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
-    [Fold (Std.Rco α) α inferInstance] [Fold (Std.Rco β) β inferInstance]
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
+    [Fold (Std.Rco α)] [Fold (Std.Rco β)]
     [LawfulFold (Std.Rco α) α inferInstance] [LawfulFold (Std.Rco β) β inferInstance]
     (lo hi : α × β) (init : γ)
     (f : (x : α × β) → x ∈ (lo...hi : Std.Rco (α × β)) → γ → γ) :

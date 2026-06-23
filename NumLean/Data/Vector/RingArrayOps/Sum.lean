@@ -21,7 +21,7 @@ private theorem List.foldl_add_eq_sum [AddCommMonoid K] (xs : List α) (f : α �
 
 private theorem foldEntries_sum_eq_fin_sum [AddCommMonoid K] {n : Nat}
     (f : {i : Nat // i ∈ (0...n : Std.Rco Nat)} → K) :
-    (Fold.entries.{0,0,0} (0...n : Std.Rco Nat)).foldl (fun acc i => acc + f i) 0 =
+    (NumLean.entries (0...n : Std.Rco Nat)).foldl (fun acc i => acc + f i) 0 =
       ∑ i : Fin n, f (finEquivZeroRange n i) := by
   classical
   letI : Fintype {i : Nat // i ∈ (0...n : Std.Rco Nat)} :=

@@ -43,7 +43,7 @@ theorem copySlice_in_dst_range
       cast (by simp_all; intro ha'; rw[←ha'] at ha; simp at ha;) ha
     simp [h]
   simp
-  have h : ((Fold.entries.{0,0,0} 0...shape).filter (fun a : Subtype _ => dstMap a = i))
+  have h : ((NumLean.entries (0...shape)).filter (fun a : Subtype _ => dstMap a = i))
            =
            [⟨(dstMap.rangeNatInv i hi).val, FinHTuple.val_mem_zero_shape (dstMap.rangeNatInv i hi)⟩] := by sorry
   conv => enter [1,1,3]; erw[h]
@@ -82,7 +82,7 @@ theorem copySlice_out_dst_range
     simp [h]
   simp
   have hEntries :
-      ((Fold.entries.{0,0,0} 0...shape).filter
+      ((NumLean.entries (0...shape)).filter
         (fun a : Subtype _ => dstMap a = i)) = [] := by
     sorry
   conv => enter [1,1,3]; erw[hEntries]

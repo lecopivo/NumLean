@@ -14,7 +14,7 @@ source entries, while entries failing `guard` are extra target entries that shou
 branch in a guarded fold. -/
 structure RangeEmbedding {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     (xs : ρ) (ys : σ) where
   toFun : {a : α // a ∈ xs} → {b : β // b ∈ ys}
@@ -29,7 +29,7 @@ namespace RangeEmbedding
 
 instance {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : RangeEmbedding xs ys) (b : β) (hb : b ∈ ys) :
     Decidable (e.guard b hb) :=
@@ -37,7 +37,7 @@ instance {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
 
 /-- Every range embeds into itself with guard always true. -/
 def refl {ρ : Type u} {α : Type v}
-    {d : Membership α ρ} [Fold ρ α d] [LawfulFold ρ α d]
+    {d : Membership α ρ} [FoldEntries ρ α d] [Fold ρ] [LawfulFold ρ α d]
     (xs : ρ) : RangeEmbedding xs xs where
   toFun := id
   guard := fun _ _ => True
@@ -54,7 +54,7 @@ def refl {ρ : Type u} {α : Type v}
 /-- Ordered range isomorphisms are range embeddings with guard always true. -/
 def ofRangeIso {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : RangeIso xs ys) : RangeEmbedding xs ys where
   toFun := e.toEquiv
@@ -71,7 +71,7 @@ def ofRangeIso {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
 
 theorem toFun_injective {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : RangeEmbedding xs ys) :
     Function.Injective e.toFun := by
@@ -87,7 +87,8 @@ The composed guard is positive: a target entry is valid when it passes the outer
 outer preimage passes the inner guard. -/
 def trans {ρ : Type u} {σ : Type v} {τ : Type w} {α : Type x} {β : Type y} {γ : Type z}
     {dρ : Membership α ρ} {dσ : Membership β σ} {dτ : Membership γ τ}
-    [Fold ρ α dρ] [Fold σ β dσ] [Fold τ γ dτ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [FoldEntries τ γ dτ]
+    [Fold ρ] [Fold σ] [Fold τ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ] [LawfulFold τ γ dτ]
     {xs : ρ} {ys : σ} {zs : τ}
     (e : RangeEmbedding xs ys) (f : RangeEmbedding ys zs) : RangeEmbedding xs zs where
@@ -136,7 +137,7 @@ This is the ordered form needed for fold transport without commutativity: target
 `invFun`. -/
 structure RangeMonoEmbedding {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     (xs : ρ) (ys : σ) extends RangeEmbedding xs ys where
   entries_filterMap_invFun_eq :
@@ -152,7 +153,7 @@ namespace RangeMonoEmbedding
 
 private theorem foldl_guarded_eq_filterMap {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {γ : Type y} {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : RangeMonoEmbedding xs ys)
     (entries : List {b : β // b ∈ ys}) (init : γ)
@@ -178,7 +179,7 @@ private theorem foldl_guarded_eq_filterMap {ρ : Type u} {σ : Type v} {α : Typ
 
 /-- Every range is an ordered guarded embedding into itself. -/
 def refl {ρ : Type u} {α : Type v}
-    {d : Membership α ρ} [Fold ρ α d] [LawfulFold ρ α d]
+    {d : Membership α ρ} [FoldEntries ρ α d] [Fold ρ] [LawfulFold ρ α d]
     (xs : ρ) : RangeMonoEmbedding xs xs where
   toRangeEmbedding := RangeEmbedding.refl xs
   entries_filterMap_invFun_eq := by
@@ -187,7 +188,7 @@ def refl {ρ : Type u} {α : Type v}
 /-- Ordered range isomorphisms are ordered guarded embeddings with guard always true. -/
 def ofRangeIso {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : RangeIso xs ys) : RangeMonoEmbedding xs ys where
   toRangeEmbedding := RangeEmbedding.ofRangeIso e
@@ -200,7 +201,7 @@ take the neutral branch. No commutativity hypothesis is needed because the guard
 are source entries in order. -/
 theorem fold_eq_guarded {ρ : Type u} {σ : Type v} {α : Type w} {β : Type x}
     {γ : Type y} {dρ : Membership α ρ} {dσ : Membership β σ}
-    [Fold ρ α dρ] [Fold σ β dσ]
+    [FoldEntries ρ α dρ] [FoldEntries σ β dσ] [Fold ρ] [Fold σ]
     [LawfulFold ρ α dρ] [LawfulFold σ β dσ]
     {xs : ρ} {ys : σ} (e : RangeMonoEmbedding xs ys) (init : γ)
     (f : (a : α) → a ∈ xs → γ → γ) :
