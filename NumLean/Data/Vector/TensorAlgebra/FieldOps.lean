@@ -39,6 +39,63 @@ theorem tensorDiv_eq_map [Div K] {m n : Nat} {r : Rank} {shape : Shape r}
       (himap := map_toScalar_lt ymap)
       (himap' := map_toScalar_injective ymap hymap))
 
+open Classical in
+theorem tensorDiv_eq_map' [Div K] {m n : Nat} {r : Rank} {shape : Shape r}
+    (xs : Vector K n) (xmap : Layout shape h(n))
+    (ys : Vector K m) (ymap : Layout shape h(m))
+    (hymap : ymap.Injective) :
+    tensorDiv xs xmap ys ymap hymap =
+      ys.mapFinIdx fun j yj _ =>
+        if hj : j ∈ ymap.rangeNat then
+          let i := ymap.rangeNatInv j hj
+          yj / xs[xmap i]
+        else
+          yj := by
+  calc
+    tensorDiv xs xmap ys ymap hymap =
+        ys.mapFinIdx (fun j yj _ =>
+          if h : j ∈ Set.range (fun i : {i' // i' ∈ ((0 : Shape r)...shape)} => (ymap i.1).toScalar) then
+            have : Nonempty {i' // i' ∈ ((0 : Shape r)...shape)} := by have ⟨i,_⟩ := h; exact ⟨i⟩
+            let ⟨i,hi⟩ := Function.invFun (fun i : {i' // i' ∈ ((0 : Shape r)...shape)} => (ymap i.1).toScalar) j
+            yj / xs[xmap i]
+          else
+            yj) := by
+      simpa [tensorDiv] using
+        (Fold.fold_eq_vector_map'
+          (range := ((0 : Shape r)...shape))
+          (imap := fun i _ => (ymap i).toScalar)
+          (f := fun i _ yj => yj / xs[xmap i])
+          (init := ys)
+          (himap := map_toScalar_lt ymap)
+          (himap' := map_toScalar_injective ymap hymap))
+    _ = ys.mapFinIdx (fun j yj _ =>
+        if hj : j ∈ ymap.rangeNat then
+          let i := ymap.rangeNatInv j hj
+          yj / xs[xmap i]
+        else
+          yj) := by
+      apply Vector.ext
+      intro j hj
+      repeat rw [Vector.getElem_mapFinIdx]
+      by_cases hNat : j ∈ ymap.rangeNat
+      · have hRange : j ∈ Set.range (fun i : {i' // i' ∈ ((0 : Shape r)...shape)} => (ymap i.1).toScalar) := by
+          simpa [FinHTupleMap.indexFun] using (ymap.mem_rangeNat_iff_mem_range_indexFun j).1 hNat
+        haveI : Nonempty {i' // i' ∈ ((0 : Shape r)...shape)} := by
+          rcases hRange with ⟨i, _⟩
+          exact ⟨i⟩
+        rw [dif_pos hRange, dif_pos hNat]
+        have hinv :
+            Function.invFun (fun i : {i' // i' ∈ ((0 : Shape r)...shape)} => (ymap i.1).toScalar) j =
+              ⟨(ymap.rangeNatInv j hNat).val, FinHTuple.val_mem_zero_shape _⟩ := by
+          simpa [FinHTupleMap.indexFun] using
+            (FinHTupleMap.invFun_indexFun_eq_rangeNatInv ymap j hNat hymap)
+        simp [hinv]
+      · have hRange : ¬ j ∈ Set.range (fun i : {i' // i' ∈ ((0 : Shape r)...shape)} => (ymap i.1).toScalar) := by
+          intro hRange
+          exact hNat ((ymap.mem_rangeNat_iff_mem_range_indexFun j).2 (by
+            simpa [FinHTupleMap.indexFun] using hRange))
+        rw [dif_neg hRange, dif_neg hNat]
+
 def tensorInv [Inv K] {n : Nat} {r : Rank} {shape : Shape r}
     (xs : Vector K n) (xmap : Layout shape h(n))
     (_hxmap : xmap.Injective) : Vector K n := Id.run do
@@ -65,6 +122,50 @@ theorem tensorInv_eq_map [Inv K] {n : Nat} {r : Rank} {shape : Shape r}
       (init := xs)
       (himap := map_toScalar_lt xmap)
       (himap' := map_toScalar_injective xmap hxmap))
+
+open Classical in
+theorem tensorInv_eq_map' [Inv K] {n : Nat} {r : Rank} {shape : Shape r}
+    (xs : Vector K n) (xmap : Layout shape h(n)) (hxmap : xmap.Injective) :
+    tensorInv xs xmap hxmap =
+      xs.mapFinIdx fun j xj _ =>
+        if _hj : j ∈ xmap.rangeNat then
+          xj⁻¹
+        else
+          xj := by
+  calc
+    tensorInv xs xmap hxmap =
+        xs.mapFinIdx (fun j xj _ =>
+          if h : j ∈ Set.range (fun i : {i' // i' ∈ ((0 : Shape r)...shape)} => (xmap i.1).toScalar) then
+            have : Nonempty {i' // i' ∈ ((0 : Shape r)...shape)} := by have ⟨i,_⟩ := h; exact ⟨i⟩
+            let ⟨_i,_hi⟩ := Function.invFun (fun i : {i' // i' ∈ ((0 : Shape r)...shape)} => (xmap i.1).toScalar) j
+            xj⁻¹
+          else
+            xj) := by
+      simpa [tensorInv] using
+        (Fold.fold_eq_vector_map'
+          (range := ((0 : Shape r)...shape))
+          (imap := fun i _ => (xmap i).toScalar)
+          (f := fun _ _ xj => xj⁻¹)
+          (init := xs)
+          (himap := map_toScalar_lt xmap)
+          (himap' := map_toScalar_injective xmap hxmap))
+    _ = xs.mapFinIdx (fun j xj _ =>
+        if _hj : j ∈ xmap.rangeNat then
+          xj⁻¹
+        else
+          xj) := by
+      apply Vector.ext
+      intro j hj
+      repeat rw [Vector.getElem_mapFinIdx]
+      by_cases hNat : j ∈ xmap.rangeNat
+      · have hRange : j ∈ Set.range (fun i : {i' // i' ∈ ((0 : Shape r)...shape)} => (xmap i.1).toScalar) := by
+          simpa [FinHTupleMap.indexFun] using (xmap.mem_rangeNat_iff_mem_range_indexFun j).1 hNat
+        rw [dif_pos hRange, dif_pos hNat]
+      · have hRange : ¬ j ∈ Set.range (fun i : {i' // i' ∈ ((0 : Shape r)...shape)} => (xmap i.1).toScalar) := by
+          intro hRange
+          exact hNat ((xmap.mem_rangeNat_iff_mem_range_indexFun j).2 (by
+            simpa [FinHTupleMap.indexFun] using hRange))
+        rw [dif_neg hRange, dif_neg hNat]
 
 end Vector
 end NumLean

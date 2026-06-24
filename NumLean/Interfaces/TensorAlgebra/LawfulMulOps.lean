@@ -17,14 +17,13 @@ theorem tensorScal_full_get [TensorMulOps Ks K .leaf] [Mul K] [One K]
       a * VectorType.get xs i hi := by
   rw [VectorType.get_eq_getElem]
   rw [LawfulTensorMulOps.tensorScal_spec]
-  rw [Vector.tensorScal_eq_map]
+  rw [Vector.tensorScal_eq_map']
   rw [Vector.getElem_mapFinIdx]
-  have hex : ∃ i', ∃ hi : i' ∈ (h(0)...h(n)),
-      ((Layout.id h(n)) i').toScalar = i := by
-    exact ⟨h(i), by simpa [HTuple.Range.mem_iff_le_lt] using hi, by simp [Layout.id]⟩
-  simp [VectorType.get_eq_getElem, Layout.id]
-  intro hnone
-  exact (hnone h(i) (by simpa [HTuple.Range.mem_iff_le_lt] using hi) rfl).elim
+  have hmem : i ∈ (Layout.id h(n)).rangeNat := by
+    simpa [Layout.id] using
+      (FinHTupleMap.mem_rangeNat_eval (f := Layout.id h(n))
+        (i := FinHTuple.ofNatLt i hi))
+  simp [hmem, VectorType.get_eq_getElem, Layout.id]
 
 end TensorMulOps
 

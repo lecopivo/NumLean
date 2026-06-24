@@ -8,6 +8,8 @@ import NumLean.Interfaces.Algebra.NormedAlgebra
 
 namespace NumLean
 
+-- todo: move the `PartialOrder K` to data / provide only LE and LT but don't extend them!!!
+--       only ROps will expose these as and instance!!!
 class RCOps (R : outParam (Type u)) (K : Type v) extends NormedFieldOps R K,
     NormedAlgebraOps R K, Star K, PartialOrder K where
   make : R → R → K
@@ -117,7 +119,9 @@ class LawfulRCLikeOps (K : Type v) [RCOps ℝ K]
   ofReal_im_algebraMap_real : ∀ r : ℝ,
     LawfulDataRCOps.imHom (R := ℝ) (NormedAlgebraOps.algebraMap (R := ℝ) (A := K) r) = 0
 
-class ROps (R : Type u) extends RCOps R R, LT R where
+class ROps (R : Type u) extends RCOps R R where
+  -- decLL : DecidableLT R
+  -- decLE : DecidableLE R
   exp : R → R
   sin : R → R
   cos : R → R

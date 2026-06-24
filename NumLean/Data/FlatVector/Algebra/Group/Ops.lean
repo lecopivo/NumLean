@@ -33,7 +33,6 @@ instance instSMul [TensorMulOps Ks K .leaf] : SMul K (FlatVector X I) := ⟨fun 
 instance instNeg [Neg K] [One K] [TensorMulOps Ks K .leaf] : Neg (FlatVector X I) :=
   ⟨fun x => (-1 : K) • x⟩
 
--- todo: NatCast and IntCast should be part of some *Ops.
 instance instAddMonoidOps [Zero K] [NatCast K] [One K] [TensorSemiringOps Ks K .leaf] :
     AddMonoidOps (FlatVector X I) where
   toAdd := instAdd

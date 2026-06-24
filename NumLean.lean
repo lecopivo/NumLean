@@ -151,6 +151,7 @@ import NumLean.Meta.ForAll.HTuple
 import NumLean.Meta.ForAll.Notation
 import NumLean.Meta.ForAll.RcoNat
 import NumLean.Meta.ForAll.RcoNative
+import NumLean.Meta.HierarchyGraph
 import NumLean.Meta.RewriteBy
 import NumLean.Meta.Visualize
 import NumLean.Meta.Visualize.Basic

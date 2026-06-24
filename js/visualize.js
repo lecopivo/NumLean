@@ -1,13 +1,38 @@
 import * as React from 'react'
 
-const VERSION = 'numlean-visualize-v32'
+const VERSION = 'numlean-visualize-v42'
 const RANK_GAP = 3
 const RANK_BLOCK_GAP = 7
 const RANK_STAMP_BORDER = 2
 const CELL_RADIUS = 4
+const HIERARCHY_EDGE_MAX_HALF_ANGLE = (5 * Math.PI) / 12
+const HIERARCHY_EDGE_SOFT_HALF_ANGLE = Math.PI / 4
+const HIERARCHY_EDGE_MIN_DY = 30
+const HIERARCHY_EDGE_DIRECTION_STRENGTH = 0.22
 const MATHJAX_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
+const D3_URL = 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js'
 
 let mathJaxPromise = null
+let d3Promise = null
+
+function loadD3() {
+  if (globalThis.d3 && typeof globalThis.d3.forceSimulation === 'function') {
+    return Promise.resolve(globalThis.d3)
+  }
+  if (d3Promise) return d3Promise
+  d3Promise = new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = D3_URL
+    script.async = true
+    script.onload = () => {
+      if (globalThis.d3 && typeof globalThis.d3.forceSimulation === 'function') resolve(globalThis.d3)
+      else reject(new Error(`loaded ${D3_URL}, but d3.forceSimulation is unavailable`))
+    }
+    script.onerror = () => reject(new Error(`failed to load ${D3_URL}`))
+    document.head.appendChild(script)
+  })
+  return d3Promise
+}
 
 function loadMathJax() {
   if (globalThis.MathJax && typeof globalThis.MathJax.tex2svgPromise === 'function') {
@@ -178,6 +203,54 @@ function selectedSet(selected) {
   return new Set(asArray(selected).map((x) => asNumber(x)))
 }
 
+function angleFromDownward(dx, dy) {
+  let angle = Math.atan2(dy, dx)
+  angle = ((angle - Math.PI / 2 + Math.PI * 3) % (Math.PI * 2)) - Math.PI
+  return Math.abs(angle)
+}
+
+function hierarchyDirectionForce(links) {
+  return () => {
+    for (const link of links) {
+      const source = link.source
+      const target = link.target
+      if (!source || !target || source === target) continue
+      const dx = target.x - source.x
+      const dy = target.y - source.y
+      const angle = angleFromDownward(dx, dy)
+      const distance = Math.hypot(dx, dy) || 1
+      const side = dx === 0 ? 0 : dx > 0 ? 1 : -1
+
+      let targetAngle = Math.PI / 2
+      let penalty = 0
+      if (angle > HIERARCHY_EDGE_MAX_HALF_ANGLE) {
+        targetAngle = side === 0 ? Math.PI / 2 : Math.PI / 2 - side * HIERARCHY_EDGE_MAX_HALF_ANGLE
+        penalty = 1
+      } else if (angle > HIERARCHY_EDGE_SOFT_HALF_ANGLE) {
+        targetAngle = side === 0 ? Math.PI / 2 : Math.PI / 2 - side * HIERARCHY_EDGE_SOFT_HALF_ANGLE
+        penalty = Math.min(1, (angle - HIERARCHY_EDGE_SOFT_HALF_ANGLE) / Math.max(1e-6, HIERARCHY_EDGE_MAX_HALF_ANGLE - HIERARCHY_EDGE_SOFT_HALF_ANGLE))
+      }
+
+      if (penalty > 0) {
+        const desiredDx = Math.cos(targetAngle) * distance
+        const desiredDy = Math.abs(Math.sin(targetAngle)) * distance
+        const pullX = (desiredDx - dx) * HIERARCHY_EDGE_DIRECTION_STRENGTH * penalty
+        const pullY = (desiredDy - dy) * HIERARCHY_EDGE_DIRECTION_STRENGTH * penalty
+        source.vx -= pullX
+        source.vy -= pullY
+        target.vx += pullX
+        target.vy += pullY
+      }
+
+      if (dy < HIERARCHY_EDGE_MIN_DY) {
+        const downPull = (HIERARCHY_EDGE_MIN_DY - dy) * HIERARCHY_EDGE_DIRECTION_STRENGTH * 0.35
+        source.vy -= downPull
+        target.vy += downPull
+      }
+    }
+  }
+}
+
 function Style() {
   return React.createElement('style', null, `
     .numlean-vis {
@@ -233,6 +306,34 @@ function Style() {
     .numlean-vis .rank-leaf { display: grid; gap: ${RANK_GAP}px; }
     .numlean-vis .rank-cell { display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,.18); color: #071018; font-weight: 850; line-height: 1; overflow: hidden; }
     .numlean-vis .panels { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(180px, .8fr); gap: 10px; align-items: start; }
+    .numlean-vis .hierarchy { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 320px); gap: 12px; align-items: stretch; min-height: 520px; }
+    .numlean-vis .hierarchy-graph { background: rgba(8,13,22,.66); border: 1px solid rgba(255,255,255,.08); border-radius: 13px; overflow: auto; min-width: 0; }
+    .numlean-vis .hierarchy-side { background: rgba(16,22,33,.82); border: 1px solid rgba(255,255,255,.08); border-radius: 13px; padding: 12px; overflow: auto; }
+    .numlean-vis .hierarchy-title { color: #f4f7ff; font-size: 14px; font-weight: 850; margin-bottom: 8px; }
+    .numlean-vis .hierarchy-help { color: var(--muted); font-size: 12px; line-height: 1.35; margin-bottom: 10px; }
+    .numlean-vis .hierarchy-tags { display: grid; gap: 6px; margin-bottom: 12px; padding: 8px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); }
+    .numlean-vis .hierarchy-tag { display: flex; align-items: center; gap: 7px; color: #dce8ff; font-size: 12px; cursor: pointer; user-select: none; }
+    .numlean-vis .hierarchy-tag input { accent-color: #ffd166; }
+    .numlean-vis .hierarchy-instance { width: 100%; text-align: left; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: rgba(255,255,255,.045); color: #edf2fb; padding: 8px 9px; margin-bottom: 8px; cursor: pointer; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
+    .numlean-vis .hierarchy-instance:hover, .numlean-vis .hierarchy-instance.active { border-color: rgba(255,209,102,.8); background: rgba(255,209,102,.12); }
+    .numlean-vis .hierarchy-instance.inactive { opacity: .32; filter: grayscale(1); }
+    .numlean-vis .hierarchy-io { color: var(--muted); font-size: 11px; margin-top: 5px; white-space: normal; line-height: 1.35; }
+    .numlean-vis .hierarchy-layout-error { margin: 10px; color: #ffb4b4; font-size: 12px; }
+    .numlean-vis .hierarchy-edge-extends { stroke: #7cc7ff; stroke-width: 2.2; opacity: .82; }
+    .numlean-vis .hierarchy-edge-assumes { stroke: #ffd166; stroke-width: 2; stroke-dasharray: 8 6; opacity: .72; }
+    .numlean-vis .hierarchy-edge-instance { stroke: #8ff0c7; stroke-width: 2.4; opacity: .98; }
+    .numlean-vis .hierarchy-edge-instance-assumption { stroke: #7cc7ff; stroke-width: 2.4; opacity: .98; }
+    .numlean-vis .hierarchy-edge-instance-inactive { opacity: .16; }
+    .numlean-vis .hierarchy-node.assumption rect { fill: #7cc7ff; stroke: #7cc7ff; }
+    .numlean-vis .hierarchy-node.inferred rect { fill: #8ff0c7; stroke: #d9ffef; }
+    .numlean-vis .hierarchy-node rect { fill: #dcecff; stroke: rgba(255,255,255,.45); stroke-width: 1.5; }
+    .numlean-vis .hierarchy-node text { fill: #071018; font-size: 12px; }
+    .numlean-vis .hierarchy-node.inactive { opacity: .25; filter: grayscale(1); }
+    .numlean-vis .hierarchy-edge-inactive { opacity: .12; filter: grayscale(1); }
+    .numlean-vis .hierarchy-node.selected rect { fill: #ffd166; stroke: #fff1b8; stroke-width: 3; }
+    .numlean-vis .hierarchy-node.input rect { fill: #8ff0c7; stroke: #d9ffef; stroke-width: 3; }
+    .numlean-vis .hierarchy-node.output rect { fill: #ffd166; stroke: #fff1b8; stroke-width: 3; }
+    @media (max-width: 760px) { .numlean-vis .hierarchy { grid-template-columns: 1fr; } }
     @media (max-width: 760px) { .numlean-vis .pair, .numlean-vis .panels { grid-template-columns: 1fr; } }
   `)
 }
@@ -539,6 +640,500 @@ function Row({ items }) {
   return React.createElement('div', { className: 'row' }, asArray(items).map((item, i) => React.createElement(Item, { key: i, item })))
 }
 
+function nameText(value) {
+  if (typeof value === 'string') return value
+  if (value && typeof value === 'object') {
+    if (typeof value.name === 'string') return value.name
+    if (typeof value.fullName === 'string') return value.fullName
+  }
+  return String(value == null ? '' : value)
+}
+
+function shortName(value) {
+  const text = nameText(value)
+  const parts = text.split('.')
+  return parts[parts.length - 1] || text
+}
+
+function hierarchyInitialLayout(nodes, edges, width, height) {
+  const ids = nodes.map((n) => nameText(n.name))
+  const indeg = new Map(ids.map((id) => [id, 0]))
+  const out = new Map(ids.map((id) => [id, []]))
+  for (const edge of edges) {
+    const source = nameText(edge.source)
+    const target = nameText(edge.target)
+    if (!indeg.has(source) || !indeg.has(target)) continue
+    indeg.set(target, indeg.get(target) + 1)
+    out.get(source).push(target)
+  }
+  const depth = new Map(ids.map((id) => [id, 0]))
+  const queue = ids.filter((id) => indeg.get(id) === 0)
+  for (let i = 0; i < queue.length; i++) {
+    const id = queue[i]
+    for (const target of out.get(id) || []) {
+      depth.set(target, Math.max(depth.get(target), depth.get(id) + 1))
+      indeg.set(target, indeg.get(target) - 1)
+      if (indeg.get(target) === 0) queue.push(target)
+    }
+  }
+  const layers = new Map()
+  for (const id of ids) {
+    const d = depth.get(id) || 0
+    if (!layers.has(d)) layers.set(d, [])
+    layers.get(d).push(id)
+  }
+  const maxDepth = Math.max(0, ...Array.from(layers.keys()))
+  const pos = new Map()
+  for (const [d, layer] of layers.entries()) {
+    layer.sort((a, b) => shortName(a).localeCompare(shortName(b)))
+    for (let i = 0; i < layer.length; i++) {
+      pos.set(layer[i], {
+        x: 100 + (width - 200) * ((i + 1) / (layer.length + 1)),
+        y: 80 + (height - 160) * (maxDepth === 0 ? 0.5 : d / maxDepth)
+      })
+    }
+  }
+  return pos
+}
+
+function itemTags(item) {
+  const tags = asArray(item && item.tags).map(nameText).filter(Boolean)
+  if (!tags.length && item && item.tag != null) tags.push(nameText(item.tag))
+  return tags
+}
+
+function tagList(nodes, instances) {
+  const seen = new Set()
+  for (const item of [...nodes, ...instances]) {
+    for (const tag of itemTags(item)) seen.add(tag)
+  }
+  return Array.from(seen).sort()
+}
+
+function itemActive(item, activeTags) {
+  const tags = itemTags(item)
+  return tags.length === 0 || tags.some((tag) => activeTags.has(tag))
+}
+
+function effectiveNodeTags(nodes, _edges, instances) {
+  const tagsById = new Map(nodes.map((node) => [nameText(node.name), new Set(itemTags(node))]))
+  function addTags(id, tags) {
+    if (!tagsById.has(id)) tagsById.set(id, new Set())
+    const target = tagsById.get(id)
+    for (const tag of tags) target.add(tag)
+  }
+  for (const inst of instances) {
+    const tags = itemTags(inst)
+    addTags(nameText(inst.output), tags)
+  }
+  return tagsById
+}
+
+function tagsActive(tags, activeTags) {
+  return !tags || tags.size === 0 || Array.from(tags).some((tag) => activeTags.has(tag))
+}
+
+function useHierarchyForceLayout(nodes, edges, width, height) {
+  const [positions, setPositions] = React.useState(new Map())
+  const [error, setError] = React.useState(null)
+  const simulationRef = React.useRef(null)
+  const nodeByIdRef = React.useRef(new Map())
+
+  const setNodePosition = React.useCallback((id, x, y, pin = true) => {
+    const node = nodeByIdRef.current.get(id)
+    if (!node) return
+    node.x = x
+    node.y = y
+    node.vx = 0
+    node.vy = 0
+    if (pin) {
+      node.fx = x
+      node.fy = y
+    } else {
+      node.fx = null
+      node.fy = null
+    }
+    if (simulationRef.current) simulationRef.current.alpha(0.28).restart()
+    setPositions((old) => {
+      const next = new Map(old)
+      next.set(id, { x, y })
+      return next
+    })
+  }, [])
+
+  const releaseNode = React.useCallback((id) => {
+    const node = nodeByIdRef.current.get(id)
+    if (!node) return
+    node.fx = null
+    node.fy = null
+    if (simulationRef.current) simulationRef.current.alpha(0.12).alphaTarget(0)
+  }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+    let simulation = null
+    simulationRef.current = null
+    setError(null)
+    loadD3().then((d3) => {
+      if (cancelled) return
+      const initial = hierarchyInitialLayout(nodes, edges, width, height)
+      const simNodes = nodes.map((node) => {
+        const id = nameText(node.name)
+        const p = initial.get(id) || { x: width / 2, y: height / 2 }
+        return { id, x: p.x, y: p.y, label: node.label || shortName(id) }
+      })
+      const nodeIds = new Set(simNodes.map((node) => node.id))
+      nodeByIdRef.current = new Map(simNodes.map((node) => [node.id, node]))
+      const links = edges.map((edge) => ({
+        source: nameText(edge.source),
+        target: nameText(edge.target),
+        kind: edge.kind === 'extends' || edge.kind && edge.kind.extends != null ? 'extends' : 'assumes'
+      })).filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+      simulation = d3.forceSimulation(simNodes)
+        .force('link', d3.forceLink(links).id((d) => d.id).distance((d) => d.kind === 'extends' ? 150 : 115).strength((d) => d.kind === 'extends' ? 0.72 : 0.38))
+        .force('direction', hierarchyDirectionForce(links))
+        .force('charge', d3.forceManyBody().strength(-620))
+        .force('x', d3.forceX((d) => (initial.get(d.id) || { x: width / 2 }).x).strength(0.06))
+        .force('y', d3.forceY((d) => (initial.get(d.id) || { y: height / 2 }).y).strength(0.18))
+        .force('collision', d3.forceCollide(88).strength(0.9))
+        .alpha(1)
+        .alphaDecay(0.045)
+      simulationRef.current = simulation
+      let tick = 0
+      simulation.on('tick', () => {
+        tick += 1
+        if (cancelled || tick % 2 !== 0) return
+        setPositions(new Map(simNodes.map((node) => [node.id, { x: node.x, y: node.y }])))
+      })
+      simulation.on('end', () => {
+        if (!cancelled) setPositions(new Map(simNodes.map((node) => [node.id, { x: node.x, y: node.y }])))
+      })
+      }).catch((err) => {
+      if (!cancelled) {
+        setError(err && err.message ? err.message : 'failed to load D3')
+        setPositions(hierarchyInitialLayout(nodes, edges, width, height))
+        nodeByIdRef.current = new Map()
+      }
+    })
+    return () => {
+      cancelled = true
+      if (simulation) simulation.stop()
+      simulationRef.current = null
+    }
+  }, [nodes, edges, width, height])
+  return { positions, error, setNodePosition, releaseNode, simulationRef, nodeByIdRef }
+}
+
+function nodeBoundaryPoint(from, to) {
+  const halfW = 70
+  const halfH = 20
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  if (dx === 0 && dy === 0) return { x: from.x, y: from.y }
+  const scale = Math.min(Math.abs(halfW / (dx || 1e-6)), Math.abs(halfH / (dy || 1e-6)))
+  return { x: from.x + dx * scale, y: from.y + dy * scale }
+}
+
+function HierarchyGraphCard({ item }) {
+  const nodes = asArray(item.classes)
+  const edges = asArray(item.classEdges)
+  const instances = asArray(item.instances)
+  const tags = React.useMemo(() => tagList(nodes, instances), [nodes, instances])
+  const [enabledTags, setEnabledTags] = React.useState(() => new Set(tags))
+  const [selectedClass, setSelectedClass] = React.useState(nodes[0] ? nameText(nodes[0].name) : null)
+  const [selectedInstance, setSelectedInstance] = React.useState(null)
+  const [view, setView] = React.useState({ scale: 1, x: 0, y: 0 })
+  const graphRef = React.useRef(null)
+  const dragRef = React.useRef(null)
+  const ignoreNodeClickRef = React.useRef(false)
+  const width = Math.max(900, 170 * Math.ceil(Math.sqrt(Math.max(1, nodes.length))) + 260)
+  const height = Math.max(560, 120 * Math.ceil(Math.sqrt(Math.max(1, nodes.length))) + 220)
+  const { positions, error: layoutError, setNodePosition, releaseNode } = useHierarchyForceLayout(nodes, edges, width, height)
+  const nodeTags = React.useMemo(() => effectiveNodeTags(nodes, edges, instances), [nodes, edges, instances])
+  const inferredByInstances = React.useMemo(() => instances.filter((inst) => nameText(inst.output) === selectedClass), [instances, selectedClass])
+  const inferableFromSelected = React.useMemo(() => {
+    if (!selectedClass) return []
+    return instances.filter((inst) => asArray(inst.inputs).map(nameText).includes(selectedClass))
+  }, [instances, selectedClass])
+  const inferableInstances = React.useMemo(() => {
+    const blocked = new Set(inferredByInstances.map((inst) => nameText(inst.name)))
+    return inferableFromSelected.filter((inst) => !blocked.has(nameText(inst.name)))
+  }, [inferredByInstances, inferableFromSelected])
+  const activeInstance = selectedInstance == null ? null : instances.find((inst) => nameText(inst.name) === selectedInstance)
+  const activeInstanceInputs = React.useMemo(() => activeInstance ? asArray(activeInstance.inputs).map(nameText) : [], [activeInstance])
+  const activeInstanceInputSet = React.useMemo(() => new Set(activeInstanceInputs), [activeInstanceInputs])
+  const output = activeInstance ? nameText(activeInstance.output) : null
+  const selectedInstanceMode = React.useMemo(() => {
+    if (!activeInstance || !selectedClass) return null
+    if (output === selectedClass) return 'inferredBy'
+    if (activeInstanceInputSet.has(selectedClass)) return 'canInfer'
+    return null
+  }, [activeInstance, selectedClass, output, activeInstanceInputSet])
+  const selectedInstanceEdges = React.useMemo(() => {
+    if (!activeInstance || !selectedInstanceMode) return []
+    const out = output
+    if (!out) return []
+    return activeInstanceInputs.map((input) => ({
+      source: nameText(input),
+      target: out,
+      mode: selectedInstanceMode === 'canInfer'
+        ? (selectedClass === nameText(input) ? 'canInfer' : 'assumption')
+        : 'instance'
+    })).filter((edge) => edge.source && edge.target)
+  }, [activeInstanceInputs, output, selectedClass, selectedInstanceMode])
+  function resolveNodeClick(id) {
+    if (ignoreNodeClickRef.current) {
+      ignoreNodeClickRef.current = false
+      return
+    }
+    selectClass(id)
+  }
+  function selectClass(id) {
+    setSelectedClass(id)
+    setSelectedInstance(null)
+  }
+  React.useEffect(() => {
+    setEnabledTags((old) => {
+      const next = new Set()
+      for (const tag of tags) {
+        if (old.size === 0 || old.has(tag)) next.add(tag)
+      }
+      return next.size === 0 && tags.length > 0 ? new Set(tags) : next
+    })
+  }, [tags])
+  function toggleTag(tag) {
+    setEnabledTags((old) => {
+      const next = new Set(old)
+      if (next.has(tag)) next.delete(tag)
+      else next.add(tag)
+      return next
+    })
+  }
+  function graphPoint(event) {
+    const graph = graphRef.current || event.currentTarget
+    const rect = graph && graph.getBoundingClientRect ? graph.getBoundingClientRect() : { left: 0, top: 0 }
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+  }
+  function onWheel(event) {
+    event.preventDefault()
+    const point = graphPoint(event)
+    setView((old) => {
+      const factor = Math.exp(-event.deltaY * 0.001)
+      const scale = Math.max(0.25, Math.min(3.5, old.scale * factor))
+      const worldX = (point.x - old.x) / old.scale
+      const worldY = (point.y - old.y) / old.scale
+      return { scale, x: point.x - worldX * scale, y: point.y - worldY * scale }
+    })
+  }
+  function toWorld(event, viewState) {
+    const point = graphPoint(event)
+    return {
+      x: (point.x - viewState.x) / viewState.scale,
+      y: (point.y - viewState.y) / viewState.scale
+    }
+  }
+  function onPointerDown(event) {
+    if (event.target && event.target.closest && event.target.closest('.hierarchy-node')) return
+    if (event.button !== 0 && event.button !== 1 && event.button !== 2) return
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    const point = graphPoint(event)
+    dragRef.current = {
+      pointerId: event.pointerId,
+      mode: event.button === 2 ? 'zoom' : 'pan',
+      startX: event.clientX,
+      startY: event.clientY,
+      anchorX: point.x,
+      anchorY: point.y,
+      view,
+      moved: false
+    }
+  }
+  function onPointerMove(event) {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    if (drag.mode === 'node') {
+      const world = toWorld(event, drag.view)
+      const nodeId = drag.nodeId
+      if (nodeId) {
+        const dx = event.clientX - drag.startX
+        const dy = event.clientY - drag.startY
+        if (drag.moved || Math.abs(dx) + Math.abs(dy) > 3) {
+          drag.moved = true
+          const offsetX = drag.offsetX || 0
+          const offsetY = drag.offsetY || 0
+          setNodePosition(nodeId, world.x - offsetX, world.y - offsetY, true)
+        }
+      }
+      return
+    }
+    const dx = event.clientX - drag.startX
+    const dy = event.clientY - drag.startY
+    if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true
+    if (drag.mode === 'zoom') {
+      const scale = Math.max(0.25, Math.min(3.5, drag.view.scale * Math.exp(-dy * 0.008)))
+      const worldX = (drag.anchorX - drag.view.x) / drag.view.scale
+      const worldY = (drag.anchorY - drag.view.y) / drag.view.scale
+      setView({ scale, x: drag.anchorX - worldX * scale, y: drag.anchorY - worldY * scale })
+    } else {
+      setView({ ...drag.view, x: drag.view.x + dx, y: drag.view.y + dy })
+    }
+  }
+  function onPointerUp(event) {
+    const drag = dragRef.current
+    if (drag && drag.pointerId === event.pointerId) {
+      if (drag.mode === 'node') {
+        if (drag.nodeId) releaseNode(drag.nodeId)
+        if (drag.moved) ignoreNodeClickRef.current = true
+      }
+      dragRef.current = null
+      try { event.currentTarget.releasePointerCapture(event.pointerId) } catch (_e) {}
+    }
+  }
+  function onNodePointerDown(event, nodeId) {
+    if (event.button !== 0) return
+    event.preventDefault()
+    event.stopPropagation()
+    ignoreNodeClickRef.current = false
+    event.currentTarget.setPointerCapture(event.pointerId)
+    const world = toWorld(event, view)
+    const start = positions.get(nodeId)
+    const offsetX = start ? world.x - start.x : 0
+    const offsetY = start ? world.y - start.y : 0
+    dragRef.current = {
+      pointerId: event.pointerId,
+      mode: 'node',
+      nodeId,
+      startX: event.clientX,
+      startY: event.clientY,
+      view,
+      offsetX,
+      offsetY,
+      moved: false
+    }
+  }
+  function resetView() {
+    setView({ scale: 1, x: 0, y: 0 })
+  }
+  return React.createElement('div', { className: 'hierarchy' },
+    React.createElement('div', { className: 'hierarchy-graph' },
+      layoutError ? React.createElement('div', { className: 'hierarchy-layout-error' }, layoutError) : null,
+      React.createElement('svg', {
+        width,
+        height,
+        viewBox: `0 0 ${width} ${height}`,
+        onWheel,
+        ref: graphRef,
+        onPointerDown,
+        onPointerMove,
+        onPointerUp,
+        onPointerCancel: onPointerUp,
+        onContextMenu: (event) => event.preventDefault(),
+        onDoubleClick: resetView,
+        style: { touchAction: 'none', cursor: dragRef.current ? 'grabbing' : 'grab' }
+      },
+        React.createElement('defs', null,
+          React.createElement('marker', { id: 'hierarchy-arrow', markerWidth: 10, markerHeight: 10, refX: 9, refY: 3, orient: 'auto', markerUnits: 'strokeWidth' },
+            React.createElement('path', { d: 'M0,0 L0,6 L9,3 z', fill: '#dbeafe' })
+          ),
+          React.createElement('marker', { id: 'hierarchy-arrow-instance', markerWidth: 10, markerHeight: 10, refX: 9, refY: 3, orient: 'auto', markerUnits: 'strokeWidth' },
+            React.createElement('path', { d: 'M0,0 L0,6 L9,3 z', fill: '#8ff0c7' })
+          ),
+          React.createElement('marker', { id: 'hierarchy-arrow-instance-assumption', markerWidth: 10, markerHeight: 10, refX: 9, refY: 3, orient: 'auto', markerUnits: 'strokeWidth' },
+            React.createElement('path', { d: 'M0,0 L0,6 L9,3 z', fill: '#7cc7ff' })
+          )
+        ),
+        React.createElement('rect', { x: 0, y: 0, width, height, fill: 'transparent' }),
+        React.createElement('g', { transform: `translate(${view.x} ${view.y}) scale(${view.scale})` },
+          edges.map((edge, i) => {
+            const sourceId = nameText(edge.source)
+            const targetId = nameText(edge.target)
+            const source = positions.get(sourceId)
+            const target = positions.get(targetId)
+            if (!source || !target) return null
+            const kind = edge.kind === 'extends' || edge.kind && edge.kind.extends != null ? 'extends' : 'assumes'
+            const start = nodeBoundaryPoint(source, target)
+            const end = nodeBoundaryPoint(target, source)
+            const active = tagsActive(nodeTags.get(sourceId), enabledTags) && tagsActive(nodeTags.get(targetId), enabledTags)
+            return React.createElement('line', { key: i, className: `hierarchy-edge-${kind}${active ? '' : ' hierarchy-edge-inactive'}`, x1: start.x, y1: start.y, x2: end.x, y2: end.y, markerEnd: 'url(#hierarchy-arrow)' })
+          }),
+          selectedInstanceEdges.length === 0 ? null : selectedInstanceEdges.map((edge, i) => {
+            const source = positions.get(edge.source)
+            const target = positions.get(edge.target)
+            if (!source || !target) return null
+            const start = nodeBoundaryPoint(source, target)
+            const end = nodeBoundaryPoint(target, source)
+            const active = tagsActive(nodeTags.get(edge.source), enabledTags) && tagsActive(nodeTags.get(edge.target), enabledTags)
+            const edgeClass = edge.mode === 'assumption' ? 'hierarchy-edge-instance-assumption' : 'hierarchy-edge-instance'
+            const edgeMarker = edge.mode === 'assumption' ? 'url(#hierarchy-arrow-instance-assumption)' : 'url(#hierarchy-arrow-instance)'
+            return React.createElement('line', {
+              key: `instance-edge-${i}-${edge.source}-${edge.target}`,
+              className: `${edgeClass}${active ? '' : ' hierarchy-edge-instance-inactive'}`,
+              x1: start.x,
+              y1: start.y,
+              x2: end.x,
+              y2: end.y,
+              markerEnd: edgeMarker
+            })
+          }),
+          nodes.map((node) => {
+            const id = nameText(node.name)
+            const p = positions.get(id) || { x: width / 2, y: height / 2 }
+            const cls = ['hierarchy-node']
+            if (id === selectedClass) cls.push('selected')
+            if (selectedInstanceMode === 'canInfer') {
+              if (id === output) cls.push('inferred')
+              if (activeInstanceInputSet.has(id) && id !== selectedClass) cls.push('assumption')
+            } else if (activeInstanceInputSet.has(id)) {
+              cls.push('input')
+            } else if (output === id) {
+              cls.push('output')
+            }
+            if (!tagsActive(nodeTags.get(id), enabledTags)) cls.push('inactive')
+            return React.createElement('g', { key: id, className: cls.join(' '), transform: `translate(${p.x - 70}, ${p.y - 20})`, onPointerDown: (event) => onNodePointerDown(event, id), onClick: () => resolveNodeClick(id), style: { cursor: 'pointer' } },
+              React.createElement('rect', { width: 140, height: 40, rx: 11 }),
+              React.createElement('text', { x: 70, y: 21 }, node.label || shortName(id))
+            )
+          })
+        )
+      )
+    ),
+    React.createElement('div', { className: 'hierarchy-side' },
+      React.createElement('div', { className: 'hierarchy-title' }, selectedClass ? shortName(selectedClass) : 'Hierarchy graph'),
+      tags.length ? React.createElement('div', { className: 'hierarchy-tags' },
+        tags.map((tag) => React.createElement('label', { key: tag, className: 'hierarchy-tag' },
+          React.createElement('input', { type: 'checkbox', checked: enabledTags.has(tag), onChange: () => toggleTag(tag) }),
+          tag
+        ))
+      ) : null,
+      React.createElement('div', { className: 'hierarchy-help' }, selectedClass
+        ? 'Green: inferred class. Light blue: parallel assumptions. Click one to highlight connections.'
+        : 'Click a class node to list instances.'
+      ),
+      React.createElement('div', { className: 'hierarchy-help' }, inferredByInstances.length === 0 ? 'No marked instances infer this class.' : 'Instances that directly infer this class:'),
+      inferredByInstances.length === 0 ? null : inferredByInstances.map((inst) => {
+        const id = nameText(inst.name)
+        const active = selectedInstance === id
+        const enabled = itemActive(inst, enabledTags)
+        return React.createElement('button', { key: id, className: `hierarchy-instance${active ? ' active' : ''}${enabled ? '' : ' inactive'}`, onClick: () => setSelectedInstance(active ? null : id) },
+          inst.label || shortName(id),
+          React.createElement('div', { className: 'hierarchy-io' }, `${asArray(inst.inputs).map(shortName).join(', ') || '∅'} ⇒ ${shortName(inst.output)}`)
+        )
+      }),
+      React.createElement('div', { className: 'hierarchy-help' }, inferableInstances.length === 0 ? 'No marked instances can be inferred by this class.' : 'Instances this class can infer:'),
+      inferableInstances.length === 0 ? null : inferableInstances.map((inst) => {
+        const id = nameText(inst.name)
+        const active = selectedInstance === id
+        const enabled = itemActive(inst, enabledTags)
+        return React.createElement('button', { key: id, className: `hierarchy-instance${active ? ' active' : ''}${enabled ? '' : ' inactive'}`, onClick: () => setSelectedInstance(active ? null : id) },
+          inst.label || shortName(id),
+          React.createElement('div', { className: 'hierarchy-io' }, `${asArray(inst.inputs).map(shortName).join(', ') || '∅'} ⇒ ${shortName(inst.output)}`)
+        )
+      })
+    )
+  )
+}
+
 function ratioPair(value, fallbackA = 1, fallbackB = 1) {
   const xs = asArray(value)
   const a = Math.max(1, asNumber(xs[0] == null ? fallbackA : xs[0]))
@@ -554,6 +1149,7 @@ function itemKind(item) {
   if (item.sourceRows != null || item.sourceValues != null || item.selected != null) return 'slice'
   if (item.items != null) return 'flow'
   if (item.left != null && item.right != null) return 'prod'
+  if (item.classes != null && item.classEdges != null && item.instances != null) return 'hierarchyGraph'
   if (item.rows != null && item.cols == null) return 'grid'
   if (item.tree != null) return 'shape'
   if (item.shape != null && item.values != null) return 'highRankLayout'
@@ -571,6 +1167,7 @@ function Item({ item }) {
   if (kind === 'latex') return React.createElement(LaTeXCard, { source: item.source })
   if (kind === 'highRankLayout') return React.createElement(HighRankLayoutCard, { item })
   if (kind === 'slice') return React.createElement(SliceCard, { item })
+  if (kind === 'hierarchyGraph') return React.createElement(HierarchyGraphCard, { item })
   if (kind === 'prod') {
     const options = item.options || {}
     const direction = item.direction || options.direction || 'horizontal'

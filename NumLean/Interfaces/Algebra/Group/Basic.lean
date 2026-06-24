@@ -1,14 +1,17 @@
 import Mathlib.Algebra.Group.Defs
+import NumLean.Meta.HierarchyGraph
 
 namespace NumLean
 namespace Interfaces
 namespace Algebra
 
+@[hierarchy_graph algebra_ops]
 class AddMonoidOps (K : Type u) extends Add K, Zero K where
   nsmul : Nat → K → K
 
 instance [inst : AddMonoidOps K] : SMul Nat K := ⟨inst.nsmul⟩
 
+@[hierarchy_graph algebra_lawful]
 class LawfulAddMonoidOps (K : Type u) [AddMonoidOps K] : Prop where
   add_assoc : ∀ a b c : K, a + b + c = a + (b + c)
   zero_add : ∀ a : K, 0 + a = a
@@ -18,11 +21,13 @@ class LawfulAddMonoidOps (K : Type u) [AddMonoidOps K] : Prop where
     AddMonoidOps.nsmul n x + x
   add_comm : ∀ a b : K, a + b = b + a
 
+@[hierarchy_graph algebra_ops]
 class MonoidOps (K : Type u) extends Mul K, One K where
   npow : Nat → K → K
 
 instance [inst : MonoidOps K] : NatPow K := ⟨fun x n => inst.npow n x⟩
 
+@[hierarchy_graph algebra_lawful]
 class LawfulMonoidOps (K : Type u) [MonoidOps K] : Prop where
   mul_assoc : ∀ a b c : K, a * b * c = a * (b * c)
   one_mul : ∀ a : K, 1 * a = a
@@ -32,11 +37,13 @@ class LawfulMonoidOps (K : Type u) [MonoidOps K] : Prop where
     MonoidOps.npow n x * x
   mul_comm : ∀ a b : K, a * b = b * a
 
+@[hierarchy_graph algebra_ops]
 class AddGroupOps (K : Type u) extends AddMonoidOps K, Sub K, Neg K where
   zsmul : Int → K → K
 
 instance [inst : AddGroupOps K] : SMul Int K := ⟨inst.zsmul⟩
 
+@[hierarchy_graph algebra_lawful]
 class LawfulAddGroupOps (K : Type u) [AddGroupOps K] : Prop extends LawfulAddMonoidOps K where
   sub_eq_add_neg : ∀ a b : K, a - b = a + -b
   zsmul_zero : ∀ a : K, AddGroupOps.zsmul 0 a = 0
@@ -46,11 +53,13 @@ class LawfulAddGroupOps (K : Type u) [AddGroupOps K] : Prop extends LawfulAddMon
     -AddGroupOps.zsmul (Int.ofNat n.succ) a
   neg_add_cancel : ∀ a : K, -a + a = 0
 
+@[hierarchy_graph algebra_ops]
 class GroupOps (K : Type u) extends MonoidOps K, Div K, Inv K where
   zpow : Int → K → K
 
 instance [inst : GroupOps K] : Pow K Int := ⟨fun x n => inst.zpow n x⟩
 
+@[hierarchy_graph algebra_lawful]
 class LawfulGroupOps (K : Type u) [GroupOps K] : Prop extends LawfulMonoidOps K where
   div_eq_mul_inv : ∀ a b : K, a / b = a * b⁻¹
   zpow_zero : ∀ a : K, GroupOps.zpow 0 a = 1

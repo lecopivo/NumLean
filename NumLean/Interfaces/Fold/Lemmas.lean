@@ -161,4 +161,113 @@ theorem fold_eq_vector_map {α ρ ι n} [m : Membership ι ρ] [FoldEntries ρ �
       simp only [List.foldl_nil]
       simp [h]
 
+
+open Fold Classical Function in
+theorem fold_eq_vector_map' {α ρ ι n} [m : Membership ι ρ] [FoldEntries ρ ι m] [Fold ρ]
+    [LawfulFold ρ ι m] (range : ρ)
+    (imap : (i : ι) → i ∈ range → Nat) (f : (i : ι) → i ∈ range → α → α) (init : Vector α n)
+    (himap : ∀ i hi, imap i hi < n)
+    (himap' : Injective (fun i : {i' // i' ∈ range} => imap i.1 i.2)) :
+    Fold.fold range (init := init) (fun i hi xs =>
+      xs.set (imap i hi) (f i hi (getElem xs (imap i hi) (himap i hi))) (by grind))
+    =
+    init.mapFinIdx (fun j xj _ =>
+      if h : j ∈ Set.range (fun i : {i' // i' ∈ range} => imap i.1 i.2) then
+        have : Nonempty {i' // i' ∈ range} := by have ⟨i,_⟩ := h; exact ⟨i⟩
+        let ⟨i,hi⟩ := invFun (fun i : {i' // i' ∈ range} => imap i.1 i.2) j
+        f i hi xj
+      else
+        xj) := by
+  rw [LawfulFold.fold_eq_foldl]
+  apply Vector.ext
+  intro j hj
+  rw [Vector.getElem_mapFinIdx]
+  let step : Vector α n → {i' // i' ∈ range} → Vector α n := fun xs i =>
+      xs.set (imap i.1 i.2)
+        (f i.1 i.2 (getElem xs (imap i.1 i.2) (by grind)))
+        (by grind)
+  change ((NumLean.entries range).foldl step init)[j] = _
+  have hfoldFin := FoldMap.foldl_get_eq_foldl_filter_affectors
+      (entries := NumLean.entries range)
+      (init := init)
+      (step := step)
+      (read := fun xs (j : Fin n) => xs[j])
+      (deps := fun j : Fin n => {j})
+      (affectors := fun j : Fin n => {i : {i' // i' ∈ range} | imap i.1 i.2 = j.1})
+      (i := ⟨j, hj⟩)
+      (by simp)
+      (by
+        intro k hk idx hidx xs
+        simp only [Set.mem_singleton_iff] at hk
+        subst k
+        simp only [Set.mem_setOf_eq] at hidx
+        change (step xs idx)[j] = xs[j]'hj
+        simp [step, hidx])
+      (by
+        intro idx xs ys hagree k hk
+        simp only [Set.mem_singleton_iff] at hk
+        subst k
+        by_cases hidx : imap idx.1 idx.2 = j
+        · have hread : xs[j] = ys[j] := hagree ⟨j, hj⟩ (by simp)
+          dsimp [step]
+          have hreadIdx :
+              xs[imap idx.1 idx.2]'(himap idx.1 idx.2) =
+                ys[imap idx.1 idx.2]'(himap idx.1 idx.2) := by
+            simpa [hidx] using hread
+          simp [hidx]
+          exact congrArg (f idx.1 idx.2) hread
+        · dsimp [step]
+          have hread : xs[j] = ys[j] := hagree ⟨j, hj⟩ (by simp)
+          simp [hidx, hread])
+  change (fun xs (j : Fin n) => xs[j])
+      ((NumLean.entries range).foldl step init) ⟨j, hj⟩ = _
+  rw [hfoldFin]
+  · by_cases h : j ∈ Set.range (fun i : {i' // i' ∈ range} => imap i.1 i.2)
+    · haveI : Nonempty {i' // i' ∈ range} := by
+        rcases h with ⟨i, _⟩
+        exact ⟨i⟩
+      let idx := invFun (fun i : {i' // i' ∈ range} => imap i.1 i.2) j
+      have hij : imap idx.1 idx.2 = j := Function.invFun_eq h
+      have hfilter :
+          ((NumLean.entries range).filter fun idx' =>
+              @decide (idx' ∈ ((fun j : Fin n => {i : {i' // i' ∈ range} | imap i.1 i.2 = j.1}) ⟨j, hj⟩))
+                (Classical.propDecidable _)) =
+            [idx] := by
+        apply List.eq_singleton_of_mem_nodup_unique
+        · exact List.mem_filter.mpr ⟨LawfulFold.mem_entries (xs := range) idx.2, by simp [hij]⟩
+        · exact (LawfulFold.entries_nodup range).filter _
+        · intro b hb
+          simp only [List.mem_filter] at hb
+          have hbmem : b ∈ ((fun j : Fin n => {i : {i' // i' ∈ range} | imap i.1 i.2 = j.1}) ⟨j, hj⟩) :=
+            @of_decide_eq_true _ (Classical.propDecidable _) hb.2
+          have hbidx : imap b.1 b.2 = j := hbmem
+          apply himap'
+          simp [hbidx, hij]
+      change (fun xs (j : Fin n) => xs[j])
+        (((NumLean.entries range).filter fun idx' =>
+          @decide (idx' ∈ ((fun j : Fin n => {i : {i' // i' ∈ range} | imap i.1 i.2 = j.1}) ⟨j, hj⟩))
+            (Classical.propDecidable _)).foldl step init)
+        ⟨j, hj⟩ = _
+      rw [hfilter]
+      simp only [List.foldl_cons, List.foldl_nil]
+      simp [step, hij, h, idx]
+    · have hfilter :
+          ((NumLean.entries range).filter fun idx =>
+              @decide (idx ∈ ((fun j : Fin n => {i : {i' // i' ∈ range} | imap i.1 i.2 = j.1}) ⟨j, hj⟩))
+                (Classical.propDecidable _)) = [] := by
+        apply List.eq_nil_iff_forall_not_mem.2
+        intro idx hidx
+        simp only [List.mem_filter] at hidx
+        have hmem : idx ∈ ((fun j : Fin n => {i : {i' // i' ∈ range} | imap i.1 i.2 = j.1}) ⟨j, hj⟩) :=
+          @of_decide_eq_true _ (Classical.propDecidable _) hidx.2
+        exact h ⟨idx, hmem⟩
+      change (fun xs (j : Fin n) => xs[j])
+        (((NumLean.entries range).filter fun idx =>
+          @decide (idx ∈ ((fun j : Fin n => {i : {i' // i' ∈ range} | imap i.1 i.2 = j.1}) ⟨j, hj⟩))
+            (Classical.propDecidable _)).foldl step init)
+        ⟨j, hj⟩ = _
+      rw [hfilter]
+      simp only [List.foldl_nil]
+      simp [h]
+
 end Fold

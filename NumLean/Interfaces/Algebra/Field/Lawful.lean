@@ -5,6 +5,7 @@ namespace NumLean
 namespace Interfaces
 namespace Algebra
 
+@[hierarchy_graph algebra_ops]
 instance (priority := 100) instFieldOpsOfField {K : Type u} [inst : _root_.Field K] :
     FieldOps K where
   nsmul := inst.nsmul
@@ -14,6 +15,7 @@ instance (priority := 100) instFieldOpsOfField {K : Type u} [inst : _root_.Field
   nnqsmul := inst.nnqsmul
   qsmul := inst.qsmul
 
+@[hierarchy_graph algebra_lawful]
 instance (priority := 100) instLawfulFieldOpsOfField {K : Type u} [inst : _root_.Field K] :
     LawfulFieldOps K where
   add_assoc := inst.add_assoc
@@ -53,6 +55,7 @@ instance (priority := 100) instLawfulFieldOpsOfField {K : Type u} [inst : _root_
   ratCast_def := inst.ratCast_def
   qsmul_def := inst.qsmul_def
 
+@[hierarchy_graph algebra_lawful]
 instance (priority := 50) instFieldOfOps {K : Type u} [inst : FieldOps K] [LawfulFieldOps K] :
     _root_.Field K where
   mul_comm := LawfulMonoidOps.mul_comm

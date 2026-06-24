@@ -427,6 +427,71 @@ For very `y ∈ f.range` there is `x ∈ 0...src` such that `f x = y`. -/
 def rangeNat {m} (f : FinHTupleMap src h(m)) : Set Nat :=
   Set.range fun i : FinHTuple src => (f i.1)
 
+/-- Scalar-valued view of a bounded map on a subtype domain, matching `Fold.fold_eq_vector_map'`. -/
+def indexFun {m} (f : FinHTupleMap src h(m)) : {i' // i' ∈ ((0 : HTuple Nat p)...src)} → Nat :=
+  fun i => (f i.1).toScalar
+
+/-- Tuple-valued view of a bounded map on a subtype domain, matching `Fold.fold_eq_vector_map'`. -/
+def tupleFun (f : FinHTupleMap src dst) : {i' // i' ∈ ((0 : HTuple Nat p)...src)} → HTuple Nat q :=
+  fun i => f i.1
+
+@[simp]
+theorem indexFun_apply {m} (f : FinHTupleMap src h(m))
+    (i : {i' // i' ∈ ((0 : HTuple Nat p)...src)}) :
+    f.indexFun i = (f i.1).toScalar := rfl
+
+@[simp]
+theorem tupleFun_apply (f : FinHTupleMap src dst)
+    (i : {i' // i' ∈ ((0 : HTuple Nat p)...src)}) :
+    f.tupleFun i = f i.1 := rfl
+
+theorem indexFun_injective {m} {f : FinHTupleMap src h(m)} (hf : f.Injective) :
+    Function.Injective f.indexFun := by
+  intro i j hij
+  apply Subtype.ext
+  have hfin : (FinHTuple.equivZeroRange src i) = (FinHTuple.equivZeroRange src j) := by
+    apply hf
+    apply FinHTuple.ext
+    apply HTuple.toScalar_injective
+    simpa [FinHTuple.equivZeroRange, indexFun] using hij
+  exact congrArg FinHTuple.val hfin
+
+theorem tupleFun_injective {f : FinHTupleMap src dst} (hf : f.Injective) :
+    Function.Injective f.tupleFun := by
+  intro i j hij
+  apply Subtype.ext
+  have hfin : (FinHTuple.equivZeroRange src i) = (FinHTuple.equivZeroRange src j) := by
+    apply hf
+    apply FinHTuple.ext
+    simpa [FinHTuple.equivZeroRange, tupleFun] using hij
+  exact congrArg FinHTuple.val hfin
+
+theorem mem_rangeNat_iff_mem_range_indexFun {m}
+    (f : FinHTupleMap src h(m)) (j : Nat) :
+    j ∈ f.rangeNat ↔ j ∈ Set.range f.indexFun := by
+  constructor
+  · rintro ⟨i, hi⟩
+    refine ⟨⟨i.val, ?_⟩, ?_⟩
+    · exact FinHTuple.val_mem_zero_shape i
+    · simpa [indexFun] using hi
+  · rintro ⟨i, hi⟩
+    refine ⟨⟨i.1, ?_⟩, ?_⟩
+    · exact (HTuple.Range.mem_iff_le_lt.1 i.2).2
+    · simpa [indexFun] using hi
+
+theorem mem_range_iff_mem_range_tupleFun
+    (f : FinHTupleMap src dst) (j : HTuple Nat q) :
+    j ∈ f.range ↔ j ∈ Set.range f.tupleFun := by
+  constructor
+  · rintro ⟨i, hi⟩
+    refine ⟨⟨i.val, ?_⟩, ?_⟩
+    · exact FinHTuple.val_mem_zero_shape i
+    · simpa [tupleFun] using hi
+  · rintro ⟨i, hi⟩
+    refine ⟨⟨i.1, ?_⟩, ?_⟩
+    · exact (HTuple.Range.mem_iff_le_lt.1 i.2).2
+    · simpa [tupleFun] using hi
+
 @[grind →, grind_htuple_order →]
 theorem mem_range_lt {f : FinHTupleMap src dst} {i : HTuple Nat q} (h : i ∈ f.range) : i <ₑ dst := by
   rcases h with ⟨j, rfl⟩
@@ -594,6 +659,42 @@ theorem rangeNatInv_eval (f : FinHTupleMap src h(m)) (i : FinHTuple src) (h : f.
   apply FinHTuple.ext
   apply HTuple.toScalar_injective
   simpa using f.eval_rangeNatInv (f i) (by simp)
+
+open Function in
+theorem indexFun_invFun_eq {m} {f : FinHTupleMap src h(m)} [Nonempty {i' // i' ∈ ((0 : HTuple Nat p)...src)}]
+    (_hf : f.Injective)
+    {j : Nat} (hj : j ∈ Set.range f.indexFun) :
+    f.indexFun (invFun f.indexFun j) = j := by
+  exact invFun_eq hj
+
+open Function in
+theorem tupleFun_invFun_eq {f : FinHTupleMap src dst} [Nonempty {i' // i' ∈ ((0 : HTuple Nat p)...src)}]
+    (_hf : f.Injective)
+    {j : HTuple Nat q} (hj : j ∈ Set.range f.tupleFun) :
+    f.tupleFun (invFun f.tupleFun j) = j := by
+  exact invFun_eq hj
+
+open Function in
+theorem invFun_indexFun_eq_rangeNatInv {m}
+    [Nonempty {i' // i' ∈ ((0 : HTuple Nat p)...src)}]
+    (f : FinHTupleMap src h(m)) (j : Nat) (hj : j ∈ f.rangeNat) (hf : f.Injective) :
+    invFun f.indexFun j =
+      ⟨(f.rangeNatInv j hj).val, FinHTuple.val_mem_zero_shape _⟩ := by
+  have hset : j ∈ Set.range f.indexFun := (f.mem_rangeNat_iff_mem_range_indexFun j).1 hj
+  apply indexFun_injective hf
+  rw [indexFun_invFun_eq hf hset]
+  simpa [indexFun] using (f.eval_rangeNatInv j hj).symm
+
+open Function in
+theorem invFun_tupleFun_eq_rangeInv
+    [Nonempty {i' // i' ∈ ((0 : HTuple Nat p)...src)}]
+    (f : FinHTupleMap src dst) (j : HTuple Nat q) (hj : j ∈ f.range) (hf : f.Injective) :
+    invFun f.tupleFun j =
+      ⟨(f.rangeInv j hj).val, FinHTuple.val_mem_zero_shape _⟩ := by
+  have hset : j ∈ Set.range f.tupleFun := (f.mem_range_iff_mem_range_tupleFun j).1 hj
+  apply tupleFun_injective hf
+  rw [tupleFun_invFun_eq hf hset]
+  simpa [tupleFun] using (f.eval_rangeInv j hj).symm
 
 -- -- is this even true? probably yes as we are working with Nat
 -- /-- Bounded affine maps are equal when their underlying affine maps agree on all bounded inputs. -/

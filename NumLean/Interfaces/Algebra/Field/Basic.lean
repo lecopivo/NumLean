@@ -5,6 +5,7 @@ namespace NumLean
 namespace Interfaces
 namespace Algebra
 
+@[hierarchy_graph algebra_ops]
 class FieldOps (K : Type u) extends RingOps K, GroupOps K, NNRatCast K, RatCast K where
   nnqsmul : ℚ≥0 → K → K
   qsmul : ℚ → K → K
@@ -12,6 +13,7 @@ class FieldOps (K : Type u) extends RingOps K, GroupOps K, NNRatCast K, RatCast 
 instance [inst : FieldOps K] : SMul ℚ≥0 K := ⟨inst.nnqsmul⟩
 instance [inst : FieldOps K] : SMul ℚ K := ⟨inst.qsmul⟩
 
+@[hierarchy_graph algebra_lawful]
 class LawfulFieldOps (K : Type u) [FieldOps K] : Prop extends LawfulRingOps K where
   div_eq_mul_inv : ∀ a b : K, a / b = a * b⁻¹
   zpow_zero : ∀ a : K, GroupOps.zpow 0 a = 1
