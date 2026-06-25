@@ -14,6 +14,7 @@ The generic instances compose visualizations in Lean:
   the available widget width.
 * `Array (Array A)` displays fixed rows: the outer array stacks vertically and each inner array
   lays out horizontally.
+* `Visualize.animation` cycles through visualizations as animation frames.
 * `Visualize.prodBox` is the explicit product wrapper when alignment options matter.
 -/
 
@@ -112,6 +113,8 @@ def shape_4_by_2x2 : Layout h((4 : Nat), ((2 : Nat), (2 : Nat))) Int where
 #visualize #[profileA, profileB, profileC]
 
 #visualize #[colMajor, rowMajor, padded]
+
+#visualize Visualize.animation #[colMajor, rowMajor, padded] 700
 
 #visualize (Layout.rowMajor h(2,(2,2),(2,10)))
 

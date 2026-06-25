@@ -9,6 +9,7 @@ private noncomputable def rclikeToComplex {K : Type v} [RCLike K] (z : K) : ℂ 
   re := RCLike.re z
   im := RCLike.im z
 
+@[hierarchy_graph]
 noncomputable instance (priority := 100) instRCOpsOfRCLike {K : Type v} [inst : RCLike K] :
     RCOps ℝ K where
   le := RCLike.toPartialOrder.le
@@ -34,6 +35,7 @@ noncomputable instance (priority := 100) instRCOpsOfRCLike {K : Type v} [inst : 
   ccos z := complexToRCLike (Complex.cos (rclikeToComplex z))
   cpow z w := complexToRCLike (Complex.cpow (rclikeToComplex z) (rclikeToComplex w))
 
+@[hierarchy_graph]
 noncomputable instance (priority := 100) instLawfulDataRCOpsOfRCLike {K : Type v}
     [inst : RCLike K] : LawfulDataRCOps (R := ℝ) K where
   requiv := Equiv.refl ℝ
@@ -43,6 +45,7 @@ noncomputable instance (priority := 100) instLawfulDataRCOpsOfRCLike {K : Type v
   reHom z := RCLike.re z
   imHom z := RCLike.im z
 
+@[hierarchy_graph]
 noncomputable instance (priority := 100) instLawfulRCOpsOfRCLike {K : Type v}
     [inst : RCLike K] : LawfulRCOps K where
   reHom_apply _ := rfl
@@ -82,6 +85,7 @@ noncomputable instance (priority := 100) instLawfulRCOpsOfRCLike {K : Type v}
   ccos_eq_ofComplex := by intro z; rfl
   cpow_eq_ofComplex := by intro z w; rfl
 
+@[hierarchy_graph]
 noncomputable instance (priority := 100) instLawfulRCLikeOpsOfRCLike {K : Type v}
     [inst : RCLike K] : LawfulRCLikeOps K where
   re_apply _ := rfl
@@ -90,6 +94,7 @@ noncomputable instance (priority := 100) instLawfulRCLikeOpsOfRCLike {K : Type v
   ofReal_re_algebraMap_real := inst.ofReal_re_ax
   ofReal_im_algebraMap_real := inst.ofReal_im_ax
 
+@[hierarchy_graph]
 instance (priority := 50) instStarRingOfRCOps {K : Type v} [RCOps ℝ K]
     [LawfulDataRCOps (R := ℝ) K] [LawfulNormedFieldOps K] [LawfulRCOps K] :
     StarRing K where
@@ -97,14 +102,17 @@ instance (priority := 50) instStarRingOfRCOps {K : Type v} [RCOps ℝ K]
   star_mul := LawfulRCOps.star_mul
   star_add := LawfulRCOps.star_add
 
+@[hierarchy_graph]
 instance (priority := 50) instCompleteSpaceOfRCOps {K : Type v} [RCOps ℝ K]
     [LawfulDataRCOps (R := ℝ) K] : CompleteSpace K :=
   LawfulDataRCOps.completeSpace (R := ℝ) (K := K)
 
+@[hierarchy_graph]
 instance (priority := 50) instDecidableEqOfRCOps {K : Type v} [RCOps ℝ K]
     [LawfulDataRCOps (R := ℝ) K] : DecidableEq K :=
   LawfulDataRCOps.decEq (R := ℝ) (K := K)
 
+@[hierarchy_graph]
 instance (priority := 50) instDenselyNormedFieldOfRCOps {K : Type v} [RCOps ℝ K]
     [LawfulDataRCOps (R := ℝ) K] [LawfulNormedFieldOps K] [LawfulRCOps K] :
     DenselyNormedField K where

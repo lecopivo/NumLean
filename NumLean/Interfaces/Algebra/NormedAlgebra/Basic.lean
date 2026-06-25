@@ -3,9 +3,11 @@ import NumLean.Interfaces.Algebra.NormedField
 
 namespace NumLean
 
+@[hierarchy_graph algebra_ops]
 class NormedAlgebraOps (R : Type u) (A : Type v) extends SMul R A where
   algebraMap : R → A
 
+@[hierarchy_graph algebra_lawful]
 class LawfulNormedAlgebraOps {RR : outParam (Type u)} {RA : outParam (Type v)}
     (R : Type w) (A : Type x) [NormedFieldOps RR R] [NormedRingOps RA A]
     [NormedAlgebraOps R A] [LawfulDataNormedFieldOps R] [LawfulDataNormedRingOps A] : Prop where

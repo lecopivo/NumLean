@@ -35,6 +35,8 @@ def interval (i : RatInterval) : Set ℚ :=
 
 instance : Interval.IntervalType RatInterval ℚ where
   interval := interval
+  split i := (i, i)
+  mem_split hx := Or.inl hx
 
 instance : Zero RatInterval where
   zero := ⟨some 0, some 0⟩

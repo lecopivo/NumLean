@@ -1,6 +1,7 @@
 import Tests.BTupleFold
 import Tests.CCompiler
 import Tests.CCompilerIRSemantics
+import Tests.DyadicInterval
 import Tests.ExternIn
 import Tests.Float32ArrayEval
 import Tests.FoldEmbedding

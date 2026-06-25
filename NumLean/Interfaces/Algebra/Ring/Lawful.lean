@@ -5,13 +5,13 @@ namespace NumLean
 namespace Interfaces
 namespace Algebra
 
-@[hierarchy_graph algebra_ops]
+@[hierarchy_graph]
 instance (priority := 100) instSemiringOpsOfCommSemiring {K : Type u}
     [inst : CommSemiring K] : SemiringOps K where
   nsmul := inst.nsmul
   npow := inst.npow
 
-@[hierarchy_graph algebra_lawful]
+@[hierarchy_graph]
 instance (priority := 100) instLawfulSemiringOpsOfCommSemiring {K : Type u}
     [inst : CommSemiring K] : LawfulSemiringOps K where
   add_assoc := inst.add_assoc
@@ -33,7 +33,7 @@ instance (priority := 100) instLawfulSemiringOpsOfCommSemiring {K : Type u}
   natCast_zero := inst.natCast_zero
   natCast_succ := inst.natCast_succ
 
-@[hierarchy_graph algebra_lawful]
+@[hierarchy_graph]
 instance (priority := 50) instCommSemiringOfOps {K : Type u} [inst : SemiringOps K]
     [LawfulSemiringOps K] : CommSemiring K where
   add_assoc := LawfulAddMonoidOps.add_assoc
@@ -61,13 +61,13 @@ example {K : Type u} [inst : CommSemiring K] :
     (instCommSemiringOfOps : CommSemiring K) = inst :=
   rfl
 
-@[hierarchy_graph algebra_ops]
+@[hierarchy_graph]
 instance (priority := 100) instRingOpsOfCommRing {K : Type u} [inst : CommRing K] : RingOps K where
   nsmul := inst.nsmul
   npow := inst.npow
   zsmul := inst.zsmul
 
-@[hierarchy_graph algebra_lawful]
+@[hierarchy_graph]
 instance (priority := 100) instLawfulRingOpsOfCommRing {K : Type u} [inst : CommRing K] :
     LawfulRingOps K where
   add_assoc := inst.add_assoc
@@ -96,7 +96,7 @@ instance (priority := 100) instLawfulRingOpsOfCommRing {K : Type u} [inst : Comm
   intCast_ofNat := inst.intCast_ofNat
   intCast_negSucc := inst.intCast_negSucc
 
-@[hierarchy_graph algebra_lawful]
+@[hierarchy_graph]
 instance (priority := 50) instCommRingOfOps {K : Type u} [inst : RingOps K]
     [LawfulRingOps K] : CommRing K where
   add_assoc := LawfulAddMonoidOps.add_assoc

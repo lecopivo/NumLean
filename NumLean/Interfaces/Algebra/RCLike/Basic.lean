@@ -10,6 +10,7 @@ namespace NumLean
 
 -- todo: move the `PartialOrder K` to data / provide only LE and LT but don't extend them!!!
 --       only ROps will expose these as and instance!!!
+@[hierarchy_graph algebra_ops]
 class RCOps (R : outParam (Type u)) (K : Type v) extends NormedFieldOps R K,
     NormedAlgebraOps R K, Star K, PartialOrder K where
   make : R → R → K
@@ -21,6 +22,7 @@ class RCOps (R : outParam (Type u)) (K : Type v) extends NormedFieldOps R K,
   ccos : K → K
   cpow : K → K → K
 
+@[hierarchy_graph algebra_lawful]
 class LawfulDataRCOps {R : outParam (Type u)} (K : Type v) [RCOps R K]
     extends LawfulDataNormedFieldOps K where
   completeSpace : CompleteSpace K
@@ -42,6 +44,7 @@ noncomputable def ofComplex {R : outParam (Type u)} {K : Type v} [RCOps R K]
 
 end RCOps
 
+@[hierarchy_graph algebra_lawful]
 class LawfulRCOps {R : outParam (Type u)} (K : Type v) [RCOps R K]
     [Zero R] [LawfulDataRCOps (R := R) K] : Prop extends LawfulNormedFieldOps K where
   reHom_apply : ∀ z : K, LawfulDataRCOps.reHom (R := R) z =
@@ -106,6 +109,7 @@ class LawfulRCOps {R : outParam (Type u)} (K : Type v) [RCOps R K]
     RCOps.ofComplex (R := R) (K := K)
       (Complex.cpow (RCOps.toComplex (R := R) z) (RCOps.toComplex (R := R) w))
 
+@[hierarchy_graph algebra_lawful]
 class LawfulRCLikeOps (K : Type v) [RCOps ℝ K]
     [LawfulDataRCOps (R := ℝ) K] extends LawfulRCOps K where
   re_apply : ∀ z : K, RCOps.re (R := ℝ) z = LawfulDataRCOps.reHom (R := ℝ) z
@@ -119,6 +123,7 @@ class LawfulRCLikeOps (K : Type v) [RCOps ℝ K]
   ofReal_im_algebraMap_real : ∀ r : ℝ,
     LawfulDataRCOps.imHom (R := ℝ) (NormedAlgebraOps.algebraMap (R := ℝ) (A := K) r) = 0
 
+@[hierarchy_graph algebra_ops]
 class ROps (R : Type u) extends RCOps R R where
   -- decLL : DecidableLT R
   -- decLE : DecidableLE R
@@ -129,6 +134,7 @@ class ROps (R : Type u) extends RCOps R R where
   log : R → R
   sqrt : R → R
 
+@[hierarchy_graph algebra_lawful]
 class LawfulDataROps (R : Type u) [ROps R] extends LawfulDataRCOps (R := R) R
 
 namespace ROps
@@ -141,6 +147,7 @@ noncomputable def ofReal {R : Type u} [ROps R] [LawfulDataROps R] (x : ℝ) : R 
 
 end ROps
 
+@[hierarchy_graph algebra_lawful]
 class LawfulROps (R : Type u) [ROps R] [LawfulDataROps R] : Prop extends
     LawfulRCOps (R := R) R where
   algebraMap_eq_self : ∀ x : R, NormedAlgebraOps.algebraMap (R := R) (A := R) x = x

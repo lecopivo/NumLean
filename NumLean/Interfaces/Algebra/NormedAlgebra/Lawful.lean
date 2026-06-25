@@ -2,6 +2,7 @@ import NumLean.Interfaces.Algebra.NormedAlgebra.Basic
 
 namespace NumLean
 
+@[hierarchy_graph]
 instance (priority := 50) instAlgebraOfOps {RR RA R A}
     [NormedFieldOps RR R] [NormedRingOps RA A] [NormedAlgebraOps R A]
     [LawfulDataNormedFieldOps R] [LawfulNormedFieldOps R]
@@ -16,6 +17,7 @@ instance (priority := 50) instAlgebraOfOps {RR RA R A}
   commutes' := LawfulNormedAlgebraOps.smul_commutes
   smul_def' := LawfulNormedAlgebraOps.smul_def
 
+@[hierarchy_graph]
 instance (priority := 50) instNormedAlgebraOfOps {RR RA R A}
     [NormedFieldOps RR R] [NormedRingOps RA A] [NormedAlgebraOps R A]
     [LawfulDataNormedFieldOps R] [LawfulNormedFieldOps R]
@@ -23,11 +25,13 @@ instance (priority := 50) instNormedAlgebraOfOps {RR RA R A}
     NormedAlgebra R A where
   norm_smul_le := LawfulNormedAlgebraOps.norm_smul_le
 
+@[hierarchy_graph]
 instance (priority := 100) instNormedAlgebraOpsOfNormedAlgebra {K : Type u} {A : Type v}
     [NormedField K] [SeminormedRing A] [inst : NormedAlgebra K A] : NormedAlgebraOps K A where
   smul := inst.smul
   algebraMap := algebraMap K A
 
+@[hierarchy_graph]
 instance (priority := 100) instLawfulNormedAlgebraOpsOfNormedAlgebra {K : Type u} {A : Type v}
     [instK : NormedField K] [instA : NormedCommRing A] [inst : NormedAlgebra K A] :
     LawfulNormedAlgebraOps K A where

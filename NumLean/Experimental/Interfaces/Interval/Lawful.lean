@@ -31,6 +31,9 @@ class LawfulMul [Mul I] [Mul R] : Prop where
   mul_mem_interval : ∀ {x y : R} {i j : I},
     x ∈ i → y ∈ j → x * y ∈ (i * j)
 
+class LawfulNatPow [NatPow I] [NatPow R] : Prop where
+  natPow_mem_interval : ∀ {x : R} {i : I}, x ∈ i → ∀ n : Nat, x ^ n ∈ (i ^ n)
+
 /-- Inversion is total at the interface level. Concrete interval types may return `⊤`
 when the input interval contains zero. -/
 class LawfulInv [Inv I] [Inv R] : Prop where
@@ -48,6 +51,11 @@ class LawfulGroupOps [GroupOps I] [GroupOps R] : Prop extends
 
 class LawfulFieldOps [FieldOps I] [FieldOps R] : Prop extends
   LawfulAddGroupOps I R, LawfulGroupOps I R
+
+attribute [grind .] LawfulTop.mem_top LawfulZero.zero_mem_interval LawfulOne.one_mem_interval
+attribute [grind ←] LawfulNeg.neg_mem_interval LawfulAdd.add_mem_interval LawfulSub.sub_mem_interval
+attribute [grind ←] LawfulMul.mul_mem_interval LawfulNatPow.natPow_mem_interval
+attribute [grind ←] LawfulInv.inv_mem_interval LawfulDiv.div_mem_interval
 
 end Interval
 

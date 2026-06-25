@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-const VERSION = 'numlean-visualize-v42'
+const VERSION = 'numlean-visualize-v45'
 const RANK_GAP = 3
 const RANK_BLOCK_GAP = 7
 const RANK_STAMP_BORDER = 2
@@ -275,6 +275,9 @@ function Style() {
     .numlean-vis .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 14px; align-items: start; }
     .numlean-vis .rows { display: grid; gap: 14px; }
     .numlean-vis .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: start; }
+    .numlean-vis .animation { display: grid; gap: 10px; }
+    .numlean-vis .animation-frame { min-width: 0; }
+    .numlean-vis .animation-status { color: var(--muted); font-size: 12px; text-align: right; }
     .numlean-vis .card { background: rgba(16,22,33,.72); border: 1px solid rgba(255,255,255,.08); border-radius: 13px; padding: 12px; overflow: hidden; flex: 1 1 280px; min-width: 0; }
     .numlean-vis .flow > .card { min-width: min(220px, 100%); }
     .numlean-vis .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 0; min-height: 0; overflow: hidden; }
@@ -640,6 +643,26 @@ function Row({ items }) {
   return React.createElement('div', { className: 'row' }, asArray(items).map((item, i) => React.createElement(Item, { key: i, item })))
 }
 
+function Animation({ item }) {
+  const frames = asArray(item.frames)
+  const timeoutMillis = Math.max(1, asNumber(item.timeoutMillis || 500))
+  const [index, setIndex] = React.useState(0)
+  React.useEffect(() => {
+    setIndex(0)
+  }, [item])
+  React.useEffect(() => {
+    if (frames.length <= 1) return
+    const id = setInterval(() => setIndex((i) => (i + 1) % frames.length), timeoutMillis)
+    return () => clearInterval(id)
+  }, [frames.length, timeoutMillis])
+  if (frames.length === 0) return React.createElement('div', { className: 'card' }, 'No animation frames')
+  const safeIndex = index % frames.length
+  return React.createElement('div', { className: 'animation' },
+    React.createElement('div', { className: 'animation-frame' }, React.createElement(Item, { key: safeIndex, item: frames[safeIndex] })),
+    React.createElement('div', { className: 'animation-status' }, `${safeIndex + 1} / ${frames.length}`)
+  )
+}
+
 function nameText(value) {
   if (typeof value === 'string') return value
   if (value && typeof value === 'object') {
@@ -653,6 +676,16 @@ function shortName(value) {
   const text = nameText(value)
   const parts = text.split('.')
   return parts[parts.length - 1] || text
+}
+
+function hierarchyNodeLabel(node) {
+  const id = nameText(node && node.name)
+  return node && node.label || shortName(id)
+}
+
+function hierarchyNodeSize(label) {
+  const width = Math.max(140, Math.ceil(String(label || '').length * 7.5 + 30))
+  return { width, height: 42 }
 }
 
 function hierarchyInitialLayout(nodes, edges, width, height) {
@@ -702,35 +735,27 @@ function itemTags(item) {
   return tags
 }
 
-function tagList(nodes, instances) {
+function tagList(nodes) {
   const seen = new Set()
-  for (const item of [...nodes, ...instances]) {
+  for (const item of nodes) {
     for (const tag of itemTags(item)) seen.add(tag)
   }
   return Array.from(seen).sort()
 }
 
-function itemActive(item, activeTags) {
-  const tags = itemTags(item)
-  return tags.length === 0 || tags.some((tag) => activeTags.has(tag))
-}
-
-function effectiveNodeTags(nodes, _edges, instances) {
+function effectiveNodeTags(nodes) {
   const tagsById = new Map(nodes.map((node) => [nameText(node.name), new Set(itemTags(node))]))
-  function addTags(id, tags) {
-    if (!tagsById.has(id)) tagsById.set(id, new Set())
-    const target = tagsById.get(id)
-    for (const tag of tags) target.add(tag)
-  }
-  for (const inst of instances) {
-    const tags = itemTags(inst)
-    addTags(nameText(inst.output), tags)
-  }
   return tagsById
 }
 
-function tagsActive(tags, activeTags) {
-  return !tags || tags.size === 0 || Array.from(tags).some((tag) => activeTags.has(tag))
+function tagsActive(tags, activeTags, filtered = false) {
+  return !tags || tags.size === 0 ? !filtered : Array.from(tags).some((tag) => activeTags.has(tag))
+}
+
+function instanceActive(inst, nodeTags, activeTags, filtered = false) {
+  if (!filtered) return true
+  const ids = [nameText(inst.output), ...asArray(inst.inputs).map(nameText)]
+  return ids.some((id) => tagsActive(nodeTags.get(id), activeTags, filtered))
 }
 
 function useHierarchyForceLayout(nodes, edges, width, height) {
@@ -756,7 +781,8 @@ function useHierarchyForceLayout(nodes, edges, width, height) {
     if (simulationRef.current) simulationRef.current.alpha(0.28).restart()
     setPositions((old) => {
       const next = new Map(old)
-      next.set(id, { x, y })
+      const prev = next.get(id) || {}
+      next.set(id, { ...prev, x, y })
       return next
     })
   }, [])
@@ -780,7 +806,9 @@ function useHierarchyForceLayout(nodes, edges, width, height) {
       const simNodes = nodes.map((node) => {
         const id = nameText(node.name)
         const p = initial.get(id) || { x: width / 2, y: height / 2 }
-        return { id, x: p.x, y: p.y, label: node.label || shortName(id) }
+        const label = hierarchyNodeLabel(node)
+        const size = hierarchyNodeSize(label)
+        return { id, x: p.x, y: p.y, label, width: size.width, height: size.height }
       })
       const nodeIds = new Set(simNodes.map((node) => node.id))
       nodeByIdRef.current = new Map(simNodes.map((node) => [node.id, node]))
@@ -790,12 +818,16 @@ function useHierarchyForceLayout(nodes, edges, width, height) {
         kind: edge.kind === 'extends' || edge.kind && edge.kind.extends != null ? 'extends' : 'assumes'
       })).filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
       simulation = d3.forceSimulation(simNodes)
-        .force('link', d3.forceLink(links).id((d) => d.id).distance((d) => d.kind === 'extends' ? 150 : 115).strength((d) => d.kind === 'extends' ? 0.72 : 0.38))
+        .force('link', d3.forceLink(links).id((d) => d.id).distance((d) => {
+          const sourceWidth = d.source && d.source.width || 140
+          const targetWidth = d.target && d.target.width || 140
+          return (d.kind === 'extends' ? 105 : 80) + (sourceWidth + targetWidth) / 2
+        }).strength((d) => d.kind === 'extends' ? 0.72 : 0.38))
         .force('direction', hierarchyDirectionForce(links))
         .force('charge', d3.forceManyBody().strength(-620))
         .force('x', d3.forceX((d) => (initial.get(d.id) || { x: width / 2 }).x).strength(0.06))
         .force('y', d3.forceY((d) => (initial.get(d.id) || { y: height / 2 }).y).strength(0.18))
-        .force('collision', d3.forceCollide(88).strength(0.9))
+        .force('collision', d3.forceCollide((d) => Math.max(d.width || 140, d.height || 42) / 2 + 20).strength(0.9))
         .alpha(1)
         .alphaDecay(0.045)
       simulationRef.current = simulation
@@ -803,10 +835,10 @@ function useHierarchyForceLayout(nodes, edges, width, height) {
       simulation.on('tick', () => {
         tick += 1
         if (cancelled || tick % 2 !== 0) return
-        setPositions(new Map(simNodes.map((node) => [node.id, { x: node.x, y: node.y }])))
+        setPositions(new Map(simNodes.map((node) => [node.id, { x: node.x, y: node.y, width: node.width, height: node.height }])))
       })
       simulation.on('end', () => {
-        if (!cancelled) setPositions(new Map(simNodes.map((node) => [node.id, { x: node.x, y: node.y }])))
+        if (!cancelled) setPositions(new Map(simNodes.map((node) => [node.id, { x: node.x, y: node.y, width: node.width, height: node.height }])))
       })
       }).catch((err) => {
       if (!cancelled) {
@@ -825,8 +857,8 @@ function useHierarchyForceLayout(nodes, edges, width, height) {
 }
 
 function nodeBoundaryPoint(from, to) {
-  const halfW = 70
-  const halfH = 20
+  const halfW = (from.width || 140) / 2
+  const halfH = (from.height || 42) / 2
   const dx = to.x - from.x
   const dy = to.y - from.y
   if (dx === 0 && dy === 0) return { x: from.x, y: from.y }
@@ -838,8 +870,9 @@ function HierarchyGraphCard({ item }) {
   const nodes = asArray(item.classes)
   const edges = asArray(item.classEdges)
   const instances = asArray(item.instances)
-  const tags = React.useMemo(() => tagList(nodes, instances), [nodes, instances])
+  const tags = React.useMemo(() => tagList(nodes), [nodes])
   const [enabledTags, setEnabledTags] = React.useState(() => new Set(tags))
+  const filtered = tags.length > 0 && enabledTags.size < tags.length
   const [selectedClass, setSelectedClass] = React.useState(nodes[0] ? nameText(nodes[0].name) : null)
   const [selectedInstance, setSelectedInstance] = React.useState(null)
   const [view, setView] = React.useState({ scale: 1, x: 0, y: 0 })
@@ -849,7 +882,7 @@ function HierarchyGraphCard({ item }) {
   const width = Math.max(900, 170 * Math.ceil(Math.sqrt(Math.max(1, nodes.length))) + 260)
   const height = Math.max(560, 120 * Math.ceil(Math.sqrt(Math.max(1, nodes.length))) + 220)
   const { positions, error: layoutError, setNodePosition, releaseNode } = useHierarchyForceLayout(nodes, edges, width, height)
-  const nodeTags = React.useMemo(() => effectiveNodeTags(nodes, edges, instances), [nodes, edges, instances])
+  const nodeTags = React.useMemo(() => effectiveNodeTags(nodes), [nodes])
   const inferredByInstances = React.useMemo(() => instances.filter((inst) => nameText(inst.output) === selectedClass), [instances, selectedClass])
   const inferableFromSelected = React.useMemo(() => {
     if (!selectedClass) return []
@@ -1054,7 +1087,7 @@ function HierarchyGraphCard({ item }) {
             const kind = edge.kind === 'extends' || edge.kind && edge.kind.extends != null ? 'extends' : 'assumes'
             const start = nodeBoundaryPoint(source, target)
             const end = nodeBoundaryPoint(target, source)
-            const active = tagsActive(nodeTags.get(sourceId), enabledTags) && tagsActive(nodeTags.get(targetId), enabledTags)
+            const active = tagsActive(nodeTags.get(sourceId), enabledTags, filtered) && tagsActive(nodeTags.get(targetId), enabledTags, filtered)
             return React.createElement('line', { key: i, className: `hierarchy-edge-${kind}${active ? '' : ' hierarchy-edge-inactive'}`, x1: start.x, y1: start.y, x2: end.x, y2: end.y, markerEnd: 'url(#hierarchy-arrow)' })
           }),
           selectedInstanceEdges.length === 0 ? null : selectedInstanceEdges.map((edge, i) => {
@@ -1063,7 +1096,7 @@ function HierarchyGraphCard({ item }) {
             if (!source || !target) return null
             const start = nodeBoundaryPoint(source, target)
             const end = nodeBoundaryPoint(target, source)
-            const active = tagsActive(nodeTags.get(edge.source), enabledTags) && tagsActive(nodeTags.get(edge.target), enabledTags)
+            const active = tagsActive(nodeTags.get(edge.source), enabledTags, filtered) && tagsActive(nodeTags.get(edge.target), enabledTags, filtered)
             const edgeClass = edge.mode === 'assumption' ? 'hierarchy-edge-instance-assumption' : 'hierarchy-edge-instance'
             const edgeMarker = edge.mode === 'assumption' ? 'url(#hierarchy-arrow-instance-assumption)' : 'url(#hierarchy-arrow-instance)'
             return React.createElement('line', {
@@ -1079,6 +1112,10 @@ function HierarchyGraphCard({ item }) {
           nodes.map((node) => {
             const id = nameText(node.name)
             const p = positions.get(id) || { x: width / 2, y: height / 2 }
+            const label = hierarchyNodeLabel(node)
+            const size = hierarchyNodeSize(label)
+            const nodeWidth = p.width || size.width
+            const nodeHeight = p.height || size.height
             const cls = ['hierarchy-node']
             if (id === selectedClass) cls.push('selected')
             if (selectedInstanceMode === 'canInfer') {
@@ -1089,10 +1126,10 @@ function HierarchyGraphCard({ item }) {
             } else if (output === id) {
               cls.push('output')
             }
-            if (!tagsActive(nodeTags.get(id), enabledTags)) cls.push('inactive')
-            return React.createElement('g', { key: id, className: cls.join(' '), transform: `translate(${p.x - 70}, ${p.y - 20})`, onPointerDown: (event) => onNodePointerDown(event, id), onClick: () => resolveNodeClick(id), style: { cursor: 'pointer' } },
-              React.createElement('rect', { width: 140, height: 40, rx: 11 }),
-              React.createElement('text', { x: 70, y: 21 }, node.label || shortName(id))
+            if (!tagsActive(nodeTags.get(id), enabledTags, filtered)) cls.push('inactive')
+            return React.createElement('g', { key: id, className: cls.join(' '), transform: `translate(${p.x - nodeWidth / 2}, ${p.y - nodeHeight / 2})`, onPointerDown: (event) => onNodePointerDown(event, id), onClick: () => resolveNodeClick(id), style: { cursor: 'pointer' } },
+              React.createElement('rect', { width: nodeWidth, height: nodeHeight, rx: 11 }),
+              React.createElement('text', { x: nodeWidth / 2, y: nodeHeight / 2 + 1 }, label)
             )
           })
         )
@@ -1114,7 +1151,7 @@ function HierarchyGraphCard({ item }) {
       inferredByInstances.length === 0 ? null : inferredByInstances.map((inst) => {
         const id = nameText(inst.name)
         const active = selectedInstance === id
-        const enabled = itemActive(inst, enabledTags)
+        const enabled = instanceActive(inst, nodeTags, enabledTags, filtered)
         return React.createElement('button', { key: id, className: `hierarchy-instance${active ? ' active' : ''}${enabled ? '' : ' inactive'}`, onClick: () => setSelectedInstance(active ? null : id) },
           inst.label || shortName(id),
           React.createElement('div', { className: 'hierarchy-io' }, `${asArray(inst.inputs).map(shortName).join(', ') || '∅'} ⇒ ${shortName(inst.output)}`)
@@ -1124,7 +1161,7 @@ function HierarchyGraphCard({ item }) {
       inferableInstances.length === 0 ? null : inferableInstances.map((inst) => {
         const id = nameText(inst.name)
         const active = selectedInstance === id
-        const enabled = itemActive(inst, enabledTags)
+        const enabled = instanceActive(inst, nodeTags, enabledTags, filtered)
         return React.createElement('button', { key: id, className: `hierarchy-instance${active ? ' active' : ''}${enabled ? '' : ' inactive'}`, onClick: () => setSelectedInstance(active ? null : id) },
           inst.label || shortName(id),
           React.createElement('div', { className: 'hierarchy-io' }, `${asArray(inst.inputs).map(shortName).join(', ') || '∅'} ⇒ ${shortName(inst.output)}`)
@@ -1147,6 +1184,7 @@ function itemKind(item) {
   if (item.profile != null) return 'profile'
   if (item.source != null) return 'latex'
   if (item.sourceRows != null || item.sourceValues != null || item.selected != null) return 'slice'
+  if (item.frames != null) return 'animation'
   if (item.items != null) return 'flow'
   if (item.left != null && item.right != null) return 'prod'
   if (item.classes != null && item.classEdges != null && item.instances != null) return 'hierarchyGraph'
@@ -1168,6 +1206,7 @@ function Item({ item }) {
   if (kind === 'highRankLayout') return React.createElement(HighRankLayoutCard, { item })
   if (kind === 'slice') return React.createElement(SliceCard, { item })
   if (kind === 'hierarchyGraph') return React.createElement(HierarchyGraphCard, { item })
+  if (kind === 'animation') return React.createElement(Animation, { item })
   if (kind === 'prod') {
     const options = item.options || {}
     const direction = item.direction || options.direction || 'horizontal'

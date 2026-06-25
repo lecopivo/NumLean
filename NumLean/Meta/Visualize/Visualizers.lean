@@ -102,6 +102,29 @@ structure Grid (α : Type u) where
   rows : Array (Array α)
 deriving ToJson, FromJson
 
+/-- Visual data for a time-based animation over a sequence of visual items.
+
+Each frame must already be encoded by its own `Visualizer` before it is placed in the animation.
+The JavaScript widget cycles through `frames`, showing one frame every `timeoutMillis`
+milliseconds.
+
+Example after encoding child items to JSON:
+```lean
+{ frames := #[toJson ({ tree := "(2,2)" } : Visualize.BinaryTreeVis)]
+  timeoutMillis := 500 }
+```
+-/
+structure Animation (α : Type u) where
+  /-- Frames to display in order. -/
+  frames : Array α
+  /-- Delay between frame changes, in milliseconds. -/
+  timeoutMillis : Nat := 500
+deriving ToJson, FromJson
+
+def animation (frames : Array α) (timeoutMillis : Nat := 500) : Animation α where
+  frames := frames
+  timeoutMillis := timeoutMillis
+
 /-- Orientation for product visualizations.
 
 `horizontal` places the left visual item beside the right visual item. `vertical` stacks the left
@@ -214,6 +237,12 @@ instance {α : Type u} [v : Visualizer α] : Visualizer (Visualize.Grid α) wher
     let rows ← grid.rows.mapM fun row => row.mapM v.encodeProps
     pure (toJson ({ rows := rows } : Visualize.Grid Json))
 
+instance {α : Type u} [v : Visualizer α] : Visualizer (Visualize.Animation α) where
+  javascript := Visualize.javascript
+  encodeProps animation := do
+    let frames ← animation.frames.mapM v.encodeProps
+    pure (toJson ({ frames := frames, timeoutMillis := animation.timeoutMillis } : Visualize.Animation Json))
+
 instance {α : Type u} {β : Type v} [va : Visualizer α] [vb : Visualizer β] :
     Visualizer (Visualize.Prod α β) where
   javascript := Visualize.javascript
@@ -232,6 +261,12 @@ instance (priority := low) {α : Type u} {vis : Type v} [Visualizable α vis] :
 instance (priority := high) {α : Type u} {vis : Type v} [Visualizable α vis] :
     Visualizable (Array (Array α)) (Visualize.Grid vis) where
   toVis rows := { rows := rows.map fun xs => xs.map (Visualizable.toVis (vis := vis)) }
+
+instance {α : Type u} {vis : Type v} [Visualizable α vis] :
+    Visualizable (Visualize.Animation α) (Visualize.Animation vis) where
+  toVis x :=
+    { frames := x.frames.map (Visualizable.toVis (vis := vis))
+      timeoutMillis := x.timeoutMillis }
 
 instance {α : Type u} {β : Type v} {visα : Type w} {visβ : Type x}
     [Visualizable α visα] [Visualizable β visβ] :

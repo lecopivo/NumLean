@@ -45,7 +45,7 @@ deriving Repr, Inhabited, ToJson, FromJson
 
 structure HierarchyGraphEntry where
   declName : Name
-  tag? : Option Name
+  tags : Array Name := #[]
 deriving Inhabited, Repr
 
 initialize hierarchyGraphExt : SimpleScopedEnvExtension HierarchyGraphEntry (Array HierarchyGraphEntry) ←
@@ -55,10 +55,10 @@ initialize hierarchyGraphExt : SimpleScopedEnvExtension HierarchyGraphEntry (Arr
     addEntry := fun s e => s.push e
   }
 
-syntax (name := hierarchyGraphAttr) "hierarchy_graph" (ppSpace ident)? : attr
+syntax (name := hierarchyGraphAttr) "hierarchy_graph" (ppSpace ident)* : attr
 
-private def parseTag? : Syntax → CoreM (Option Name)
-  | `(attr| hierarchy_graph $[$tag]?) => pure (tag.map (·.getId))
+private def parseTags : Syntax → CoreM (Array Name)
+  | `(attr| hierarchy_graph $[$tags]*) => pure (tags.map (·.getId))
   | _ => throwUnsupportedSyntax
 
 initialize registerBuiltinAttribute {
@@ -66,19 +66,25 @@ initialize registerBuiltinAttribute {
   descr := "mark a class or instance declaration for hierarchy graph generation"
   applicationTime := .afterCompilation
   add := fun decl stx kind => do
-    let tag? ← parseTag? stx
-    hierarchyGraphExt.add { declName := decl, tag? } kind
+    let tags ← parseTags stx
+    if !tags.isEmpty && (← getInstancePriority? decl).isSome then
+      throwError "hierarchy_graph tags are only allowed on class declarations; use bare @[hierarchy_graph] for instances"
+    hierarchyGraphExt.add { declName := decl, tags } kind
   erase := fun _ => throwError "can't remove hierarchy_graph attributes"
 }
 
 private def shortLabel (name : Name) : String :=
   name.components.getLast?.map toString |>.getD name.toString
 
-private def entryMatchesTags (tags : Array Name) (entry : HierarchyGraphEntry) : Bool :=
-  tags.isEmpty || entry.tag?.any (tags.contains ·)
+private def generalTag : Name := `general
 
-private def entryTags (entry : HierarchyGraphEntry) : Array Name :=
-  entry.tag?.map (#[·]) |>.getD #[]
+private def otherTag : Name := `other
+
+private def entryMatchesTags (tags : Array Name) (entry : HierarchyGraphEntry) : Bool :=
+  tags.isEmpty || entry.tags.any (tags.contains ·) || (entry.tags.isEmpty && tags.contains generalTag)
+
+private def classEntryTags (entry : HierarchyGraphEntry) : Array Name :=
+  if entry.tags.isEmpty then #[generalTag] else entry.tags
 
 private def appClassName? (e : Expr) : MetaM (Option Name) := do
   let e ← whnfR e
@@ -113,8 +119,8 @@ private def classNode? (entry : HierarchyGraphEntry) : MetaM (Option HierarchyCl
     name := entry.declName
     label := shortLabel entry.declName
     type := ← typeString info.type
-    tag? := entry.tag?
-    tags := entryTags entry
+    tag? := (classEntryTags entry)[0]?
+    tags := classEntryTags entry
   }
 
 private def parentClassEdges (className : Name) : CoreM (Array HierarchyClassEdge) := do
@@ -140,6 +146,12 @@ private def mergeTags (a b : Array Name) : Array Name := Id.run do
       result := result.push tag
   return result
 
+private def ensureOtherClassNode (nodes : Array HierarchyClassNode) (name : Name) : Array HierarchyClassNode :=
+  if nodes.any (·.name == name) then
+    nodes
+  else
+    nodes.push { name, label := shortLabel name, type := "", tag? := some otherTag, tags := #[otherTag] }
+
 private def mergeClassNodes (nodes : Array HierarchyClassNode) : Array HierarchyClassNode := Id.run do
   let mut result := #[]
   for node in nodes do
@@ -162,9 +174,9 @@ private def closeClassNodes (nodes : Array HierarchyClassNode) (edges : Array Hi
     nodes := ensureClassNode nodes edge.source
     nodes := ensureClassNode nodes edge.target
   for inst in instances do
-    nodes := ensureClassNode nodes inst.output
+    nodes := ensureOtherClassNode nodes inst.output
     for input in inst.inputs do
-      nodes := ensureClassNode nodes input
+      nodes := ensureOtherClassNode nodes input
   return nodes
 
 private def assumeClassEdges (className : Name) : MetaM (Array HierarchyClassEdge) := do
@@ -191,23 +203,25 @@ private def instanceEdge? (entry : HierarchyGraphEntry) : MetaM (Option Hierarch
     output := output
     type := ← typeString info.type
     priority? := ← getInstancePriority? entry.declName
-    tag? := entry.tag?
-    tags := entryTags entry
+    tag? := none
+    tags := #[]
   }
 
 def generateHierarchyGraphWithTags (tags : Array Name := #[]) : CoreM HierarchyGraph := do
-  let entries := (hierarchyGraphExt.getState (← getEnv)).filter (entryMatchesTags tags)
+  let allEntries := hierarchyGraphExt.getState (← getEnv)
   MetaM.run' do
     let mut classes := #[]
     let mut classEdges := #[]
     let mut instances := #[]
-    for entry in entries do
+    for entry in allEntries do
       if let some node ← classNode? entry then
-        classes := classes.push node
-        classEdges := classEdges ++ (← parentClassEdges entry.declName)
-        classEdges := classEdges ++ (← assumeClassEdges entry.declName)
+        if entryMatchesTags tags entry then
+          classes := classes.push node
+          classEdges := classEdges ++ (← parentClassEdges entry.declName)
+          classEdges := classEdges ++ (← assumeClassEdges entry.declName)
       if let some edge ← instanceEdge? entry then
-        instances := instances.push edge
+        if tags.isEmpty || tags.contains otherTag then
+          instances := instances.push edge
     classes := mergeClassNodes (closeClassNodes classes classEdges instances)
     return { classes, classEdges, instances }
 

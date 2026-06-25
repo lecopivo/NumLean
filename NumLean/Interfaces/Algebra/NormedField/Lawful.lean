@@ -2,11 +2,13 @@ import NumLean.Interfaces.Algebra.NormedField.Basic
 
 namespace NumLean
 
+@[hierarchy_graph]
 instance (priority := 50) instNormedFieldOfOps {R K} [NormedFieldOps R K]
     [LawfulDataNormedFieldOps K] [LawfulNormedFieldOps K] : NormedField K where
   dist_eq := LawfulNormedFieldOps.dist_eq
   norm_mul := LawfulNormedFieldOps.norm_mul
 
+@[hierarchy_graph]
 instance (priority := 100) instNormedFieldOpsOfNormedField {K : Type v}
     [inst : NormedField K] : NormedFieldOps ℝ K where
   rnorm x := ‖x‖
@@ -16,11 +18,13 @@ instance (priority := 100) instNormedFieldOpsOfNormedField {K : Type v}
   nnqsmul := inst.nnqsmul
   qsmul := inst.qsmul
 
+@[hierarchy_graph]
 instance (priority := 100) instLawfulDataNormedFieldOpsOfNormedField {K : Type v}
     [inst : NormedField K] : LawfulDataNormedFieldOps K where
   requiv := Equiv.refl ℝ
   rnorm_eq_norm _ := rfl
 
+@[hierarchy_graph]
 instance (priority := 100) instLawfulNormedFieldOpsOfNormedField {K : Type v}
     [inst : NormedField K] : LawfulNormedFieldOps K where
   add_assoc := inst.add_assoc
