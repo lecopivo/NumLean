@@ -8,11 +8,13 @@ import NumLean.Interfaces.Algebra.NormedAlgebra
 
 namespace NumLean
 
--- todo: move the `PartialOrder K` to data / provide only LE and LT but don't extend them!!!
---       only ROps will expose these as and instance!!!
 @[hierarchy_graph algebra_ops]
 class RCOps (R : outParam (Type u)) (K : Type v) extends NormedFieldOps R K,
-    NormedAlgebraOps R K, Star K, PartialOrder K where
+    NormedAlgebraOps R K, Star K, BEq K where
+  le : K → K → Prop
+  lt : K → K → Prop
+  decLe : DecidableRel le
+  decLt : DecidableRel lt
   make : R → R → K
   re : K → R
   im : K → R
@@ -21,6 +23,8 @@ class RCOps (R : outParam (Type u)) (K : Type v) extends NormedFieldOps R K,
   csin : K → K
   ccos : K → K
   cpow : K → K → K
+
+attribute [instance 200] RCOps.toNormedFieldOps RCOps.toNormedAlgebraOps RCOps.toStar RCOps.toBEq
 
 @[hierarchy_graph algebra_lawful]
 class LawfulDataRCOps {R : outParam (Type u)} (K : Type v) [RCOps R K]
@@ -47,6 +51,12 @@ end RCOps
 @[hierarchy_graph algebra_lawful]
 class LawfulRCOps {R : outParam (Type u)} (K : Type v) [RCOps R K]
     [Zero R] [LawfulDataRCOps (R := R) K] : Prop extends LawfulNormedFieldOps K where
+  le_refl : ∀ x : K, RCOps.le (R := R) x x
+  le_trans : ∀ x y z : K, RCOps.le (R := R) x y → RCOps.le (R := R) y z →
+    RCOps.le (R := R) x z
+  lt_iff_le_not_ge : ∀ x y : K,
+    RCOps.lt (R := R) x y ↔ RCOps.le (R := R) x y ∧ ¬ RCOps.le (R := R) y x
+  le_antisymm : ∀ x y : K, RCOps.le (R := R) x y → RCOps.le (R := R) y x → x = y
   reHom_apply : ∀ z : K, LawfulDataRCOps.reHom (R := R) z =
     LawfulDataRNorm.requiv (E := K) (RCOps.re (R := R) z)
   imHom_apply : ∀ z : K, LawfulDataRCOps.imHom (R := R) z =
@@ -96,7 +106,7 @@ class LawfulRCOps {R : outParam (Type u)} (K : Type v) [RCOps R K]
     LawfulDataRCOps.imHom (R := R) z *
         LawfulDataRCOps.imHom (R := R) (RCOps.I (R := R) (K := K)) =
       LawfulDataRCOps.imHom (R := R) z
-  le_iff_re_im : ∀ {z w : K}, z ≤ w ↔
+  le_iff_re_im : ∀ {z w : K}, RCOps.le (R := R) z w ↔
     LawfulDataRCOps.reHom (R := R) z ≤ LawfulDataRCOps.reHom (R := R) w ∧
       LawfulDataRCOps.imHom (R := R) z = LawfulDataRCOps.imHom (R := R) w
   cexp_eq_ofComplex : ∀ z : K, RCOps.cexp z =
@@ -134,10 +144,24 @@ class ROps (R : Type u) extends RCOps R R where
   log : R → R
   sqrt : R → R
 
+attribute [instance 200] ROps.toRCOps
+
 @[hierarchy_graph algebra_lawful]
 class LawfulDataROps (R : Type u) [ROps R] extends LawfulDataRCOps (R := R) R
 
 namespace ROps
+
+instance instLE {R : Type u} [ROps R] : LE R where
+  le := RCOps.le (R := R) (K := R)
+
+instance instLT {R : Type u} [ROps R] : LT R where
+  lt := RCOps.lt (R := R) (K := R)
+
+instance instDecidableLE {R : Type u} [ROps R] : DecidableRel (· ≤ · : R → R → Prop) :=
+  RCOps.decLe (R := R) (K := R)
+
+instance instDecidableLT {R : Type u} [ROps R] : DecidableRel (· < · : R → R → Prop) :=
+  RCOps.decLt (R := R) (K := R)
 
 noncomputable def toReal {R : Type u} [ROps R] [LawfulDataROps R] (x : R) : ℝ :=
   LawfulDataRNorm.requiv (E := R) x

@@ -2,7 +2,6 @@ import NumLean.Interfaces.IndexType
 import NumLean.Interfaces.SetElem
 import NumLean.Interfaces.VectorType.Basic
 import NumLean.Interfaces.HasFlatRepr.Basic
-import NumLean.Interfaces.TensorArrayOps.Basic
 import NumLean.Data.FinHTuple
 import NumLean.Tactic.TBounds
 

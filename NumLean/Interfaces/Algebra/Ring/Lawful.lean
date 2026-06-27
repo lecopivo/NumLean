@@ -6,13 +6,13 @@ namespace Interfaces
 namespace Algebra
 
 @[hierarchy_graph]
-instance (priority := 100) instSemiringOpsOfCommSemiring {K : Type u}
+instance (priority := 50) instSemiringOpsOfCommSemiring {K : Type u}
     [inst : CommSemiring K] : SemiringOps K where
   nsmul := inst.nsmul
   npow := inst.npow
 
 @[hierarchy_graph]
-instance (priority := 100) instLawfulSemiringOpsOfCommSemiring {K : Type u}
+instance (priority := 50) instLawfulSemiringOpsOfCommSemiring {K : Type u}
     [inst : CommSemiring K] : LawfulSemiringOps K where
   add_assoc := inst.add_assoc
   zero_add := inst.zero_add
@@ -34,7 +34,7 @@ instance (priority := 100) instLawfulSemiringOpsOfCommSemiring {K : Type u}
   natCast_succ := inst.natCast_succ
 
 @[hierarchy_graph]
-instance (priority := 50) instCommSemiringOfOps {K : Type u} [inst : SemiringOps K]
+instance (priority := 30) instCommSemiringOfOps {K : Type u} [inst : SemiringOps K]
     [LawfulSemiringOps K] : CommSemiring K where
   add_assoc := LawfulAddMonoidOps.add_assoc
   zero_add := LawfulAddMonoidOps.zero_add
@@ -62,13 +62,13 @@ example {K : Type u} [inst : CommSemiring K] :
   rfl
 
 @[hierarchy_graph]
-instance (priority := 100) instRingOpsOfCommRing {K : Type u} [inst : CommRing K] : RingOps K where
+instance (priority := 50) instRingOpsOfCommRing {K : Type u} [inst : CommRing K] : RingOps K where
   nsmul := inst.nsmul
   npow := inst.npow
   zsmul := inst.zsmul
 
 @[hierarchy_graph]
-instance (priority := 100) instLawfulRingOpsOfCommRing {K : Type u} [inst : CommRing K] :
+instance (priority := 50) instLawfulRingOpsOfCommRing {K : Type u} [inst : CommRing K] :
     LawfulRingOps K where
   add_assoc := inst.add_assoc
   zero_add := inst.zero_add
@@ -97,7 +97,7 @@ instance (priority := 100) instLawfulRingOpsOfCommRing {K : Type u} [inst : Comm
   intCast_negSucc := inst.intCast_negSucc
 
 @[hierarchy_graph]
-instance (priority := 50) instCommRingOfOps {K : Type u} [inst : RingOps K]
+instance (priority := 30) instCommRingOfOps {K : Type u} [inst : RingOps K]
     [LawfulRingOps K] : CommRing K where
   add_assoc := LawfulAddMonoidOps.add_assoc
   zero_add := LawfulAddMonoidOps.zero_add

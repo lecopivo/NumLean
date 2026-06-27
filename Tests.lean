@@ -1,4 +1,5 @@
 import Tests.BTupleFold
+import Tests.AlgebraDeriving
 import Tests.CCompiler
 import Tests.CCompilerIRSemantics
 import Tests.DyadicInterval
@@ -17,6 +18,7 @@ import Tests.OrderInstances
 import Tests.ScalarArrays
 import Tests.TBounds
 import Tests.TupleOrderNotation
+import Tests.TypeclassPerformance
 import Tests.VectorRangeIterators
 import Tests.Visualize
 

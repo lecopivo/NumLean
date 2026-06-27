@@ -1,5 +1,5 @@
 import NumLean.Experimental.Data.BTuple.Basic
-import NumLean.Algebra.Order
+import NumLean.Interfaces.Order
 import Mathlib.Data.List.Lex
 
 /-!

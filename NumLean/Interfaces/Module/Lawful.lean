@@ -2,8 +2,6 @@ import NumLean.Interfaces.Algebra.Ring.Lawful
 import NumLean.Interfaces.Module.Basic
 
 namespace NumLean
-namespace Interfaces
-namespace Module
 
 open Interfaces.Algebra
 
@@ -39,6 +37,4 @@ example {K : Type u} {X : Type v} [instK : CommSemiring K] [instX : AddCommMonoi
     [inst : Module K X] : (instModuleOfOps : Module K X) = inst :=
   rfl
 
-end Module
-end Interfaces
 end NumLean

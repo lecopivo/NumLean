@@ -5,6 +5,15 @@ namespace NumLean
 namespace Interfaces
 namespace Algebra
 
+-- Recovering primitive operations through distributivity is a very broad fallback. Keep it below
+-- direct NumLean ops projections so `RingOps`/`SemiringOps` evidence is usable without detours.
+attribute [instance 100]
+  AddCommMagma.toAdd
+  AddCommSemigroup.toAddCommMagma
+  AddCommMonoid.toAddCommSemigroup
+  MulZeroClass.toZero
+  Distrib.toAdd Distrib.toMul
+
 @[hierarchy_graph algebra_ops]
 class SemiringOps (K : Type u) extends AddMonoidOps K, MonoidOps K, NatCast K
 

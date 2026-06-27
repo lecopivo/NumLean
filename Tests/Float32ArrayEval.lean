@@ -1,4 +1,4 @@
-import NumLean.Data.Float32Array
+import NumLean.Data.Scalars.Float32.Float32Array
 
 open NumLean
 

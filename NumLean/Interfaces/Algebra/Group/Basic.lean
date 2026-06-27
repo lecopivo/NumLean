@@ -5,6 +5,10 @@ namespace NumLean
 namespace Interfaces
 namespace Algebra
 
+-- These are broad fallback routes to primitive operations. Keep them below direct NumLean ops
+-- projections so existing `AddMonoidOps`/`AddGroupOps` evidence is not bypassed.
+attribute [instance 100] AddZero.toZero NegZeroClass.toZero
+
 @[hierarchy_graph algebra_ops]
 class AddMonoidOps (K : Type u) extends Add K, Zero K where
   nsmul : Nat → K → K

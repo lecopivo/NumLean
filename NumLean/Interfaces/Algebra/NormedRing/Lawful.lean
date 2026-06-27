@@ -2,24 +2,24 @@ import NumLean.Interfaces.Algebra.NormedRing.Basic
 
 namespace NumLean
 
-instance (priority := 50) instNormedCommRingOfOps {R K} [NormedRingOps R K]
+instance (priority := 30) instNormedCommRingOfOps {R K} [NormedRingOps R K]
     [LawfulDataNormedRingOps K] [LawfulNormedRingOps K] : NormedCommRing K where
   dist_eq := LawfulNormedRingOps.dist_eq
   norm_mul_le := LawfulNormedRingOps.norm_mul_le
   mul_comm := NumLean.Interfaces.Algebra.LawfulMonoidOps.mul_comm
 
-instance (priority := 100) instNormedRingOpsOfNormedCommRing {K : Type v}
+instance (priority := 50) instNormedRingOpsOfNormedCommRing {K : Type v}
     [inst : NormedCommRing K] : NormedRingOps ℝ K where
   rnorm x := ‖x‖
   zsmul := inst.zsmul
   intCast := inst.intCast
 
-instance (priority := 100) instLawfulDataNormedRingOpsOfNormedCommRing {K : Type v}
+instance (priority := 50) instLawfulDataNormedRingOpsOfNormedCommRing {K : Type v}
     [inst : NormedCommRing K] : LawfulDataNormedRingOps K where
   requiv := Equiv.refl ℝ
   rnorm_eq_norm _ := rfl
 
-instance (priority := 100) instLawfulNormedRingOpsOfNormedCommRing {K : Type v}
+instance (priority := 50) instLawfulNormedRingOpsOfNormedCommRing {K : Type v}
     [inst : NormedCommRing K] : LawfulNormedRingOps K where
   add_assoc := inst.add_assoc
   zero_add := inst.zero_add

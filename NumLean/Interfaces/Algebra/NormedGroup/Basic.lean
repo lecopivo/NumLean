@@ -1,11 +1,13 @@
 import Mathlib.Analysis.Normed.Group.Defs
-import NumLean.Algebra.Ops
+import NumLean.Interfaces.Algebra.RNorm
 
 namespace NumLean
 
 @[hierarchy_graph algebra_ops]
 class NormedAddMonoidOps (R : outParam (Type u)) (E : Type v) extends RNorm E R,
     AddMonoidOps E
+
+attribute [instance 200] NormedAddMonoidOps.toRNorm NormedAddMonoidOps.toAddMonoidOps
 
 @[hierarchy_graph algebra_lawful]
 class LawfulDataRNorm {R : outParam (Type u)} (E : Type v) [RNorm E R] extends
@@ -25,6 +27,8 @@ class LawfulNormedAddMonoidOps {R : outParam (Type u)} (E : Type v)
 @[hierarchy_graph algebra_ops]
 class NormedMonoidOps (R : outParam (Type u)) (E : Type v) extends RNorm E R, MonoidOps E
 
+attribute [instance 200] NormedMonoidOps.toRNorm NormedMonoidOps.toMonoidOps
+
 @[hierarchy_graph algebra_lawful]
 class LawfulDataNormedMonoidOps {R : outParam (Type u)} (E : Type v)
     [NormedMonoidOps R E] extends LawfulDataRNorm E
@@ -36,6 +40,8 @@ class LawfulNormedMonoidOps {R : outParam (Type u)} (E : Type v) [NormedMonoidOp
 @[hierarchy_graph algebra_ops]
 class NormedAddGroupOps (R : outParam (Type u)) (E : Type v) extends
     NormedAddMonoidOps R E, AddGroupOps E
+
+attribute [instance 200] NormedAddGroupOps.toNormedAddMonoidOps NormedAddGroupOps.toAddGroupOps
 
 @[hierarchy_graph algebra_lawful]
 class LawfulDataNormedAddGroupOps {R : outParam (Type u)} (E : Type v)
@@ -50,6 +56,8 @@ class LawfulNormedAddGroupOps {R : outParam (Type u)} (E : Type v)
 @[hierarchy_graph algebra_ops]
 class NormedGroupOps (R : outParam (Type u)) (E : Type v) extends NormedMonoidOps R E,
     GroupOps E
+
+attribute [instance 200] NormedGroupOps.toNormedMonoidOps NormedGroupOps.toGroupOps
 
 @[hierarchy_graph algebra_lawful]
 class LawfulDataNormedGroupOps {R : outParam (Type u)} (E : Type v)

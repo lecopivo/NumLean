@@ -1,5 +1,5 @@
 import NumLean.Experimental.Data.HList.Notation
-import NumLean.Algebra.Order
+import NumLean.Interfaces.Order
 
 namespace NumLean
 

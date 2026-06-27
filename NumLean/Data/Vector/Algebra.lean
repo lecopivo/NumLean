@@ -36,12 +36,7 @@ instance instNumLeanAddCommMonoid [AddCommMonoid α] : AddCommMonoid (Vector α 
   add_comm x y := by ext; simp; ac_rfl
 
 instance instNumLeanAddCommGroup [AddCommGroup α] : AddCommGroup (Vector α n) where
-  neg := Neg.neg
-  sub := Sub.sub
-  nsmul := (· • ·)
   zsmul := (· • ·)
-  nsmul_zero x := by ext; simp
-  nsmul_succ k x := by ext; simp [succ_nsmul]
   neg_add_cancel x := by ext; simp
   sub_eq_add_neg x y := by
     ext i hi

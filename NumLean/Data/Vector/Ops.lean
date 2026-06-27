@@ -1,4 +1,4 @@
-import NumLean.Algebra.Order
+import NumLean.Interfaces.Order
 import NumLean.Data.Vector.Basic
 
 namespace Vector

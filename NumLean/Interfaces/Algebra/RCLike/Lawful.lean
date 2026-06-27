@@ -10,14 +10,13 @@ private noncomputable def rclikeToComplex {K : Type v} [RCLike K] (z : K) : ℂ 
   im := RCLike.im z
 
 @[hierarchy_graph]
-noncomputable instance (priority := 100) instRCOpsOfRCLike {K : Type v} [inst : RCLike K] :
+noncomputable instance (priority := 50) instRCOpsOfRCLike {K : Type v} [inst : RCLike K] :
     RCOps ℝ K where
+  beq x y := decide (x = y)
   le := RCLike.toPartialOrder.le
   lt := RCLike.toPartialOrder.lt
-  le_refl := RCLike.toPartialOrder.le_refl
-  le_trans := RCLike.toPartialOrder.le_trans
-  lt_iff_le_not_ge := RCLike.toPartialOrder.lt_iff_le_not_ge
-  le_antisymm := RCLike.toPartialOrder.le_antisymm
+  decLe := Classical.decRel RCLike.toPartialOrder.le
+  decLt := Classical.decRel RCLike.toPartialOrder.lt
   smul := inst.smul
   algebraMap := algebraMap ℝ K
   rnorm x := ‖x‖
@@ -36,7 +35,7 @@ noncomputable instance (priority := 100) instRCOpsOfRCLike {K : Type v} [inst : 
   cpow z w := complexToRCLike (Complex.cpow (rclikeToComplex z) (rclikeToComplex w))
 
 @[hierarchy_graph]
-noncomputable instance (priority := 100) instLawfulDataRCOpsOfRCLike {K : Type v}
+noncomputable instance (priority := 50) instLawfulDataRCOpsOfRCLike {K : Type v}
     [inst : RCLike K] : LawfulDataRCOps (R := ℝ) K where
   requiv := Equiv.refl ℝ
   rnorm_eq_norm _ := rfl
@@ -46,8 +45,12 @@ noncomputable instance (priority := 100) instLawfulDataRCOpsOfRCLike {K : Type v
   imHom z := RCLike.im z
 
 @[hierarchy_graph]
-noncomputable instance (priority := 100) instLawfulRCOpsOfRCLike {K : Type v}
+noncomputable instance (priority := 50) instLawfulRCOpsOfRCLike {K : Type v}
     [inst : RCLike K] : LawfulRCOps K where
+  le_refl := RCLike.toPartialOrder.le_refl
+  le_trans := RCLike.toPartialOrder.le_trans
+  lt_iff_le_not_ge := RCLike.toPartialOrder.lt_iff_le_not_ge
+  le_antisymm := RCLike.toPartialOrder.le_antisymm
   reHom_apply _ := rfl
   imHom_apply _ := rfl
   re_zero := RCLike.re.map_zero
@@ -85,8 +88,18 @@ noncomputable instance (priority := 100) instLawfulRCOpsOfRCLike {K : Type v}
   ccos_eq_ofComplex := by intro z; rfl
   cpow_eq_ofComplex := by intro z w; rfl
 
+@[reducible]
+private def partialOrderOfRCOps {R : Type u} {K : Type v} [RCOps R K] [Zero R]
+    [LawfulDataRCOps (R := R) K] [LawfulRCOps (R := R) K] : PartialOrder K where
+  le := RCOps.le (R := R)
+  lt := RCOps.lt (R := R)
+  le_refl := LawfulRCOps.le_refl (R := R)
+  le_trans := LawfulRCOps.le_trans (R := R)
+  lt_iff_le_not_ge := LawfulRCOps.lt_iff_le_not_ge (R := R)
+  le_antisymm := LawfulRCOps.le_antisymm (R := R)
+
 @[hierarchy_graph]
-noncomputable instance (priority := 100) instLawfulRCLikeOpsOfRCLike {K : Type v}
+noncomputable instance (priority := 50) instLawfulRCLikeOpsOfRCLike {K : Type v}
     [inst : RCLike K] : LawfulRCLikeOps K where
   re_apply _ := rfl
   im_apply _ := rfl
@@ -95,7 +108,7 @@ noncomputable instance (priority := 100) instLawfulRCLikeOpsOfRCLike {K : Type v
   ofReal_im_algebraMap_real := inst.ofReal_im_ax
 
 @[hierarchy_graph]
-instance (priority := 50) instStarRingOfRCOps {K : Type v} [RCOps ℝ K]
+instance (priority := 30) instStarRingOfRCOps {K : Type v} [RCOps ℝ K]
     [LawfulDataRCOps (R := ℝ) K] [LawfulNormedFieldOps K] [LawfulRCOps K] :
     StarRing K where
   star_involutive := LawfulRCOps.star_star
@@ -103,17 +116,17 @@ instance (priority := 50) instStarRingOfRCOps {K : Type v} [RCOps ℝ K]
   star_add := LawfulRCOps.star_add
 
 @[hierarchy_graph]
-instance (priority := 50) instCompleteSpaceOfRCOps {K : Type v} [RCOps ℝ K]
+instance (priority := 30) instCompleteSpaceOfRCOps {K : Type v} [RCOps ℝ K]
     [LawfulDataRCOps (R := ℝ) K] : CompleteSpace K :=
   LawfulDataRCOps.completeSpace (R := ℝ) (K := K)
 
 @[hierarchy_graph]
-instance (priority := 50) instDecidableEqOfRCOps {K : Type v} [RCOps ℝ K]
+instance (priority := 30) instDecidableEqOfRCOps {K : Type v} [RCOps ℝ K]
     [LawfulDataRCOps (R := ℝ) K] : DecidableEq K :=
   LawfulDataRCOps.decEq (R := ℝ) (K := K)
 
 @[hierarchy_graph]
-instance (priority := 50) instDenselyNormedFieldOfRCOps {K : Type v} [RCOps ℝ K]
+instance (priority := 30) instDenselyNormedFieldOfRCOps {K : Type v} [RCOps ℝ K]
     [LawfulDataRCOps (R := ℝ) K] [LawfulNormedFieldOps K] [LawfulRCOps K] :
     DenselyNormedField K where
   lt_norm_lt := LawfulRCOps.lt_norm_lt
@@ -158,14 +171,14 @@ noncomputable def rclikeOfRCOps (K : Type v) [RCOps ℝ K]
   conj_I_ax := LawfulRCOps.conj_I
   norm_sq_eq_def_ax := LawfulRCOps.norm_sq_eq_def
   mul_im_I_ax := LawfulRCOps.mul_im_I
-  toPartialOrder := inferInstance
+  toPartialOrder := partialOrderOfRCOps (R := ℝ) (K := K)
   le_iff_re_im := LawfulRCOps.le_iff_re_im
   toDecidableEq := inferInstance
 
 example {K : Type v} [inst : RCLike K] : rclikeOfRCOps K = inst :=
   rfl
 
-noncomputable instance (priority := 100) instROpsOfRCLikeReal : ROps ℝ where
+noncomputable instance (priority := 50) instROpsOfRCLikeReal : ROps ℝ where
   toRCOps := instRCOpsOfRCLike (K := ℝ)
   exp := Real.exp
   sin := Real.sin
@@ -174,11 +187,11 @@ noncomputable instance (priority := 100) instROpsOfRCLikeReal : ROps ℝ where
   log := Real.log
   sqrt := Real.sqrt
 
-noncomputable instance (priority := 100) instLawfulDataROpsOfRCLikeReal :
+noncomputable instance (priority := 50) instLawfulDataROpsOfRCLikeReal :
     LawfulDataROps ℝ where
   toLawfulDataRCOps := instLawfulDataRCOpsOfRCLike (K := ℝ)
 
-noncomputable instance (priority := 100) instLawfulROpsOfRCLikeReal :
+noncomputable instance (priority := 50) instLawfulROpsOfRCLikeReal :
     LawfulROps ℝ where
   toLawfulRCOps := instLawfulRCOpsOfRCLike (K := ℝ)
   algebraMap_eq_self _ := rfl
@@ -286,7 +299,7 @@ noncomputable def inferRCLike (R : Type u) [ROps R] [LawfulDataROps R] [LawfulRO
     conj_I_ax := LawfulRCOps.conj_I
     norm_sq_eq_def_ax := LawfulRCOps.norm_sq_eq_def
     mul_im_I_ax := LawfulRCOps.mul_im_I
-    toPartialOrder := inferInstance
+    toPartialOrder := partialOrderOfRCOps (R := R) (K := R)
     le_iff_re_im := LawfulRCOps.le_iff_re_im
     toDecidableEq := LawfulDataRCOps.decEq (R := R) (K := R) }
 

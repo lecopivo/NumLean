@@ -1,4 +1,4 @@
-import NumLean.Algebra.Float
+import NumLean.Data.Scalars.Float64.Algebra
 
 namespace NumLean
 

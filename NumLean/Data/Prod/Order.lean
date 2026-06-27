@@ -1,4 +1,4 @@
-import NumLean.Algebra.Order
+import NumLean.Interfaces.Order
 import NumLean.Data.Prod.OrderInit
 import Mathlib.Data.Prod.Lex
 

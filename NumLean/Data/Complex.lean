@@ -1,10 +1,6 @@
-import NumLean.Data.Float32Array
+import NumLean.Data.Scalars.Float32.Float32Array
 
 namespace NumLean
-
-@[unbox]
-structure Complex32 where
-  (re im : Float32)
 
 @[unbox]
 structure Complex64 where

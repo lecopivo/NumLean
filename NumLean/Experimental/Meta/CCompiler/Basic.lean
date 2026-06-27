@@ -1,7 +1,7 @@
 import Lean
 import Lean.Compiler.LCNF.ToDecl
 import Batteries.Data.FloatArray
-import NumLean.Data.Float32Array
+import NumLean.Data.Scalars.Float32.Float32Array
 import NumLean.Data.ScalarArrays
 import NumLean.Meta.ForAll
 

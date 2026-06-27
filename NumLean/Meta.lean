@@ -1,4 +1,5 @@
 import NumLean.Meta.ForAll
+import NumLean.Meta.GetElemSetElemLinter
 import NumLean.Meta.HierarchyGraph
 import NumLean.Meta.RewriteBy
 import NumLean.Meta.Visualize

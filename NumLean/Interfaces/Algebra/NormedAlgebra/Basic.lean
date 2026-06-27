@@ -7,6 +7,8 @@ namespace NumLean
 class NormedAlgebraOps (R : Type u) (A : Type v) extends SMul R A where
   algebraMap : R → A
 
+attribute [instance 200] NormedAlgebraOps.toSMul
+
 @[hierarchy_graph algebra_lawful]
 class LawfulNormedAlgebraOps {RR : outParam (Type u)} {RA : outParam (Type v)}
     (R : Type w) (A : Type x) [NormedFieldOps RR R] [NormedRingOps RA A]

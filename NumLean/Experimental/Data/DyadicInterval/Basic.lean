@@ -1,5 +1,5 @@
-import NumLean.Algebra.Instances
-import NumLean.Algebra.Ops
+import NumLean.Data.Scalars.Real.Algebra
+import NumLean.Interfaces.Algebra.RNorm
 import NumLean.Experimental.Data.DyadicInterval.ExtDyadic
 import NumLean.Experimental.Interfaces.Interval
 
@@ -85,12 +85,12 @@ instance {prec : Option Int} : LE (DyadicInterval prec) := ⟨le⟩
 instance {prec : Option Int} : LT (DyadicInterval prec) := ⟨lt⟩
 
 instance {prec : Option Int} (i j : DyadicInterval prec) : Decidable (i ≤ j) := by
-  cases i <;> cases j
+  cases i; cases j
   rename_i ilo ihi jlo jhi
   cases ihi <;> cases jlo <;> simp [LE.le, le] <;> infer_instance
 
 instance {prec : Option Int} (i j : DyadicInterval prec) : Decidable (i < j) := by
-  cases i <;> cases j
+  cases i; cases j
   rename_i ilo ihi jlo jhi
   cases ihi <;> cases jlo <;> simp [LT.lt, lt] <;> infer_instance
 
@@ -244,7 +244,7 @@ theorem mul_mk {prec : Option Int} (ilo ihi jlo jhi : Option Dyadic) :
 instance : Interval.LawfulMul (DyadicInterval prec) ℝ where
   mul_mem_interval := by
     intro x y ⟨ilo, ihi⟩ ⟨jlo, jhi⟩ hx hy
-    cases ilo <;> cases ihi <;> cases jlo <;> cases jhi <;> simp at hx hy ⊢ <;> grind
+    cases ilo <;> cases ihi <;> cases jlo <;> cases jhi <;> simp at hx hy ⊢ ; grind
 
 theorem even_pow_le_even_pow_of_nonpos {a b : ℝ} {n : Nat} (hn : Even n)
     (hab : a ≤ b) (hb : b ≤ 0) : b ^ n ≤ a ^ n := by

@@ -1,4 +1,6 @@
 import NumLean.Interfaces.HasFlatRepr.Basic
+import NumLean.Interfaces.Algebra
+import NumLean.Interfaces.Module
 
 namespace NumLean
 
@@ -58,15 +60,15 @@ class LawfulSMul (R : Type u) (X : Type v) (Ks : Nat → Type w) {K : Type z} {n
   getComp_smul (a : R) (x : X) (i : Nat) (h : i < nX) :
     getComp (Ks := Ks) (K := K) (a • x) i h = a • getComp (Ks := Ks) (K := K) x i h
 
-class LawfulAddMonoidOps (R : Type u) (X : Type v) (Ks : Nat → Type w) {K : Type z}
+class LawfulAddMonoidOps (X : Type v) (Ks : Nat → Type w) {K : Type z}
     {nX : Nat} [VectorType Ks K] [HasFlatRepr X Ks nX]
-    [Zero X] [Zero K] [Add X] [Add K] [SMul R X] [SMul R K] : Prop extends
-    LawfulZero X Ks, LawfulAdd X Ks, LawfulSMul R X Ks
+    [RingOps K] [AddMonoidOps X] [SMul K X] [LawfulModuleOps K X] : Prop extends
+    LawfulZero X Ks, LawfulAdd X Ks, LawfulSMul K X Ks
 
-class LawfulAddGroupOps (R : Type u) (X : Type v) (Ks : Nat → Type w) {K : Type z}
+class LawfulAddGroupOps (X : Type v) (Ks : Nat → Type w) {K : Type z}
     {nX : Nat} [VectorType Ks K] [HasFlatRepr X Ks nX]
-    [Zero X] [Zero K] [Add X] [Add K] [Sub X] [Sub K] [SMul R X] [SMul R K] : Prop
-    extends LawfulAddMonoidOps R X Ks, LawfulSub X Ks
+    [RingOps K] [AddGroupOps X] [SMul K X] [LawfulModuleOps K X] : Prop
+    extends LawfulAddMonoidOps X Ks, LawfulSub X Ks, LawfulNeg X Ks
 
 class LawfulPowNat (X : Type u) (Ks : Nat → Type v) {K : Type w} {nX : Nat}
     [VectorType Ks K] [HasFlatRepr X Ks nX] [NatPow X] [NatPow K] : Prop where
@@ -117,9 +119,9 @@ instance [Div R] : LawfulDiv R Rs where
 instance {S : Type w} [SMul S R] : LawfulSMul S R Rs where
   getComp_smul := by intros; rfl
 
-instance {S : Type w} [Zero R] [Add R] [SMul S R] : LawfulAddMonoidOps S R Rs where
+instance [RingOps R] [LawfulModuleOps R R] : LawfulAddMonoidOps R Rs where
 
-instance {S : Type w} [Zero R] [Add R] [Sub R] [SMul S R] : LawfulAddGroupOps S R Rs where
+instance [RingOps R] [LawfulModuleOps R R] : LawfulAddGroupOps R Rs where
 
 instance [NatPow R] : LawfulPowNat R Rs where
   getComp_pow_nat := by intros; rfl

@@ -69,6 +69,7 @@ variable {X : Type u} {Ks : Nat → Type v} {K : Type w} {nX : Nat}
   [VectorType Ks K] [HasFlatRepr X Ks nX]
 
 attribute [simp]
+  getComp_get_eq_vector_get
   vector_get_set_eq
   vector_get_set_ne
   vector_get_push_lt

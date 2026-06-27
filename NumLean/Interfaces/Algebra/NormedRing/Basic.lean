@@ -8,6 +8,8 @@ namespace NumLean
 class NormedRingOps (R : outParam (Type u)) (K : Type v) extends
     NormedAddGroupOps R K, RingOps K
 
+attribute [instance 200] NormedRingOps.toNormedAddGroupOps NormedRingOps.toRingOps
+
 @[hierarchy_graph algebra_lawful]
 class LawfulDataNormedRingOps {R : outParam (Type u)} (K : Type v)
     [NormedRingOps R K] extends LawfulDataNormedAddGroupOps K
@@ -18,6 +20,6 @@ class LawfulNormedRingOps {R : outParam (Type u)} (K : Type v) [NormedRingOps R 
   dist_eq : ∀ x y : K, dist x y = ‖-x + y‖
   norm_mul_le : ∀ a b : K, ‖a * b‖ ≤ ‖a‖ * ‖b‖
 
-instance [RNorm K R] [RingOps K] : NormedRingOps R K where
+instance (priority := 50) [RNorm K R] [RingOps K] : NormedRingOps R K where
 
 end NumLean

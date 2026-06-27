@@ -5,12 +5,12 @@ namespace Interfaces
 namespace Algebra
 
 @[hierarchy_graph]
-instance (priority := 100) instAddMonoidOpsOfAddCommMonoid {K : Type u}
+instance (priority := 50) instAddMonoidOpsOfAddCommMonoid {K : Type u}
     [inst : AddCommMonoid K] : AddMonoidOps K where
   nsmul := inst.nsmul
 
 @[hierarchy_graph]
-instance (priority := 100) instLawfulAddMonoidOpsOfAddCommMonoid {K : Type u}
+instance (priority := 50) instLawfulAddMonoidOpsOfAddCommMonoid {K : Type u}
     [inst : AddCommMonoid K] : LawfulAddMonoidOps K where
   add_assoc := inst.add_assoc
   zero_add := inst.zero_add
@@ -20,7 +20,7 @@ instance (priority := 100) instLawfulAddMonoidOpsOfAddCommMonoid {K : Type u}
   add_comm := inst.add_comm
 
 @[hierarchy_graph]
-instance (priority := 50) instAddCommMonoidOfOps {K : Type u} [inst : AddMonoidOps K]
+instance (priority := 30) instAddCommMonoidOfOps {K : Type u} [inst : AddMonoidOps K]
     [LawfulAddMonoidOps K] : AddCommMonoid K where
   add_assoc := LawfulAddMonoidOps.add_assoc
   zero_add := LawfulAddMonoidOps.zero_add
@@ -35,12 +35,12 @@ example {K : Type u} [inst : AddCommMonoid K] :
   rfl
 
 @[hierarchy_graph]
-instance (priority := 100) instMonoidOpsOfCommMonoid {K : Type u} [inst : CommMonoid K] :
+instance (priority := 50) instMonoidOpsOfCommMonoid {K : Type u} [inst : CommMonoid K] :
     MonoidOps K where
   npow := inst.npow
 
 @[hierarchy_graph]
-instance (priority := 100) instLawfulMonoidOpsOfCommMonoid {K : Type u} [inst : CommMonoid K] :
+instance (priority := 50) instLawfulMonoidOpsOfCommMonoid {K : Type u} [inst : CommMonoid K] :
     LawfulMonoidOps K where
   mul_assoc := inst.mul_assoc
   one_mul := inst.one_mul
@@ -50,7 +50,7 @@ instance (priority := 100) instLawfulMonoidOpsOfCommMonoid {K : Type u} [inst : 
   mul_comm := inst.mul_comm
 
 @[hierarchy_graph]
-instance (priority := 50) instCommMonoidOfOps {K : Type u} [inst : MonoidOps K]
+instance (priority := 30) instCommMonoidOfOps {K : Type u} [inst : MonoidOps K]
     [LawfulMonoidOps K] : CommMonoid K where
   mul_assoc := LawfulMonoidOps.mul_assoc
   one_mul := LawfulMonoidOps.one_mul
@@ -65,13 +65,13 @@ example {K : Type u} [inst : CommMonoid K] :
   rfl
 
 @[hierarchy_graph]
-instance (priority := 100) instAddGroupOpsOfAddCommGroup {K : Type u}
+instance (priority := 50) instAddGroupOpsOfAddCommGroup {K : Type u}
     [inst : AddCommGroup K] : AddGroupOps K where
   nsmul := inst.nsmul
   zsmul := inst.zsmul
 
 @[hierarchy_graph]
-instance (priority := 100) instLawfulAddGroupOpsOfAddCommGroup {K : Type u}
+instance (priority := 50) instLawfulAddGroupOpsOfAddCommGroup {K : Type u}
     [inst : AddCommGroup K] : LawfulAddGroupOps K where
   add_assoc := inst.add_assoc
   zero_add := inst.zero_add
@@ -86,7 +86,7 @@ instance (priority := 100) instLawfulAddGroupOpsOfAddCommGroup {K : Type u}
   neg_add_cancel := inst.neg_add_cancel
 
 @[hierarchy_graph]
-instance (priority := 50) instAddCommGroupOfOps {K : Type u} [inst : AddGroupOps K]
+instance (priority := 30) instAddCommGroupOfOps {K : Type u} [inst : AddGroupOps K]
     [LawfulAddGroupOps K] : AddCommGroup K where
   add_assoc := LawfulAddMonoidOps.add_assoc
   zero_add := LawfulAddMonoidOps.zero_add
@@ -107,13 +107,13 @@ example {K : Type u} [inst : AddCommGroup K] :
   rfl
 
 @[hierarchy_graph]
-instance (priority := 100) instGroupOpsOfCommGroup {K : Type u} [inst : CommGroup K] :
+instance (priority := 50) instGroupOpsOfCommGroup {K : Type u} [inst : CommGroup K] :
     GroupOps K where
   npow := inst.npow
   zpow := inst.zpow
 
 @[hierarchy_graph]
-instance (priority := 100) instLawfulGroupOpsOfCommGroup {K : Type u} [inst : CommGroup K] :
+instance (priority := 50) instLawfulGroupOpsOfCommGroup {K : Type u} [inst : CommGroup K] :
     LawfulGroupOps K where
   mul_assoc := inst.mul_assoc
   one_mul := inst.one_mul
@@ -128,7 +128,7 @@ instance (priority := 100) instLawfulGroupOpsOfCommGroup {K : Type u} [inst : Co
   inv_mul_cancel := inst.inv_mul_cancel
 
 @[hierarchy_graph]
-instance (priority := 50) instCommGroupOfOps {K : Type u} [inst : GroupOps K]
+instance (priority := 30) instCommGroupOfOps {K : Type u} [inst : GroupOps K]
     [LawfulGroupOps K] : CommGroup K where
   mul_assoc := LawfulMonoidOps.mul_assoc
   one_mul := LawfulMonoidOps.one_mul

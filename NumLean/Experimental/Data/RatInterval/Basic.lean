@@ -1,6 +1,6 @@
 import Mathlib.Tactic
-import NumLean.Algebra.Instances
-import NumLean.Algebra.Ops
+import NumLean.Data.Scalars.Real.Algebra
+import NumLean.Interfaces.Algebra.RNorm
 import NumLean.Experimental.Interfaces.Interval
 
 namespace NumLean

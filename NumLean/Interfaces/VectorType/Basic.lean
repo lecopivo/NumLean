@@ -14,17 +14,17 @@ class VectorType (As : Nat → Type u) (A : outParam (Type w)) where
 
   emptyWithCapacity (c : Nat) : As 0
 
-  uget {n} (as : As n) (i : USize) (h : i.toNat < n) : A
-  uget_spec {n} (as : As n) (i : USize) (h : i.toNat < n) :
-    uget as i h = (toVector as)[i.toNat]'h
+  -- uget {n} (as : As n) (i : USize) (h : i.toNat < n) : A
+  -- uget_spec {n} (as : As n) (i : USize) (h : i.toNat < n) :
+  --   uget as i h = (toVector as)[i.toNat]'h
 
   get {n} (as : As n) (i : Nat) (h : i < n) : A
   get_spec {n} (as : As n) (i : Nat) (h : i < n) :
     get as i h = (toVector as)[i]'h
 
-  uset {n} (as : As n) (i : USize) (a : A) (h : i.toNat < n) : As n
-  uset_spec {n} (as : As n) (i : USize) (a : A) (h : i.toNat < n) :
-    toVector (uset as i a h) = (toVector as).set i.toNat a h
+  -- uset {n} (as : As n) (i : USize) (a : A) (h : i.toNat < n) : As n
+  -- uset_spec {n} (as : As n) (i : USize) (a : A) (h : i.toNat < n) :
+  --   toVector (uset as i a h) = (toVector as).set i.toNat a h
 
   set {n} (as : As n) (i : Nat) (a : A) (h : i < n) : As n
   set_spec {n} (as : As n) (i : Nat) (a : A) (h : i < n) :
@@ -65,7 +65,7 @@ theorem fromVector_toVector {n} (as : As n) : fromVector (toVector as) = as :=
   left_inv as
 
 attribute [simp]
-  uset_spec
+  -- uset_spec
   set_spec
   pop_spec
   replicate_spec
@@ -112,9 +112,9 @@ theorem ext {n} (xs ys : As n) : (∀ i, (h : i < n) → get xs i h = get ys i h
   rw [← get_spec xs i hi, ← get_spec ys i hi]
   exact h i hi
 
-theorem uget_eq_getElem {n} (as : As n) (i : USize) (h : i.toNat < n) :
-    uget as i h = (toVector as)[i.toNat]'h :=
-  uget_spec as i h
+-- theorem uget_eq_getElem {n} (as : As n) (i : USize) (h : i.toNat < n) :
+--     uget as i h = (toVector as)[i.toNat]'h :=
+--   uget_spec as i h
 
 theorem get_eq_getElem {n} (as : As n) (i : Nat) (h : i < n) :
     get as i h = (toVector as)[i]'h :=
@@ -139,19 +139,19 @@ theorem get_set_ne {n} (as : As n) {i j : Nat} (a : A) (hi : i < n) (hj : j < n)
   rw [Vector.getElem_set]
   simp [hij]
 
-@[simp]
-theorem uget_uset_eq {n} (as : As n) (i : USize) (a : A) (hi : i.toNat < n) :
-    uget (uset as i a hi) i hi = a := by
-  rw [uget_eq_getElem, uset_spec]
-  exact Vector.getElem_set_self hi
+-- @[simp]
+-- theorem uget_uset_eq {n} (as : As n) (i : USize) (a : A) (hi : i.toNat < n) :
+--     uget (uset as i a hi) i hi = a := by
+--   rw [uget_eq_getElem, uset_spec]
+--   exact Vector.getElem_set_self hi
 
-@[simp]
-theorem uget_uset_ne {n} (as : As n) {i j : USize} (a : A)
-    (hi : i.toNat < n) (hj : j.toNat < n) (hij : i.toNat ≠ j.toNat) :
-    uget (uset as i a hi) j hj = uget as j hj := by
-  rw [uget_eq_getElem, uset_spec, uget_eq_getElem]
-  rw [Vector.getElem_set]
-  simp [hij]
+-- @[simp]
+-- theorem uget_uset_ne {n} (as : As n) {i j : USize} (a : A)
+--     (hi : i.toNat < n) (hj : j.toNat < n) (hij : i.toNat ≠ j.toNat) :
+--     uget (uset as i a hi) j hj = uget as j hj := by
+--   rw [uget_eq_getElem, uset_spec, uget_eq_getElem]
+--   rw [Vector.getElem_set]
+--   simp [hij]
 
 @[simp]
 theorem get_pop {n} (as : As (n + 1)) (i : Nat) (hi : i < n) :
@@ -211,12 +211,12 @@ instance {A : Type u} : VectorType (Vector A) A where
   left_inv _ := rfl
   right_inv _ := rfl
   emptyWithCapacity c := .emptyWithCapacity c
-  uget as i h := as[i.toNat]'h
-  uget_spec _ _ _ := rfl
+  -- uget as i h := as[i.toNat]'h
+  -- uget_spec _ _ _ := rfl
   get as i h := as[i]'h
   get_spec _ _ _ := rfl
-  uset as i a h := as.set i.toNat a h
-  uset_spec _ _ _ _ := rfl
+  -- uset as i a h := as.set i.toNat a h
+  -- uset_spec _ _ _ _ := rfl
   set as i a h := as.set i a h
   set_spec _ _ _ _ := rfl
   pop as := as.pop

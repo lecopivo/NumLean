@@ -9,16 +9,8 @@ instance : SetElem (Vector α n) Nat α (fun _ i => i < n) where
   setElem xs i x h := xs.set i x h
   setElem_valid := by intros; simp
 
-instance : SetElem (Vector α n) (Fin n) α (fun _ _ => True) where
-  setElem xs i x h := xs.set i.1 x i.2
-  setElem_valid := by intros; simp
+instance : LawfulSetElem (Vector α n) Nat where
+  getElem_setElem_eq := by intros; simp [setElem]
+  getElem_setElem_neq := by intros; simp_all [setElem]
 
 namespace Vector
-
-@[simp]
-theorem setElem_fin_eq_set (xs : Vector α n) {x} (i : Fin n) :
-    setElem xs i x (by trivial) = xs.set i.1 x := by rfl
-
-@[simp]
-theorem setElem_nat_eq_set (xs : Vector α n) {x} (i : Nat) (h : i < n) :
-    setElem xs i x h = xs.set i x := by rfl

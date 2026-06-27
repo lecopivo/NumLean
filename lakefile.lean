@@ -34,7 +34,11 @@ lean_lib NumLeanExperimental where
 @[default_target]
 lean_lib NumLeanAll where
 
-lean_lib NumLean.Data.Float32Array where
+lean_lib NumLean.Data.Scalars.Float32.Float32Array where
+  moreLinkLibs := #[libNumLeanNative]
+  precompileModules := true
+
+lean_lib NumLean.Data.Scalars.Float64.Float64Array where
   moreLinkLibs := #[libNumLeanNative]
   precompileModules := true
 

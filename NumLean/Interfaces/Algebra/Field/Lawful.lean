@@ -6,7 +6,7 @@ namespace Interfaces
 namespace Algebra
 
 @[hierarchy_graph]
-instance (priority := 100) instFieldOpsOfField {K : Type u} [inst : _root_.Field K] :
+instance (priority := 50) instFieldOpsOfField {K : Type u} [inst : _root_.Field K] :
     FieldOps K where
   nsmul := inst.nsmul
   npow := inst.npow
@@ -16,7 +16,7 @@ instance (priority := 100) instFieldOpsOfField {K : Type u} [inst : _root_.Field
   qsmul := inst.qsmul
 
 @[hierarchy_graph]
-instance (priority := 100) instLawfulFieldOpsOfField {K : Type u} [inst : _root_.Field K] :
+instance (priority := 50) instLawfulFieldOpsOfField {K : Type u} [inst : _root_.Field K] :
     LawfulFieldOps K where
   add_assoc := inst.add_assoc
   zero_add := inst.zero_add
@@ -56,7 +56,7 @@ instance (priority := 100) instLawfulFieldOpsOfField {K : Type u} [inst : _root_
   qsmul_def := inst.qsmul_def
 
 @[hierarchy_graph]
-instance (priority := 50) instFieldOfOps {K : Type u} [inst : FieldOps K] [LawfulFieldOps K] :
+instance (priority := 30) instFieldOfOps {K : Type u} [inst : FieldOps K] [LawfulFieldOps K] :
     _root_.Field K where
   mul_comm := LawfulMonoidOps.mul_comm
   div_eq_mul_inv := LawfulFieldOps.div_eq_mul_inv

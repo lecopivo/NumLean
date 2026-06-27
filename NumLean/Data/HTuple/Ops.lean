@@ -1,5 +1,5 @@
 import NumLean.Data.HTuple.Basic
-import NumLean.Algebra.Order
+import NumLean.Interfaces.Order
 
 namespace NumLean
 
