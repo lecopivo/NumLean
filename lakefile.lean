@@ -42,10 +42,6 @@ lean_lib NumLean.Data.Scalars.Float64.Float64Array where
   moreLinkLibs := #[libNumLeanNative]
   precompileModules := true
 
-lean_lib NumLean.Data.FloatArray.TensorOps where
-  moreLinkLibs := #[libNumLeanNative]
-  precompileModules := true
-
 lean_exe floatArrayTensorBenchmark where
   root := `Benchmarks.FloatArrayTensorBenchmark
   supportInterpreter := true

@@ -1,4 +1,3 @@
-import NumLean.Data.Complex
 import NumLean.Data.FinHTuple
 import NumLean.Data.FinHTuple.Basic
 import NumLean.Data.FinHTuple.FinHTupleMap
@@ -8,7 +7,6 @@ import NumLean.Data.FlatVector.Basic
 import NumLean.Data.FlatVector.HasFlatRepr
 import NumLean.Data.FlatVector.Ops
 import NumLean.Data.Scalars.Float32.Float32Array
-import NumLean.Data.FloatArray.TensorOps
 import NumLean.Data.HTuple
 import NumLean.Data.HTuple.Algebra
 import NumLean.Data.HTuple.Basic

@@ -49,11 +49,11 @@ instance [Inhabited K] : HasDefaultFlatRepr (FlatVector X I) Ks (nI * nX) where
   get_toFlatVector_eq_getComp := sorry
   replicate n x :=
     let src : Ks (nI * nX) := x.data
-    let srcMap : Layout h(n * (nI * nX)) h(nI * nX) := sorry
+    let srcMap := Layout.id h(n, (nI * nX)) |>.snd
     -- todo: ideally we can copy to uninitialized memory
     let dst : Ks (n * (nI * nX)) := VectorType.replicate (As:=Ks) (n * (nI * nX)) default
-    let dstMap : Layout h(n * (nI * nX)) h(n * (nI * nX)) := .id _
-    copySlice K src srcMap dst dstMap (by grind)
+    let dstMap := .rowMajor h(n, (nI * nX))
+    copySlice K src srcMap dst dstMap (by sorry)
   get_replicate := sorry
 
 
