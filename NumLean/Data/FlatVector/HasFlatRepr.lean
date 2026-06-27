@@ -1,13 +1,15 @@
 import NumLean.Data.FlatVector.Basic
+import NumLean.Interfaces.TensorType
 
 namespace NumLean
 
 namespace FlatVector
 
 variable {X : Type u} {I : Type v}
-    {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI]
+    {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI] [TensorType Ks]
 
-instance : HasDefaultFlatRepr (FlatVector X I) Ks (nI * nX) where
+open TensorType Tensor in
+instance [Inhabited K] : HasDefaultFlatRepr (FlatVector X I) Ks (nI * nX) where
   toVector x := VectorType.toVector x.data
   fromVector x := { data := VectorType.fromVector (As := Ks) x }
   left_inv := by intros _; simp
@@ -18,30 +20,42 @@ instance : HasDefaultFlatRepr (FlatVector X I) Ks (nI * nX) where
   setComp_spec := by intros; simp [← VectorType.set_spec]
   get {n} xs i h :=
     let src := xs
-    let srcMap : FinHTupleMap h(nI * nX) h(n) := sorry
-    let dst : Ks 0 := VectorType.emptyWithCapacity (nI * nX)
-    let dstMap : FinHTupleMap h(nI * nX) h(nI * nX) := .id h(nI * nX)
-    -- let data := extractSlice (nI * nX) src srcMap dst dstMap (by grind)
-    -- { data }
-    sorry
+    let srcMap : Layout h(nI * nX) h(n) := {
+      offset := i
+      stride := h(h(1))
+      inBounds := sorry
+    }
+    -- todo: ideally we can copy to uninitialized memory
+    let dst : Ks (nI * nX) := VectorType.replicate (As:=Ks) (nI * nX) default
+    let dstMap := Layout.id h(nI * nX)
+    { data := copySlice K src srcMap dst dstMap (by grind) }
   getComp_get_eq_vector_get := sorry
   set {n} xs i x h :=
     let src := x.data
-    let srcMap : FinHTupleMap h(nI * nX) h(nI * nX) := .id h(nI * nX)
+    let srcMap := Layout.id h(nI * nX)
     let dst := xs
-    let dstMap : FinHTupleMap h(nI * nX) h(n) := sorry
-    -- let data := copySlice src srcMap dst dstMap sorry
-    -- data
-    sorry
+    let dstMap : Layout h(nI * nX) h(n) := {
+      offset := i
+      stride := h(h(1))
+      inBounds := sorry
+    }
+    copySlice K src srcMap dst dstMap sorry
   vector_get_set_eq := sorry
   vector_get_set_ne := sorry
-  push := sorry
+  push xs x := VectorType.append xs x.data
   vector_get_push_lt := sorry
   vector_get_push_eq := sorry
-  toFlatVector := sorry
+  toFlatVector xs := xs.data
   get_toFlatVector_eq_getComp := sorry
-  replicate := sorry
+  replicate n x :=
+    let src : Ks (nI * nX) := x.data
+    let srcMap : Layout h(n * (nI * nX)) h(nI * nX) := sorry
+    -- todo: ideally we can copy to uninitialized memory
+    let dst : Ks (n * (nI * nX)) := VectorType.replicate (As:=Ks) (n * (nI * nX)) default
+    let dstMap : Layout h(n * (nI * nX)) h(n * (nI * nX)) := .id _
+    copySlice K src srcMap dst dstMap (by grind)
   get_replicate := sorry
+
 
 end FlatVector
 
