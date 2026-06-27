@@ -201,6 +201,7 @@ set_option maxHeartbeats 1800 in
 example : SMul R R := inferInstance
 
 set_option maxHeartbeats 10000 in
+noncomputable
 example : NormedSpace R (FlatVector R (Fin 10)) := inferInstance
 
 set_option maxHeartbeats 3000 in
