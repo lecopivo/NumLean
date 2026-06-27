@@ -5,3 +5,4 @@ import NumLean.Data.Scalars.Float64.Algebra
 import NumLean.Data.Scalars.Float64.VectorType
 import NumLean.Data.Scalars.Float64.HasFlatRepr
 import NumLean.Data.Scalars.Float64.TensorType
+import NumLean.Data.Scalars.Float64.TensorAlgebra

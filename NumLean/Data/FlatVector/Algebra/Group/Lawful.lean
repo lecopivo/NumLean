@@ -154,13 +154,6 @@ instance [CommRing K] [NormedAddCommGroup X] [Module K X]
       exact sq_eq_zero_iff.mp hi
     exact (sub_eq_zero.mp (norm_eq_zero.mp hnorm)).symm
 
-noncomputable
-instance [NormedField K] [NormedAddCommGroup X] [Module K X]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
-    [HasFlatRepr.LawfulAddGroupOps (nX := nX) X Ks] :
-    NormedSpace K (FlatVector X I) where
-  norm_smul_le := sorry
-
 section Normed
 
 variable [CommRing K] [NormedAddCommGroup X] [Module K X]
@@ -173,9 +166,10 @@ theorem norm_eq_sqrt_sum (xs : FlatVector X I) : ‖xs‖ = Real.sqrt (∑ i : I
 end Normed
 
 
+noncomputable
 instance [NormedField K] [NormedAddCommGroup X] [NormedSpace K X]
     [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
-    [HasFlatRepr.LawfulAddGroupOps X Ks] :
+    [HasFlatRepr.LawfulAddGroupOps (nX := nX) X Ks] :
     NormedSpace K (FlatVector X I) where
   norm_smul_le := by
     intros

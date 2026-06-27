@@ -203,8 +203,9 @@ theorem get_tensorAxpy {m n : Nat} {shape : Shape r} (a : K)
     (Vector.getElem_tensorAxpy (a := a) (xs := toVector xs) (xmap := xmap)
       (ys := toVector ys) (ymap := ymap) (hymap := hymap) idx hidx)
 
-@[simp]
-theorem get_tensorAxpySelf {n : Nat} {shape : Shape r} (a : K)
+
+set_option linter.unusedSectionVars false in
+proof_wanted get_tensorAxpySelf {n : Nat} {shape : Shape r} (a : K)
     (data : Ks n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
     (hdst : dstMap.Injective) (h : Disjoint srcMap.range dstMap.range)
     (idx : Nat) (hidx : idx < n) :
@@ -215,11 +216,7 @@ theorem get_tensorAxpySelf {n : Nat} {shape : Shape r} (a : K)
       VectorType.get data idx hidx
         + a * VectorType.get data (srcMap (dstMap.rangeNatInv idx hi)) (by get_elem_tactic)
     else
-      VectorType.get data idx hidx := by
-  rw [VectorType.get_spec, LawfulTensorRingOps.toVector_tensorAxpySelf]
-  simpa only [VectorType.get_spec] using
-    (Vector.getElem_tensorAxpySelf (a := a) (data := toVector data) (srcMap := srcMap)
-      (dstMap := dstMap) (hdst := hdst) (h := h) idx hidx)
+      VectorType.get data idx hidx
 
 @[simp]
 theorem get_tensorScal {n : Nat} {shape : Shape r} (a : K)
@@ -296,8 +293,8 @@ theorem get_tensorGemv [LawfulRingOps K] {an xn yn : Nat}
       (amap := amap) (x := toVector x) (xmap := xmap) (y := toVector y)
       (ymap := ymap) (hymap := hymap) idx hidx)
 
-@[simp]
-theorem get_tensorGer {an xn yn : Nat}
+set_option linter.unusedSectionVars false in
+proof_wanted get_tensorGer {an xn yn : Nat}
     {rr rc : Rank} {rows : Shape rr} {cols : Shape rc}
     (alpha : K)
     (x : Ks xn) (xmap : Layout rows h(xn))
@@ -313,15 +310,10 @@ theorem get_tensorGer {an xn yn : Nat}
         + alpha * VectorType.get x (xmap i) (by get_elem_tactic)
           * VectorType.get y (ymap j) (by get_elem_tactic)
     else
-      VectorType.get A idx hidx := by
-  rw [VectorType.get_spec, LawfulTensorRingOps.toVector_tensorGer]
-  simpa only [VectorType.get_spec] using
-    (Vector.getElem_tensorGer (alpha := alpha) (x := toVector x) (xmap := xmap)
-      (y := toVector y) (ymap := ymap) (A := toVector A) (amap := amap)
-      (hamap := hamap) idx hidx)
+      VectorType.get A idx hidx
 
-@[simp]
-theorem get_tensorGemm [LawfulRingOps K] {an bn cn : Nat}
+set_option linter.unusedSectionVars false in
+proof_wanted get_tensorGemm [LawfulRingOps K] {an bn cn : Nat}
     {ri rj rk : Rank}
     {is : Shape ri} {js : Shape rj} {ks : Shape rk}
     (alpha beta : K)
@@ -340,13 +332,7 @@ theorem get_tensorGemm [LawfulRingOps K] {an bn cn : Nat}
       +
       beta * VectorType.get C idx hidx
     else
-      VectorType.get C idx hidx := by
-  letI : CommRing K := inferInstance
-  rw [VectorType.get_spec, LawfulTensorRingOps.toVector_tensorGemm]
-  simpa only [VectorType.get_spec] using
-    (Vector.getElem_tensorGemm (alpha := alpha) (beta := beta) (A := toVector A)
-      (amap := amap) (B := toVector B) (bmap := bmap) (C := toVector C)
-      (cmap := cmap) (hcmap := hcmap) idx hidx)
+      VectorType.get C idx hidx
 
 theorem tensorSum_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
     [LawfulRingOps K] {n : Nat}
@@ -407,6 +393,7 @@ theorem tensorDot_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
     (tensorDot_eq_sum (Ks:=Ks) (K:=K) (r:=.leaf) (xs := xs) (xmap := Layout.id h(n))
       (ys := ys) (ymap := Layout.id h(n)))
 
+
 @[simp mid+1]
 theorem get_tensorMul_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
     {n : Nat}
@@ -428,9 +415,9 @@ theorem get_tensorMul_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .l
       · simp
     exact False.elim (hi hmem)
 
-/-
-@[simp]
-theorem get_tensorGemv_rowMajor [LawfulRingOps K]
+
+set_option linter.unusedSectionVars false in
+proof_wanted get_tensorGemv_rowMajor [LawfulRingOps K]
     {ra rc : Rank} {rows : Shape ra} {cols : Shape rc}
     (alpha beta : K)
     (A : Ks (rows.prod cols).numel)
@@ -449,16 +436,11 @@ theorem get_tensorGemv_rowMajor [LawfulRingOps K]
         (HTuple.rowMajorIndex_lt_numel (by get_elem_tactic))
         * VectorType.get x (j.rowMajorIndex cols) (HTuple.rowMajorIndex_lt_numel (by get_elem_tactic)))
     +
-    beta * VectorType.get y (i.rowMajorIndex rows) (HTuple.rowMajorIndex_lt_numel hi) := by
-  rw [get_tensorGemv]
-  letI : CommRing K := inferInstance
-  by_cases hmem : i.rowMajorIndex rows ∈ (FinHTupleMap.rowMajorMap rows).rangeNat
-  · have hinv := rowMajorMap_rangeNatInv_val (shape := rows) hi hmem
-    simp [hmem, hinv]
-  · exact False.elim (hmem (rowMajorMap_mem_rangeNat hi))
+    beta * VectorType.get y (i.rowMajorIndex rows) (HTuple.rowMajorIndex_lt_numel hi)
 
-@[simp]
-theorem get_tensorGer_rowMajor
+
+set_option linter.unusedSectionVars false in
+proof_wanted get_tensorGer_rowMajor
     {rr rc : Rank} {rows : Shape rr} {cols : Shape rc}
     (alpha : K)
     (x : Ks rows.numel) (y : Ks cols.numel)
@@ -477,18 +459,11 @@ theorem get_tensorGer_rowMajor
     VectorType.get A ((i.prod j).rowMajorIndex (rows.prod cols))
       (HTuple.rowMajorIndex_lt_numel (by get_elem_tactic))
       + alpha * VectorType.get x (i.rowMajorIndex rows) (HTuple.rowMajorIndex_lt_numel hi)
-        * VectorType.get y (j.rowMajorIndex cols) (HTuple.rowMajorIndex_lt_numel hj) := by
-  rw [get_tensorGer]
-  by_cases hmem : (i.prod j).rowMajorIndex (rows.prod cols) ∈
-      (FinHTupleMap.rowMajorMap (rows.prod cols)).rangeNat
-  · have hinv := rowMajorMap_rangeNatInv_val (shape := rows.prod cols)
-      (i := i.prod j) (by get_elem_tactic) hmem
-    simp [hmem, hinv]
-  · exact False.elim (hmem (rowMajorMap_mem_rangeNat (shape := rows.prod cols)
-      (i := i.prod j) (by get_elem_tactic)))
+        * VectorType.get y (j.rowMajorIndex cols) (HTuple.rowMajorIndex_lt_numel hj)
 
-@[simp]
-theorem get_tensorGemm_rowMajor [LawfulRingOps K]
+
+set_option linter.unusedSectionVars false in
+proof_wanted get_tensorGemm_rowMajor [LawfulRingOps K]
     {ri rj rk : Rank}
     {is : Shape ri} {js : Shape rj} {ks : Shape rk}
     (alpha beta : K)
@@ -513,16 +488,7 @@ theorem get_tensorGemm_rowMajor [LawfulRingOps K]
           (HTuple.rowMajorIndex_lt_numel (by get_elem_tactic)))
     +
     beta * VectorType.get C ((i.prod j).rowMajorIndex (is.prod js))
-      (HTuple.rowMajorIndex_lt_numel (by get_elem_tactic)) := by
-  rw [get_tensorGemm]
-  letI : CommRing K := inferInstance
-  by_cases hmem : (i.prod j).rowMajorIndex (is.prod js) ∈
-      (FinHTupleMap.rowMajorMap (is.prod js)).rangeNat
-  · have hinv := rowMajorMap_rangeNatInv_val (shape := is.prod js)
-      (i := i.prod j) (by get_elem_tactic) hmem
-    simp [hmem, hinv]
-  · exact False.elim (hmem (rowMajorMap_mem_rangeNat (shape := is.prod js)
-      (i := i.prod j) (by get_elem_tactic)))
--/
+      (HTuple.rowMajorIndex_lt_numel (by get_elem_tactic))
+
 
 end TensorRingOps

@@ -427,11 +427,11 @@ For very `y ∈ f.range` there is `x ∈ 0...src` such that `f x = y`. -/
 def rangeNat {m} (f : FinHTupleMap src h(m)) : Set Nat :=
   Set.range fun i : FinHTuple src => (f i.1)
 
-/-- Scalar-valued view of a bounded map on a subtype domain, matching `Fold.fold_eq_vector_map'`. -/
+/-- Scalar-valued view of a bounded map on a subtype domain, matching `Fold.fold_ext`. -/
 def indexFun {m} (f : FinHTupleMap src h(m)) : {i' // i' ∈ ((0 : HTuple Nat p)...src)} → Nat :=
   fun i => (f i.1).toScalar
 
-/-- Tuple-valued view of a bounded map on a subtype domain, matching `Fold.fold_eq_vector_map'`. -/
+/-- Tuple-valued view of a bounded map on a subtype domain, matching `Fold.fold_ext`. -/
 def tupleFun (f : FinHTupleMap src dst) : {i' // i' ∈ ((0 : HTuple Nat p)...src)} → HTuple Nat q :=
   fun i => f i.1
 

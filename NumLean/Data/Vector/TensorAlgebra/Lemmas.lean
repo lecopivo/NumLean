@@ -30,15 +30,12 @@ theorem getElem_tensorAxpy [Add K] [Mul K] {m n : Nat} {r : Rank} {shape : Shape
     else
       ys[idx] := by
   simp only [tensorAxpy, Id.run, bind, pure, HTuple.getElem_leaf, HTuple.setElem_leaf]
-  erw[fold_ext (shape := shape) (init := ys)  (j := idx)
+  erw[Fold.fold_layout_ext (shape := shape) (init := ys)  (j := idx)
         (f := fun i hi yi => yi + a * xs[(xmap i : Nat)])
         (map := ymap) (hmap := hymap)]
-  case himap => intros; get_elem_tactic
-  case hj => intros; get_elem_tactic
 
 
-@[simp]
-theorem getElem_tensorAxpySelf [Add K] [Mul K] {n : Nat} {r : Rank} {shape : Shape r} (a : K)
+proof_wanted getElem_tensorAxpySelf [Add K] [Mul K] {n : Nat} {r : Rank} {shape : Shape r} (a : K)
     (data : Vector K n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
     (hdst : dstMap.Injective) (h : Disjoint srcMap.range dstMap.range)
     (idx : Nat) (hidx : idx < n) :
@@ -47,8 +44,7 @@ theorem getElem_tensorAxpySelf [Add K] [Mul K] {n : Nat} {r : Rank} {shape : Sha
     if hi : idx ∈ dstMap.rangeNat then
       data[idx] + a * data[srcMap (dstMap.rangeNatInv idx hi)]
     else
-      data[idx] := by
-  sorry
+      data[idx]
 
 
 @[simp]
@@ -62,11 +58,9 @@ theorem getElem_tensorScal [Mul K] {n : Nat} {r : Rank} {shape : Shape r} (a : K
     else
       xs[idx] := by
   simp only [tensorScal, Id.run, bind, pure, HTuple.getElem_leaf, HTuple.setElem_leaf]
-  erw[fold_ext (shape := shape) (init := xs)  (j := idx)
+  erw[Fold.fold_layout_ext (shape := shape) (init := xs)  (j := idx)
         (f := fun i hi xi => a * xi)
         (map := xmap) (hmap := hxmap)]
-  case himap => intros; get_elem_tactic
-  case hj => intros; get_elem_tactic
 
 
 theorem tensorDot_eq_sum [AddCommMonoid K] [Mul K] {m n : Nat} {r : Rank}
@@ -94,11 +88,9 @@ theorem getElem_tensorMul [Mul K] {m n : Nat} {r : Rank} {shape : Shape r}
     else
       ys[idx] := by
   simp only [tensorMul, Id.run, bind, pure, HTuple.getElem_leaf, HTuple.setElem_leaf]
-  erw[fold_ext (shape := shape) (init := ys)  (j := idx)
+  erw[Fold.fold_layout_ext (shape := shape) (init := ys)  (j := idx)
         (f := fun i hi yi => yi * xs[(xmap i : Nat)])
         (map := ymap) (hmap := hymap)]
-  case himap => intros; get_elem_tactic
-  case hj => intros; get_elem_tactic
 
 
 -- todo: we need variant of Fold.fold_eq_sum
@@ -121,11 +113,9 @@ theorem getElem_tensorDiv [Div K] {m n : Nat} {r : Rank} {shape : Shape r}
     else
       ys[idx] := by
   simp only [tensorDiv, Id.run, bind, pure, HTuple.getElem_leaf, HTuple.setElem_leaf]
-  erw[fold_ext (shape := shape) (init := ys)  (j := idx)
+  erw[Fold.fold_layout_ext (shape := shape) (init := ys)  (j := idx)
         (f := fun i hi yi => yi / xs[(xmap i : Nat)])
         (map := ymap) (hmap := hymap)]
-  case himap => intros; get_elem_tactic
-  case hj => intros; get_elem_tactic
 
 
 @[simp]
@@ -139,11 +129,9 @@ theorem getElem_tensorInv [Inv K] {n : Nat} {r : Rank} {shape : Shape r}
     else
       xs[idx] := by
   simp only [tensorInv, Id.run, bind, pure, HTuple.getElem_leaf, HTuple.setElem_leaf]
-  erw[fold_ext (shape := shape) (init := xs)  (j := idx)
+  erw[Fold.fold_layout_ext (shape := shape) (init := xs)  (j := idx)
         (f := fun i hi xi => xi⁻¹)
         (map := xmap) (hmap := hxmap)]
-  case himap => intros; get_elem_tactic
-  case hj => intros; get_elem_tactic
 
 
 @[simp]
@@ -170,19 +158,16 @@ def getElem_tensorGemv [CommRing K] {an xn yn : Nat}
           (range := 0...cols)
           (f := fun j hj => A[amap (HTuple.prod i j)] * x[xmap j])
           (init := (0 : K)))]
-  erw[fold_ext (shape := rows) (init := y)  (j := idx)
+  erw[Fold.fold_layout_ext (shape := rows) (init := y)  (j := idx)
         (f := fun i hi yi => ( (alpha * (0 + ∑ j ∈ (entries 0...cols).toFinset,
                                                A[amap (HTuple.prod i j)] * x[xmap j]))
                                +
                                beta * yi))
         (map := ymap) (hmap := hymap)]
-  case himap => intros; get_elem_tactic
-  case hj => intros; get_elem_tactic
   simp
 
 
-@[simp]
-theorem getElem_tensorGer [Add K] [Mul K] {an xn yn : Nat}
+proof_wanted getElem_tensorGer [Add K] [Mul K] {an xn yn : Nat}
     {rr rc : Rank} {rows : Shape rr} {cols : Shape rc}
     (alpha : K)
     (x : Vector K xn) (xmap : Layout rows h(xn))
@@ -195,19 +180,17 @@ theorem getElem_tensorGer [Add K] [Mul K] {an xn yn : Nat}
       let ⟨.prod i j, hij⟩ := amap.rangeNatInv idx h
       A[idx] + alpha * x[xmap i] * y[ymap j]
     else
-      A[idx] := by
-  simp only [tensorGer, Id.run, bind, pure, HTuple.getElem_leaf, HTuple.setElem_leaf]
+      A[idx]
+  -- simp only [tensorGer, Id.run, bind, pure, HTuple.getElem_leaf, HTuple.setElem_leaf]
   -- todo: merge the two loops
-  sorry
-  -- erw[fold_ext (shape := (.prod rows cols)) (init := A)  (j := idx)
+  -- erw[Fold.fold_layout_ext (shape := (.prod rows cols)) (init := A)  (j := idx)
   --       (f := fun (.prod i j) hi Aij => Aij + alpha * x[(xmap i : Nat)] * y[(ymap j : Nat)])
   --       (map := amap) (hmap := hamap)]
   -- case himap => intros; get_elem_tactic
   -- case hj => intros; get_elem_tactic
 
 
-@[simp]
-theorem getElem_tensorGemm [CommRing K]  {an bn cn : Nat}
+proof_wanted getElem_tensorGemm [CommRing K]  {an bn cn : Nat}
     {ri rj rk : Rank}
     {is : Shape ri} {js : Shape rj} {ks : Shape rk}
     (alpha beta : K)
@@ -224,4 +207,4 @@ theorem getElem_tensorGemm [CommRing K]  {an bn cn : Nat}
       +
       beta * C[idx]
     else
-      C[idx] := sorry
+      C[idx]

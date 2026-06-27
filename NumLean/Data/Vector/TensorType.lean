@@ -11,25 +11,6 @@ namespace Vector
 
 open Tensor
 
--- todo: prove this and move somewhere else
-open Fold Classical Function in
-theorem fold_ext {r : Rank} {shape : Shape r}
-    {X Xs dom} [GetElem Xs Nat X dom] [SetElem Xs Nat X dom] [LawfulSetElem Xs Nat]
-    (map : Layout shape h(n)) (init : Xs)
-    (hmap : map.Injective)
-    (f : (i : HTuple ℕ r) → (i <ₑ shape) → X → X)
-    (himap : ∀ x i (hi : i <ₑ shape), dom x (map i))
-    (j : Nat) (hj : ∀ x, dom x j) :
-    getElem (Fold.fold (0...shape) (init := init) (fun i hi xs =>
-      setElem xs (map i : Nat) (f i (by grind) xs[(map i : Nat)]) (himap _ _ (by grind)))) j (hj _)
-    =
-    if hj : j ∈ map.rangeNat then
-      let ⟨i,hi⟩ := map.rangeNatInv j hj
-      f i hi (init[j]'(by grind))
-    else
-      init[j]'(by grind) := by sorry
-
-
 /-- Copy a splice from `src` to `dst` i.e. dst[dstMap i] := src[srcMap i].
 
 This is the reference implementation of `TensorType.copySlice`. -/
@@ -83,12 +64,7 @@ def swapSliceSelf {α} {n : Nat} {r : Rank} {shape : Shape r}
     Vector α n := Id.run do
   let mut data := data
   for_all i in 0...shape do
-    let k := map i
-    let k' := map' i
-    let x := data[k]
-    let x' := data[k']
-    data[k] := x'
-    data[k'] := x
+    data := data.swap (map i) (map' i)
   return data
 
 
@@ -105,10 +81,8 @@ theorem getElem_copySlice {K n m} {r : Rank} {shape : Shape r}
     else
       dst[i] := by
   simp [copySlice, Id.run, bind, pure]
-  erw[fold_ext (init := dst) (f := fun i h _ => src[(srcMap i)])]
+  erw[Fold.fold_layout_ext (init := dst) (f := fun i h _ => src[(srcMap i)])]
   case hmap => assumption
-  case hj => intros; assumption
-  case himap => intros; get_elem_tactic
   rfl
 
 
@@ -116,7 +90,7 @@ open Classical in
 /-- Copy a splice from `src` to `dst` i.e. dst[dstMap i] := src[srcMap i].
 
 This is the reference implementation of `TensorType.copySlice`. -/
-theorem getElem_copySliceSelf {α} {m n : Nat} {r : Rank} {shape : Shape r}
+proof_wanted getElem_copySliceSelf {α} {m n : Nat} {r : Rank} {shape : Shape r}
     (data : Vector α n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
     (hdst : dstMap.Injective) (h : Disjoint srcMap.range dstMap.range)
     (j : Nat) (hj : j < n) :
@@ -125,14 +99,14 @@ theorem getElem_copySliceSelf {α} {m n : Nat} {r : Rank} {shape : Shape r}
     if hi : i ∈ dstMap.rangeNat then
       data[srcMap (dstMap.rangeNatInv i hi)]
     else
-      data[j] := sorry
+      data[j]
 
 
 open Classical in
 /-- Copy a splice from `src` to `dst` i.e. dst[dstMap i] := src[srcMap i].
 
 This is the reference implementation of `TensorType.copySlice`. -/
-theorem getElem_swapSliceSelf {α} {n : Nat} {r : Rank} {shape : Shape r}
+proof_wanted getElem_swapSliceSelf {α} {n : Nat} {r : Rank} {shape : Shape r}
     (data : Vector α n) (map : Layout shape h(n)) (map' : Layout shape h(n))
     (hmap : map.Injective) (hmap' : map'.Injective) (h : Disjoint map.range map'.range)
     (j : Nat) (hj : j < n) :
@@ -143,4 +117,4 @@ theorem getElem_swapSliceSelf {α} {n : Nat} {r : Rank} {shape : Shape r}
     else if hk : k ∈ map'.rangeNat then
       data[map (map'.rangeNatInv k hk)]
     else
-      data[j] := sorry
+      data[j]

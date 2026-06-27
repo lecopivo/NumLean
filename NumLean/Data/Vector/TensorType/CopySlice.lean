@@ -22,23 +22,6 @@ def copySlice {K n m} {r : Rank} {shape : Shape r}
   return dst
 
 
-open Fold Classical Function in
-theorem fold_ext {r : Rank} {shape : Shape r}
-    {X Xs dom} [GetElem Xs Nat X dom] [SetElem Xs Nat X dom] [LawfulSetElem Xs Nat]
-    (map : Layout shape h(n)) (init : Xs)
-    (hmap : map.Injective)
-    (f : (i : HTuple ℕ r) → (i <ₑ shape) → X → X)
-    (himap : ∀ x i (hi : i <ₑ shape), dom x (map i))
-    (j : Nat) (hj : ∀ x, dom x j) :
-    getElem (Fold.fold (0...shape) (init := init) (fun i hi xs =>
-      setElem xs (map i : Nat) (f i (by grind) (getElem xs (map i) (himap _ _ (by grind)))) (himap _ _ (by grind)))) j (hj _)
-    =
-    if hj : j ∈ map.rangeNat then
-      let ⟨i,hi⟩ := map.rangeNatInv j hj
-      f i hi (init[j]'(by grind))
-    else
-      init[j]'(by grind) := sorry
-
 set_option pp.coercions false in
 open Classical Fold in
 theorem getElem_copySlice {K n m} {r : Rank} {shape : Shape r}
@@ -52,10 +35,8 @@ theorem getElem_copySlice {K n m} {r : Rank} {shape : Shape r}
     else
       dst[i] := by
   simp [copySlice, Id.run, bind, pure]
-  erw[fold_ext (init := dst) (f := fun i h _ => src[(srcMap i : Nat)])]
+  erw[Fold.fold_layout_ext (init := dst) (f := fun i h _ => src[(srcMap i : Nat)])]
   case hmap => assumption
-  case hj => intros; assumption
-  case himap => intros; get_elem_tactic
 
 
 

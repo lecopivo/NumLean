@@ -98,7 +98,7 @@ import NumLean.Interfaces.Module
 import NumLean.Interfaces.Module.Basic
 import NumLean.Interfaces.Module.Lawful
 import NumLean.Interfaces.Order
-import NumLean.Interfaces.RealModeal.Basic
+import NumLean.Interfaces.RealModel
 import NumLean.Interfaces.SetElem
 import NumLean.Interfaces.TensorAlgebra
 import NumLean.Interfaces.TensorIndexType

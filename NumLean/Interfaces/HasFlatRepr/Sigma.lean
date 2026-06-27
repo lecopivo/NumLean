@@ -6,6 +6,7 @@ namespace NumLean
 
 namespace HasFlatRepr
 
+-- todo: move this to Data.Sigma and use this to infer instances on sigma
 private def sigmaEquivProd (X : Type u) (Y : Type v) : ((_ : X) × Y) ≃ X × Y where
   toFun xy := (xy.1, xy.2)
   invFun xy := ⟨xy.1, xy.2⟩

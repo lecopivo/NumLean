@@ -8,44 +8,45 @@ namespace HasFlatRepr
 variable {X : Type u} {Y : Type v} {Ks : Nat → Type w} {K : Type z} {nX nY : Nat}
   [VectorType Ks K] [HasFlatRepr X Ks nX] [HasFlatRepr Y Ks nY]
 
-private def prodToVector (xy : X × Y) : Vector K (nX + nY) :=
+def prodToVector (xy : X × Y) : Vector K (nX + nY) :=
   HasFlatRepr.toVector (Ks := Ks) xy.1 ++ HasFlatRepr.toVector (Ks := Ks) xy.2
 
-private def prodFromVector (xy : Vector K (nX + nY)) : X × Y :=
+def prodFromVector (xy : Vector K (nX + nY)) : X × Y :=
   (HasFlatRepr.fromVector (Ks := Ks) (X := X) (Vector.ofFn fun i : Fin nX => xy[i.1]),
    HasFlatRepr.fromVector (Ks := Ks) (X := Y) (Vector.ofFn fun i : Fin nY => xy[nX + i.1]))
 
-private def prodGetComp (xy : X × Y) (i : Nat) (h : i < nX + nY) : K :=
+def prodGetComp (xy : X × Y) (i : Nat) (h : i < nX + nY) : K :=
   if hi : i < nX then
     HasFlatRepr.getComp (Ks := Ks) xy.1 i hi
   else
     HasFlatRepr.getComp (Ks := Ks) xy.2 (i - nX) (by omega)
 
-private theorem prod_getComp_left (xy : X × Y) (i : Nat) (h : i < nX + nY) (hi : i < nX) :
+theorem prod_getComp_left (xy : X × Y) (i : Nat) (h : i < nX + nY) (hi : i < nX) :
     prodGetComp (Ks := Ks) xy i h = HasFlatRepr.getComp (Ks := Ks) xy.1 i hi := by
   simp [prodGetComp, hi]
 
-private theorem prod_getComp_right (xy : X × Y) (i : Nat) (h : i < nX + nY) (hi : ¬ i < nX) :
+theorem prod_getComp_right (xy : X × Y) (i : Nat) (h : i < nX + nY) (hi : ¬ i < nX) :
     prodGetComp (Ks := Ks) xy i h = HasFlatRepr.getComp (Ks := Ks) xy.2 (i - nX) (by omega) := by
   simp [prodGetComp, hi]
 
-private def prodSetComp (xy : X × Y) (i : Nat) (k : K) (h : i < nX + nY) : X × Y :=
+-- todo: this is not a good implementation
+def prodSetComp (xy : X × Y) (i : Nat) (k : K) (h : i < nX + nY) : X × Y :=
   let xy' := (prodToVector (Ks := Ks) xy).set i k h
   (HasFlatRepr.fromVector (Ks := Ks) (X := X) (Vector.ofFn fun j : Fin nX => xy'[j.1]'(by omega)),
    HasFlatRepr.fromVector (Ks := Ks) (X := Y) (Vector.ofFn fun j : Fin nY => xy'[nX + j.1]'(by omega)))
 
-private def prodGet {n : Nat} (ks : Ks n) (off : Nat) (h : off + (nX + nY) ≤ n) : X × Y :=
+def prodGet {n : Nat} (ks : Ks n) (off : Nat) (h : off + (nX + nY) ≤ n) : X × Y :=
   (HasFlatRepr.get (X := X) ks off (by omega),
    HasFlatRepr.get (X := Y) ks (off + nX) (by omega))
 
-private def prodSet {n : Nat} (ks : Ks n) (off : Nat) (xy : X × Y) (h : off + (nX + nY) ≤ n) : Ks n :=
+def prodSet {n : Nat} (ks : Ks n) (off : Nat) (xy : X × Y) (h : off + (nX + nY) ≤ n) : Ks n :=
   let ks := HasFlatRepr.set (X := X) ks off xy.1 (by omega)
   HasFlatRepr.set (X := Y) ks (off + nX) xy.2 (by omega)
 
-private def prodToFlatVector (xy : X × Y) : Ks (nX + nY) :=
+def prodToFlatVector (xy : X × Y) : Ks (nX + nY) :=
   VectorType.append (HasFlatRepr.toFlatVector (Ks := Ks) xy.1) (HasFlatRepr.toFlatVector (Ks := Ks) xy.2)
 
-private theorem prod_get_toFlatVector_eq_getComp (xy : X × Y) (i : Nat) (hi : i < nX + nY) :
+theorem prod_get_toFlatVector_eq_getComp (xy : X × Y) (i : Nat) (hi : i < nX + nY) :
     VectorType.get (prodToFlatVector (Ks := Ks) xy) i hi = prodGetComp (Ks := Ks) xy i hi := by
   rcases xy with ⟨x, y⟩
   by_cases hleft : i < nX
@@ -59,10 +60,14 @@ private theorem prod_get_toFlatVector_eq_getComp (xy : X × Y) (i : Nat) (hi : i
     · rw [HasFlatRepr.get_toFlatVector_eq_getComp]
     · omega
 
-private def prodPush {n : Nat} (ks : Ks n) (xy : X × Y) : Ks (n + (nX + nY)) :=
+-- todo: this could be improved, I think   `(kx ++ x) ++ y` is better than `ks ++ (x ++ y)`
+def prodPush {n : Nat} (ks : Ks n) (xy : X × Y) : Ks (n + (nX + nY)) :=
   VectorType.append ks (prodToFlatVector (Ks := Ks) xy)
 
-private def prodReplicate (n : Nat) (xy : X × Y) : Ks (n * (nX + nY)) :=
+-- todo: this is bad, don't use fromVector/Vector.ofFn etc
+-- do we need TensorType to do this efficiently? we can just convert `x` and `y` to `Ks` and
+-- blast it with broadcasting copySlice
+def prodReplicate (n : Nat) (xy : X × Y) : Ks (n * (nX + nY)) :=
   VectorType.fromVector (As := Ks) <| Vector.ofFn fun ij : Fin (n * (nX + nY)) =>
     prodGetComp (Ks := Ks) xy (ij.1 % (nX + nY)) (by
       by_cases h : nX + nY = 0

@@ -1,4 +1,5 @@
 import NumLean.Data.FinHTuple.Basic
+import NumLean.Data.FinHTuple.FinHTupleMap
 import NumLean.Interfaces.Fold
 import Mathlib.Data.List.Intervals
 
@@ -88,5 +89,65 @@ def zeroRangeRangeEquivFin {p : HTuple.Profile} (ns : HTuple Nat p) :
 
 
 end FinHTuple
+
+namespace Fold
+
+open Classical Function in
+theorem fold_layout_ext {r : HTuple.Profile} {shape : HTuple Nat r}
+    {α : Type u} {n : Nat} (map : FinHTupleMap shape h(n)) (init : Vector α n)
+    (hmap : map.Injective)
+    (f : (i : HTuple ℕ r) → (i <ₑ shape) → α → α)
+    (j : Nat) (hj : j < n) :
+    getElem (Fold.fold (0...shape) (init := init) (fun i hi xs =>
+      xs.set (map i : Nat)
+        (f i (by grind) (getElem xs (map i) (by simpa using map.inBounds i (by grind))))
+        (by simpa using map.inBounds i (by grind)))) j hj
+    =
+    if hj : j ∈ map.rangeNat then
+      let ⟨i, hi⟩ := map.rangeNatInv j hj
+      f i hi init[j]
+    else
+      init[j] := by
+  let imap : (i : HTuple Nat r) → i ∈ ((0 : HTuple Nat r)...shape) → Nat := fun i _ => (map i : Nat)
+  let f' : (i : HTuple Nat r) → i ∈ ((0 : HTuple Nat r)...shape) → α → α := fun i hi x => f i (by grind) x
+  have himap : ∀ i hi, imap i hi < n := by
+    intro i hi
+    exact FinHTupleMap.mem_rangeNat_lt (f := map) (by exact ⟨⟨i, by grind⟩, rfl⟩)
+  have himap' : Injective (fun i : {i' // i' ∈ ((0 : HTuple Nat r)...shape)} => imap i.1 i.2) := by
+    intro a b hab
+    apply Subtype.ext
+    have hfin : (⟨a.1, by grind⟩ : FinHTuple shape) = ⟨b.1, by grind⟩ := by
+      apply hmap
+      apply FinHTuple.ext
+      apply HTuple.toScalar_injective
+      simpa [imap] using hab
+    exact congrArg FinHTuple.val hfin
+  have hfold := Fold.fold_ext
+    (range := ((0 : HTuple Nat r)...shape))
+    (imap := imap) (f := f') (init := init)
+    (himap := himap) (himap' := himap')
+  change getElem (Fold.fold (0...shape) (init := init) (fun i hi xs =>
+      xs.set (imap i hi) (f' i hi (getElem xs (imap i hi) (himap i hi))) (by grind))) j hj = _
+  rw [hfold]
+  rw [Vector.getElem_mapFinIdx]
+  by_cases h : j ∈ map.rangeNat
+  · have hset : j ∈ Set.range (fun i : {i' // i' ∈ ((0 : HTuple Nat r)...shape)} => imap i.1 i.2) := by
+      rw [map.mem_rangeNat_iff_mem_range_indexFun] at h
+      simpa [imap, FinHTupleMap.indexFun] using h
+    haveI : Nonempty {i' // i' ∈ ((0 : HTuple Nat r)...shape)} := by
+      rcases hset with ⟨i, _⟩
+      exact ⟨i⟩
+    have hinv : invFun (fun i : {i' // i' ∈ ((0 : HTuple Nat r)...shape)} => imap i.1 i.2) j =
+        ⟨(map.rangeNatInv j h).val, FinHTuple.val_mem_zero_shape _⟩ := by
+      simpa [imap, FinHTupleMap.indexFun] using map.invFun_indexFun_eq_rangeNatInv j h hmap
+    simp only [hset, h, dif_pos, hinv, f']
+  · have hset : ¬ j ∈ Set.range (fun i : {i' // i' ∈ ((0 : HTuple Nat r)...shape)} => imap i.1 i.2) := by
+      intro hset
+      apply h
+      rw [map.mem_rangeNat_iff_mem_range_indexFun]
+      simpa [imap, FinHTupleMap.indexFun] using hset
+    simp [hset, h]
+
+end Fold
 
 end NumLean

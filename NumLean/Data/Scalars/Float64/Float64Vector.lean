@@ -2,9 +2,6 @@ import NumLean.Data.Scalars.Float64.Basic
 import NumLean.Data.Scalars.Float64.Float64Array
 
 import NumLean.Interfaces.SetElem
-import NumLean.Interfaces.VectorType.Basic
-import NumLean.Interfaces.HasFlatRepr
-import NumLean.Interfaces.TensorAlgebra
 
 namespace NumLean
 
@@ -70,84 +67,8 @@ def cast (xs : Float64Vector n) {m : Nat} (h : n = m) : Float64Vector m :=
   ⟨xs.data, by simp [h,xs.2]⟩
 
 @[inline]
-def simpCast (xs : Float64Vector n) {m : Nat} (h : n = m := by (conv_lhs => simp); try rfl) : Float64Vector m :=
+def simpCast (xs : Float64Vector n) {m : Nat} (h : n = m := by simp) : Float64Vector m :=
   xs.cast h
-
--- def emptyWithCapacity (c : Nat) : Float64Vector 0 :=
---   ⟨Vector.emptyWithCapacity c⟩
-
--- def replicate (n : Nat) (x : Float) : Float64Vector n :=
---   ⟨Vector.replicate n x⟩
-
-instance : VectorType Float64Vector Float64 where
-  toVector xs := ⟨xs.data.1, xs.2⟩
-  fromVector xs := ⟨⟨xs.1⟩, xs.2⟩
-  left_inv := by intro _; simp
-  right_inv := by intro _; simp
-
-  emptyWithCapacity c := emptyWithCapacity c
-
-  get xs i h := xs[i]
-  get_spec := by sorry
-
-  set xs i x h := setElem xs i x
-  set_spec := sorry
-
-  pop xs := xs.pop
-  pop_spec := sorry
-
-  replicate n x := replicate n x
-  replicate_spec := sorry
-
-  swap xs i j _ _:= xs.swap i j
-  swap_spec := sorry
-
-  push xs x := xs.push x
-  push_spec := sorry
-
-  append xs ys := xs.append ys
-  append_spec := sorry
-
--- VectorType.toVector (dst.append (replicate (k - m) default)) =
---     Vector.cast ⋯ ((VectorType.toVector dst).append (Vector.replicate (k - m) default))
-
-open VectorType
-@[simp]
-theorem toVector_cast (xs : Float64Vector n) (h : n = m) :
-    toVector (xs.cast h) = (toVector xs).cast h := sorry
-
-@[simp]
-theorem toVector_append (xs : Float64Vector m) (ys : Float64Vector n) :
-    toVector (xs.append ys) = (toVector xs).append (toVector ys) := sorry
-
-@[simp]
-theorem toVector_replicate (n : Nat) (x : Float64) :
-    toVector (replicate n x) = .replicate n x := sorry
-
-instance : HasFlatRepr Float64 Float64Vector 1 where
-  toVector x := #v[x]
-  fromVector x := x[0]
-  left_inv := by intro _; simp
-  right_inv := by intro _; grind
-  getComp x _ _ := x
-  getComp_spec := by intros; simp
-  setComp x _ y _ := y
-  setComp_spec := by intros; grind
-  get xs i _ := xs[i]
-  getComp_get_eq_vector_get := by intros; simp[VectorType.get]; grind
-  set xs i x _ := setElem xs i x
-  vector_get_set_eq := by intros; simp [VectorType.get]; sorry
-  vector_get_set_ne := by intros; simp [VectorType.get]; sorry
-  push xs x := xs.push x
-  vector_get_push_lt := sorry
-  vector_get_push_eq := sorry
-  toFlatVector x := (emptyWithCapacity 1).push x
-  get_toFlatVector_eq_getComp := sorry
-  replicate n x := ⟨.replicate n x, by simp⟩
-  get_replicate := sorry
-
-
-
 
 end Float64Vector
 
