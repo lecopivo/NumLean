@@ -2,5 +2,6 @@ module
 
 public import NumLean.Data.FlatVector.Algebra.Group
 public import NumLean.Data.FlatVector.Algebra.Lawful
-@[expose] public section
+public import NumLean.Data.FlatVector.Algebra.VMul
 
+@[expose] public section

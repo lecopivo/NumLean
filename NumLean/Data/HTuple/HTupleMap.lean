@@ -146,6 +146,23 @@ theorem eval_rowMajorMap_lt_card {shape : HTuple Nat q} {i : HTuple Nat q}
   rw [eval_rowMajorMap]
   simpa using HTuple.rowMajorIndex_lt_numel hi
 
+/-- Column-major affine linearization map from `0...shape` into a flat natural coordinate. -/
+def colMajorMap (shape : HTuple Nat q) : HTupleMap Nat q .leaf where
+  offset := .leaf 0
+  stride := shape.colMajorStride.map HTuple.leaf
+
+/-- `linearize` computes the column-major range index. -/
+@[simp]
+theorem eval_colMajorMap (shape : HTuple Nat q) (i : HTuple Nat q) :
+    colMajorMap shape i = h(i.colMajorIndex shape) := by
+  simp [colMajorMap, HTuple.colMajorIndex_eq_inner_colMajorStride, HTuple.inner_map_leaf]
+
+/-- `linearize` maps bounded coordinates into `0...shape.numel`. -/
+theorem eval_colMajorMap_lt_card {shape : HTuple Nat q} {i : HTuple Nat q}
+    (hi : i <ₑ shape) : colMajorMap shape i <ₑ h(shape.numel) := by
+  rw [eval_colMajorMap]
+  simpa using HTuple.colMajorIndex_lt_numel hi
+
 /-- Move a nested output coefficient profile into the output profile. -/
 def joinEquiv (I : Type u) (r p q : HTuple.Profile) :
     HTupleMap (HTuple I r) p q ≃ HTupleMap I p (r.tmul q) where

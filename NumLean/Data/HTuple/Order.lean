@@ -123,6 +123,29 @@ theorem rowMajorIndex_lt_numel {p : Profile} {shape i : HTuple Nat p}
         _ = shape₀.numel * shape₁.numel := by
               rw [Nat.mul_comm]
 
+/-- Column-major indices of bounded coordinates are bounded by the shape's cardinality. -/
+theorem colMajorIndex_lt_numel {p : Profile} {shape i : HTuple Nat p}
+    (hi : i <ₑ shape) : i.colMajorIndex shape < shape.numel := by
+  induction p with
+  | leaf =>
+      cases shape with | leaf shape =>
+      cases i with | leaf i =>
+      simpa [colMajorIndex, numel] using hi
+  | prod p q hp hq =>
+      cases shape with | prod shape₀ shape₁ =>
+      cases i with | prod i₀ i₁ =>
+      have hidx₀ : i₀.colMajorIndex shape₀ < shape₀.numel := hp hi.1
+      have hidx₁ : i₁.colMajorIndex shape₁ < shape₁.numel := hq hi.2
+      simp [colMajorIndex, numel]
+      calc
+        i₀.colMajorIndex shape₀ + shape₀.numel * i₁.colMajorIndex shape₁
+            < shape₀.numel + shape₀.numel * i₁.colMajorIndex shape₁ := by
+              exact Nat.add_lt_add_right hidx₀ _
+        _ = shape₀.numel * (i₁.colMajorIndex shape₁ + 1) := by
+              rw [Nat.mul_succ, Nat.add_comm]
+        _ ≤ shape₀.numel * shape₁.numel := by
+              exact Nat.mul_le_mul_left _ (Nat.succ_le_of_lt hidx₁)
+
 @[grind ←, grind_htuple_order ←]
 theorem elementwise_lt_not_le {α} [LinearOrder α] {a b : HTuple α p} : (a <ₑ b) → ¬(b ≤ₑ a) := by
   induction p

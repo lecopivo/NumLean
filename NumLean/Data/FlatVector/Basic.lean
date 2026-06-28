@@ -36,6 +36,10 @@ def size (_xs : FlatVector X I) : Nat := nI
 
 theorem size_eq_card (xs : FlatVector X I) : xs.size = nI := rfl
 
+def shape {r shape} [TensorIndexType I nI r shape] (_xs : FlatVector X I) := shape
+
+def rank {r shape} [TensorIndexType I nI r shape] (_xs : FlatVector X I) := r
+
 theorem offset_add_width_le_size (_xs : FlatVector X I) (i : I) :
     offset (nX := nX) i + nX ≤ nI * nX := by
   have hi := (toFin i).2
@@ -198,8 +202,10 @@ theorem get_ofVector [Inhabited X] (xs : Vector X nI) (i : I) :
   rfl
 
 open TensorIndexType in
-instance {I nI r shape} [TensorIndexType I nI r shape] [ToString X] : ToString (FlatVector X I) where
+instance {I nI r shape} [TensorIndexType I nI r shape] [ToString X] :
+    ToString (FlatVector X I) where
   toString x := FinHTuple.printTensor shape (fun i => x[fromFinHTuple (I:=I) i])
+
 
 end FlatVector
 

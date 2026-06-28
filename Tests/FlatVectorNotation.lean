@@ -104,6 +104,10 @@ section LiteralNotation
 #guard_msgs in
 #check (FlatVector.ofVector (I := Fin 2 × Fin 3) (#v[1.0, 2, 3, 4, 5, 6] : Vector Float 6))
 
+/-- info: ⊞[[1.0, 2, 3], [4, 5, 6]].shape : HTuple ℕ (hp(•, •)) -/
+#guard_msgs in
+#check ⊞[[1.0, 2, 3], [4, 5, 6]].shape
+
 /-- info: ⊞[[[1], [2]], [[3], [4]]] : Float^[2, 2, 1] -/
 #guard_msgs in
 #check (⊞[[[1], [2]], [[3], [4]]] : Float^[2, 2, 1])

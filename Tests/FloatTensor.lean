@@ -10,13 +10,14 @@ open NumLean
 
 namespace FloatTensor
 
-variable (X : Type u) (I : Type v)
-    {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI]
+instance : HasDefaultFlatRepr Nat (Vector Nat) 1 where
+instance : HasDefaultFlatRepr Int (Vector Int) 1 where
 
-instance [UntypedIndex I I' dom] : GetElem (FlatVector X I) I' X (fun _ i' => dom i') where
-  getElem xs i' h := getElem xs ((UntypedIndex.equiv (idx := I)).symm ⟨i',h⟩) .intro
+-- #check Nat^[10]
 
-#check (Float^[2])^[2]
+-- #check ⊞[1,2,3]
+
+-- #check (Float^[2])^[2]
 
 -- #eval show IO Unit from do
 --   for h : i in 0...2 do
@@ -39,3 +40,27 @@ instance [UntypedIndex I I' dom] : GetElem (FlatVector X I) I' X (fun _ i' => do
 /-- info: ⊞[[1.0, 2], [3, 4]] : Float^[2, 2] -/
 #guard_msgs in
 #check ⊞[[1.0,2],[3,4]]
+
+
+
+#check ⊞[1.0, 2, 3]
+
+#check ⊞[[1.0, 2, 3],
+         [4, 5, 6]]
+
+
+def _root_.NumLean.FlatVector.shape {X : Type u} {I : Type v}
+    {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX]
+    {r shape} [TensorIndexType I nI r shape]
+    (xs : FlatVector X I) := shape
+
+#check ⊞[[1.0, 2, 3], [4, 5, 6]].shape
+
+set_option pp.notation false
+
+#check h(1,2)
+#eval h(1,2)
+
+#eval! ⊞[1, 2, 3].shape
+
+#eval! ⊞[-1, 2, 3].shape

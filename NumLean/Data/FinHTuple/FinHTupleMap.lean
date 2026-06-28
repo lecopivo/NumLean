@@ -246,6 +246,22 @@ theorem eval_rowMajorMap_eq_linearIndex (shape : HTuple Nat p) (i : HTuple Nat p
 abbrev linearize (f : FinHTupleMap src dst) : FinHTupleMap src h(dst.numel) :=
   (rowMajorMap dst).comp f
 
+/-- Canonical bounded column-major linearization map for a shape. -/
+def colMajorMap (shape : HTuple Nat p) : FinHTupleMap shape h(shape.numel) where
+  toHTupleMap := HTupleMap.colMajorMap shape
+  inBounds := by
+    intro i hi
+    exact HTupleMap.eval_colMajorMap_lt_card hi
+
+@[simp]
+theorem eval_colMajorMap (shape : HTuple Nat p) (i : HTuple Nat p) :
+    colMajorMap shape i = h(i.colMajorIndex shape) := by
+  simp [colMajorMap, eval]
+
+/-- Linearize the bounded destination of a map into its column-major flat index. -/
+abbrev colLinearize (f : FinHTupleMap src dst) : FinHTupleMap src h(dst.numel) :=
+  (colMajorMap dst).comp f
+
 def point (shape : HTuple Nat p) (x : HTuple Nat p) (h : x <ₑ shape := by get_elem_tactic) :
     FinHTupleMap h(1) shape where
   toHTupleMap := HTupleMap.const .leaf x

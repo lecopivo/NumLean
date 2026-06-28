@@ -51,6 +51,9 @@ abbrev Layout.point (shape : Shape p) (x : Shape p) (h : x <ₑ shape := by get_
 abbrev Layout.rowMajor {p : Rank} (shape : Shape p) : Layout shape h(shape.numel) :=
   FinHTupleMap.rowMajorMap shape
 
+abbrev Layout.colMajor {p : Rank} (shape : Shape p) : Layout shape h(shape.numel) :=
+  FinHTupleMap.colMajorMap shape
+
 @[simp]
 theorem Layout.rowMajor_leaf_eq_id (n : Nat) : Layout.rowMajor h(n) = Layout.id h(n) := rfl
 

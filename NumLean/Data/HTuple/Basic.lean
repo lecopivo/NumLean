@@ -324,6 +324,18 @@ abbrev zipWith := @map₂
   | .leaf, .leaf i, .leaf _ => i
   | .prod _ _, .prod il ir, .prod sl sr => rowMajorIndex ir sr + sr.numel * rowMajorIndex il sl
 
+/-- Column-major stride for `0...shape`, with the leftmost coordinate innermost. -/
+@[inline] def colMajorStride {p : Profile} (shape : HTuple Nat p) : HTuple Nat p :=
+  match p, shape with
+  | .leaf, .leaf _ => .leaf 1
+  | .prod _ _, .prod l r => .prod (colMajorStride l) ((colMajorStride r).map (fun x => l.numel * x))
+
+/-- Column-major index inside `0...shape`, with the leftmost coordinate innermost. -/
+@[inline] def colMajorIndex {p : Profile} (x : HTuple Nat p) (shape : HTuple Nat p) : Nat :=
+  match p, x, shape with
+  | .leaf, .leaf i, .leaf _ => i
+  | .prod _ _, .prod il ir, .prod sl sr => colMajorIndex il sl + sl.numel * colMajorIndex ir sr
+
 theorem inner_map_mul_left (n : Nat) {p : Profile} (i stride : HTuple Nat p) :
     i.inner (stride.map (fun x => n * x)) = n * i.inner stride := by
   induction p with
@@ -354,6 +366,21 @@ theorem rowMajorIndex_eq_inner_rowMajorStride {p : Profile} (i shape : HTuple Na
         il.inner ((rowMajorStride sl).map (fun x => sr.numel * x)) + ir.inner (rowMajorStride sr)
       rw [hp il sl, hq ir sr, inner_map_mul_left]
       omega
+
+/-- Recursive column-major indexing agrees with evaluating against the column-major stride. -/
+theorem colMajorIndex_eq_inner_colMajorStride {p : Profile} (i shape : HTuple Nat p) :
+    colMajorIndex i shape = i.inner (colMajorStride shape) := by
+  induction p with
+  | leaf =>
+      cases i with | leaf i =>
+      cases shape with | leaf shape =>
+      simp [colMajorIndex, colMajorStride, inner, innerWith]
+  | prod p q hp hq =>
+      cases i with | prod il ir =>
+      cases shape with | prod sl sr =>
+      change colMajorIndex il sl + sl.numel * colMajorIndex ir sr =
+        il.inner (colMajorStride sl) + ir.inner ((colMajorStride sr).map (fun x => sl.numel * x))
+      rw [hp il sl, hq ir sr, inner_map_mul_left]
 
 /-- The leaf values of a hierarchical tuple in left-to-right order. -/
 @[inline] def toList {α : Type u} : {p : Profile} → HTuple α p → List α
