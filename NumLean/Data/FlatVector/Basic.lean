@@ -211,10 +211,24 @@ instance {I nI r shape} [TensorIndexType I nI r shape] [ToString X] :
 section Reshape
 
 open Tensor
+/-- This class and its instances provide a compile time trick that converts `h(m,n,k) : Shape _`
+to the canonical index type `Fin m × Fin n × Fin k` via the output parameter `I`. -/
 class ShapeIndexType {r} (shape : Shape r) (I : outParam (Type u)) where
 instance : ShapeIndexType h(n) (Fin n) where
-instance [ShapeIndexType s I] [ShapeIndexType s' I'] : ShapeIndexType (.prod s s') (I × I') where
+instance [ShapeIndexType s I] [ShapeIndexType s' I'] :
+  ShapeIndexType (.prod s s') (I × I') where
 
+/-- Reshape tensor given `shape : Shape r` which is usually given as `h(n₁, ..., nᵣ)` where
+`n₁, ..., nᵣ` are the dimension sizes of the new shape.
+
+Examples:
+  - `x.reshape h(3,5) : Float^[3,5]` for `x : Float^[15]`
+  - `A.reshape h(12) : Float^[12]` for `A : Float^[4,3]`
+  - `A.reshape h(3,2,2) : Float^[3,2,2]` for `A : Float^[4,3]`
+
+This function requires a proof `matching_size` that the new shape has the same number of elements
+as the old shape.
+-/
 def reshape {r : Rank} (x : FlatVector X I) (shape : Shape r)
     {J} [ShapeIndexType shape J] [IndexType J nJ]
     (matching_size : nI = nJ := by first | simp | decide | ring | (simp; ring) | (cbv; ring)) :
