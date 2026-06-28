@@ -40,27 +40,3 @@ instance : HasDefaultFlatRepr Int (Vector Int) 1 where
 /-- info: ⊞[[1.0, 2], [3, 4]] : Float^[2, 2] -/
 #guard_msgs in
 #check ⊞[[1.0,2],[3,4]]
-
-
-
-#check ⊞[1.0, 2, 3]
-
-#check ⊞[[1.0, 2, 3],
-         [4, 5, 6]]
-
-
-def _root_.NumLean.FlatVector.shape {X : Type u} {I : Type v}
-    {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX]
-    {r shape} [TensorIndexType I nI r shape]
-    (xs : FlatVector X I) := shape
-
-#check ⊞[[1.0, 2, 3], [4, 5, 6]].shape
-
-set_option pp.notation false
-
-#check h(1,2)
-#eval h(1,2)
-
-#eval! ⊞[1, 2, 3].shape
-
-#eval! ⊞[-1, 2, 3].shape
