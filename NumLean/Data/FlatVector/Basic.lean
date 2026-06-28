@@ -207,6 +207,24 @@ instance {I nI r shape} [TensorIndexType I nI r shape] [ToString X] :
   toString x := FinHTuple.printTensor shape (fun i => x[fromFinHTuple (I:=I) i])
 
 
+
+section Reshape
+
+open Tensor
+class ShapeIndexType {r} (shape : Shape r) (I : outParam (Type u)) where
+instance : ShapeIndexType h(n) (Fin n) where
+instance [ShapeIndexType s I] [ShapeIndexType s' I'] : ShapeIndexType (.prod s s') (I × I') where
+
+def reshape {r : Rank} (x : FlatVector X I) (shape : Shape r)
+    {J} [ShapeIndexType shape J] [IndexType J nJ]
+    (matching_size : nI = nJ := by first | simp | decide | ring | (simp; ring) | (cbv; ring)) :
+    FlatVector X J :=
+  { data := matching_size ▸ x.data }
+
+-- todo: .reindex, direcly give the new index type `J`
+
+end Reshape
+
 end FlatVector
 
 end NumLean

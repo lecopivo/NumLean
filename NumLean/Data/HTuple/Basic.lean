@@ -132,6 +132,20 @@ theorem size_pos (p : Profile) : 0 < p.size := by
   | leaf => simp [size]
   | prod left _ hleft _ => simp [size, Nat.add_pos_left hleft]
 
+mutual
+  /-- Render a profile using the same compact shape as `hp(...)` notation. -/
+  def toNotationString : Profile → String
+    | .leaf => "•"
+    | .prod left right => toNotationComponentString left ++ "," ++ toNotationString right
+
+  def toNotationComponentString : Profile → String
+    | .leaf => "•"
+    | .prod left right => "(" ++ toNotationString (.prod left right) ++ ")"
+end
+
+instance : ToString Profile where
+  toString p := "hp(" ++ p.toNotationString ++ ")"
+
 end Profile
 
 end HTuple
@@ -217,6 +231,20 @@ macro_rules
   | `($(_) hp(•) hp($y:htuple_profile_stx)) => `(hp(•, $y))
   | `($(_) hp($x:htuple_profile_stx) hp($y:htuple_profile_stx)) => `(hp(($x), $y))
   | _ => throw ()
+
+mutual
+  /-- Render an `HTuple` using the same compact shape as `h(...)` notation. -/
+  def toNotationString [ToString α] : {p : Profile} → HTuple α p → String
+    | .leaf, .leaf x => toString x
+    | .prod _ _, .prod left right => toNotationComponentString left ++ "," ++ toNotationString right
+
+  def toNotationComponentString [ToString α] : {p : Profile} → HTuple α p → String
+    | .leaf, .leaf x => toString x
+    | .prod _ _, .prod left right => "(" ++ toNotationString (.prod left right) ++ ")"
+end
+
+instance [ToString α] : ToString (HTuple α p) where
+  toString x := "h(" ++ x.toNotationString ++ ")"
 
 @[coe]
 def toScalar (x : HTuple α .leaf) : α := match x with | .leaf x => x

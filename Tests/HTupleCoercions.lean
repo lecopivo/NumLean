@@ -1,6 +1,6 @@
 module
 
-public import NumLean.Data.FinHTuple.FinHTupleMap
+public meta import NumLean.Data.FinHTuple.FinHTupleMap
 
 @[expose] public section
 
@@ -27,6 +27,14 @@ example : Function.Injective (HTuple.toScalar : HTuple α .leaf → α) :=
   HTuple.toScalar_injective
 
 end HTupleLeaf
+
+section ToString
+
+example : toString h((2, 3), 4, 5) = "h((2,3),4,5)" := by native_decide
+
+example : toString hp((•, •), •, •) = "hp((•,•),•,•)" := by native_decide
+
+end ToString
 
 section HTupleNatCast
 
