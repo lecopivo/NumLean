@@ -7,6 +7,10 @@ public import NumLean.Experimental.Data.BTuple.Order
 public import NumLean.Experimental.Data.BTuple.Range
 public import NumLean.Experimental.Data.DyadicInterval
 public import NumLean.Experimental.Data.DyadicInterval.Basic
+public import NumLean.Experimental.Data.DyadicInterval.Dyadic
+public import NumLean.Experimental.Data.DyadicInterval.ExtDyadic
+public import NumLean.Experimental.Data.DyadicInterval.Isolate
+public import NumLean.Experimental.Data.DyadicInterval.Tests
 public import NumLean.Experimental.Data.FloatP
 public import NumLean.Experimental.Data.HList
 public import NumLean.Experimental.Data.HList.Basic
@@ -21,6 +25,7 @@ public import NumLean.Experimental.Data.KernelExpr
 public import NumLean.Experimental.Data.KernelExpr.Basic
 public import NumLean.Experimental.Data.KernelExpr.HasKernelExpr
 public import NumLean.Experimental.Data.KernelExpr.Register
+public import NumLean.Experimental.Data.Layout
 public import NumLean.Experimental.Data.RatInterval
 public import NumLean.Experimental.Data.RatInterval.Basic
 public import NumLean.Experimental.Interfaces.Device.Basic

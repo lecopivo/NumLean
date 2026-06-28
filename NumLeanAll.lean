@@ -2,5 +2,5 @@ module
 
 public import NumLean
 public import NumLeanExperimental
-@[expose] public section
 
+@[expose] public section

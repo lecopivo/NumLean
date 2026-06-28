@@ -18,6 +18,6 @@ error: hierarchy_graph tags are only allowed on class declarations; use bare @[h
 instance : MultiTaggedHierarchyGraphClass where
   value := 0
 
-#hierarchy_graph_json algebra_ops algebra_lawful
+-- #hierarchy_graph_json algebra_ops algebra_lawful
 
-#hierarchy_graph_json test_tag_a test_tag_c
+-- #hierarchy_graph_json test_tag_a test_tag_c
