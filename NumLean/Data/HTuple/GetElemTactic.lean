@@ -1,4 +1,8 @@
-import NumLean.Data.HTuple.Order
+module
+
+public import NumLean.Data.HTuple.Order
+
+@[expose] public section
 
 open Lean Std PRange
 

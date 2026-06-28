@@ -1,5 +1,9 @@
-import Mathlib.Analysis.Normed.Module.Basic
-import NumLean.Interfaces.Algebra.NormedField
+module
+
+public import Mathlib.Analysis.Normed.Module.Basic
+public import NumLean.Interfaces.Algebra.NormedField
+
+@[expose] public section
 
 namespace NumLean
 

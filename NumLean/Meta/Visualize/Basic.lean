@@ -1,5 +1,9 @@
-import Lean.Server.Rpc.Basic
-import ProofWidgets.Component.Basic
+module
+
+public import Lean.Server.Rpc.Basic
+public import ProofWidgets.Component.Basic
+
+@[expose] public section
 
 namespace NumLean
 
@@ -19,9 +23,12 @@ namespace Visualize
 def javascript : String :=
   (include_str ".." / ".." / ".." / "js" / "visualize.js") ++ "\n/* numlean-visualize-v45 */"
 
+meta def javascriptMeta : String :=
+  (include_str ".." / ".." / ".." / "js" / "visualize.js") ++ "\n/* numlean-visualize-v45 */"
+
 @[widget_module]
-def Component : ProofWidgets.Component Json where
-  javascript := javascript
+meta def Component : ProofWidgets.Component Json where
+  javascript := javascriptMeta
 
 def str (s : String) : Json := Json.str s
 

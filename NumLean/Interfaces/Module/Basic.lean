@@ -1,4 +1,8 @@
-import Mathlib.Algebra.Module.Basic
+module
+
+public import Mathlib.Algebra.Module.Basic
+
+@[expose] public section
 
 namespace NumLean
 namespace Interfaces

@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 namespace NumLean
 
 /-- Machine precision of type `R`. Many floating point algorithms needs to check for non-zero

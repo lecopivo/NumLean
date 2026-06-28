@@ -1,2 +1,6 @@
-import NumLean.Interfaces.Algebra.NormedAlgebra.Basic
-import NumLean.Interfaces.Algebra.NormedAlgebra.Lawful
+module
+
+public import NumLean.Interfaces.Algebra.NormedAlgebra.Basic
+public import NumLean.Interfaces.Algebra.NormedAlgebra.Lawful
+@[expose] public section
+

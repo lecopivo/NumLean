@@ -1,5 +1,9 @@
-import NumLean.Data.HTuple.RangeIterator
-import NumLean.Meta.ForAll.Basic
+module
+
+public import NumLean.Data.HTuple.RangeIterator
+public import NumLean.Meta.ForAll.Basic
+
+@[expose] public section
 
 public section
 

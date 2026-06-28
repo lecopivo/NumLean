@@ -1,4 +1,8 @@
-import Mathlib.Data.FinEnum
+module
+
+public import Mathlib.Data.FinEnum
+
+@[expose] public section
 
 namespace NumLean
 

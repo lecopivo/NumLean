@@ -1,6 +1,10 @@
-import Mathlib.Logic.Equiv.Basic
-import Mathlib.Tactic.ProxyType
-import NumLean.Interfaces.HasFlatRepr.Basic
+module
+
+public import Mathlib.Logic.Equiv.Basic
+public import Mathlib.Tactic.ProxyType
+public import NumLean.Interfaces.HasFlatRepr.Basic
+
+@[expose] public section
 
 namespace NumLean
 

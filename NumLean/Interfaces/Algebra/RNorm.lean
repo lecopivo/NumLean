@@ -1,4 +1,8 @@
-import NumLean.Interfaces.Algebra.Field
+module
+
+public import NumLean.Interfaces.Algebra.Field
+
+@[expose] public section
 
 namespace NumLean
 

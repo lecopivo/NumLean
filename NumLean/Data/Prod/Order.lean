@@ -1,6 +1,10 @@
-import NumLean.Interfaces.Order
-import NumLean.Data.Prod.OrderInit
-import Mathlib.Data.Prod.Lex
+module
+
+public import NumLean.Interfaces.Order
+public import NumLean.Data.Prod.OrderInit
+public import Mathlib.Data.Prod.Lex
+
+@[expose] public section
 
 public section
 

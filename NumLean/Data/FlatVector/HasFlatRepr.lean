@@ -1,5 +1,9 @@
-import NumLean.Data.FlatVector.Basic
-import NumLean.Interfaces.TensorType
+module
+
+public import NumLean.Data.FlatVector.Basic
+public import NumLean.Interfaces.TensorType
+
+@[expose] public section
 
 namespace NumLean
 

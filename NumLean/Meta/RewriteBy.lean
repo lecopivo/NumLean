@@ -1,4 +1,9 @@
-import Lean
+module
+
+public import Lean
+public meta import Lean
+@[expose] public section
+
 -- import Mathlib
 
 namespace SciLean
@@ -8,7 +13,7 @@ open Lean.Elab.Tactic.Conv
 
 open Lean Elab Term Meta
 
-def elabConvRewrite (e : Expr) (assumptions : Array Syntax) (stx : TSyntax `conv) : TermElabM (Expr × Expr) := do
+meta def elabConvRewrite (e : Expr) (assumptions : Array Syntax) (stx : TSyntax `conv) : TermElabM (Expr × Expr) := do
   elabBinders assumptions fun as => do
   let (rhs, eq) ← mkConvGoalFor e
 
@@ -30,7 +35,7 @@ def elabConvRewrite (e : Expr) (assumptions : Array Syntax) (stx : TSyntax `conv
 
   return (← instantiateMVars rhs, ← mkLambdaFVars as (← instantiateMVars eq))
 
-def rewriteByConv (e : Expr) (stx : TSyntax `conv) : MetaM (Expr × Expr) := do
+meta def rewriteByConv (e : Expr) (stx : TSyntax `conv) : MetaM (Expr × Expr) := do
   let (r,_) ← (elabConvRewrite e #[] stx).run {} {}
   return r
 

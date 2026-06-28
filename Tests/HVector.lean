@@ -1,4 +1,10 @@
-import NumLean.Experimental.Data.HVector
+module
+
+public import NumLean.Experimental.Data.HVector
+public meta import NumLean.Experimental.Data.HVector.Basic
+import all NumLean.Experimental.Data.HVector
+
+@[expose] public section
 
 open NumLean
 
@@ -36,7 +42,7 @@ example : (v123.map (fun x => x + 1)).toHTuple = h(2, 3, 4) := by
       | right i => cases i; simp [v123]
 
 example : v123.foldMap (fun x => x) = 6 := by
-  rfl
+  native_decide
 
 example :
     (v123.set (HTuple.Index.right (HTuple.Index.left HTuple.Index.leaf)) 9).toHTuple = h(1, 9, 3) := by

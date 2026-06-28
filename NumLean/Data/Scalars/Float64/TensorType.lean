@@ -1,5 +1,10 @@
-import NumLean.Interfaces.TensorType
-import NumLean.Data.Scalars.Float64.VectorType
+module
+
+public import NumLean.Interfaces.TensorType
+public import NumLean.Data.Scalars.Float64.VectorType
+import all NumLean.Data.Scalars.Float64.VectorType
+
+@[expose] public section
 
 namespace NumLean
 namespace Float64Vector

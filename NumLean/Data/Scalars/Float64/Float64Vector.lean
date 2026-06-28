@@ -1,7 +1,12 @@
-import NumLean.Data.Scalars.Float64.Basic
-import NumLean.Data.Scalars.Float64.Float64Array
+module
 
-import NumLean.Interfaces.SetElem
+public import NumLean.Data.Scalars.Float64.Basic
+public import NumLean.Data.Scalars.Float64.Float64Array
+import all Init.Data.FloatArray.Basic
+
+public import NumLean.Interfaces.SetElem
+
+@[expose] public section
 
 namespace NumLean
 

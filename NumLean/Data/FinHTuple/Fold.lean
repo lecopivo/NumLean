@@ -1,7 +1,11 @@
-import NumLean.Data.FinHTuple.Basic
-import NumLean.Data.FinHTuple.FinHTupleMap
-import NumLean.Interfaces.Fold
-import Mathlib.Data.List.Intervals
+module
+
+public import NumLean.Data.FinHTuple.Basic
+public import NumLean.Data.FinHTuple.FinHTupleMap
+public import NumLean.Interfaces.Fold
+public import Mathlib.Data.List.Intervals
+
+@[expose] public section
 
 namespace NumLean
 

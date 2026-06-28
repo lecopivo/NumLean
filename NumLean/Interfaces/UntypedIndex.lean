@@ -1,5 +1,9 @@
-import Mathlib.Logic.Equiv.Defs
-import Mathlib.Logic.Equiv.Fin.Basic
+module
+
+public import Mathlib.Logic.Equiv.Defs
+public import Mathlib.Logic.Equiv.Fin.Basic
+
+@[expose] public section
 
 namespace NumLean
 

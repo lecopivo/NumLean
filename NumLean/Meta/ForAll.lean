@@ -1,6 +1,10 @@
-import NumLean.Interfaces.Fold
-import NumLean.Data.HTuple.Fold
-import NumLean.Meta.ForAll.Basic
-import NumLean.Meta.ForAll.RcoNative
-import NumLean.Meta.ForAll.HTuple
-import NumLean.Meta.ForAll.Notation
+module
+
+public import NumLean.Interfaces.Fold
+public import NumLean.Data.HTuple.Fold
+public import NumLean.Meta.ForAll.Basic
+public import NumLean.Meta.ForAll.RcoNative
+public import NumLean.Meta.ForAll.HTuple
+public import NumLean.Meta.ForAll.Notation
+@[expose] public section
+

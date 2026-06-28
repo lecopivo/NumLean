@@ -1,5 +1,9 @@
-import NumLean.Mathlib.FiberedAddTorsor.Basic
-import NumLean.Mathlib.FiberedAddTorsor.Discrete
-import NumLean.Mathlib.FiberedAddTorsor.Prod
-import NumLean.Mathlib.FiberedAddTorsor.MProd
-import NumLean.Mathlib.FiberedAddTorsor.Topology
+module
+
+public import NumLean.Mathlib.FiberedAddTorsor.Basic
+public import NumLean.Mathlib.FiberedAddTorsor.Discrete
+public import NumLean.Mathlib.FiberedAddTorsor.Prod
+public import NumLean.Mathlib.FiberedAddTorsor.MProd
+public import NumLean.Mathlib.FiberedAddTorsor.Topology
+@[expose] public section
+

@@ -1,9 +1,13 @@
-import Lean
-import Lean.Compiler.LCNF.ToDecl
-import Batteries.Data.FloatArray
-import NumLean.Data.Scalars.Float32.Float32Array
-import NumLean.Data.ScalarArrays
-import NumLean.Meta.ForAll
+module
+
+public import Lean
+public import Lean.Compiler.LCNF.ToDecl
+public import Batteries.Data.FloatArray
+public import NumLean.Data.Scalars.Float32.Float32Array
+public import NumLean.Data.ScalarArrays
+public import NumLean.Meta.ForAll
+
+@[expose] public section
 
 namespace NumLean.Experimental.Meta.CCompiler
 

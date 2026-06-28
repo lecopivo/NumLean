@@ -1,7 +1,11 @@
-import NumLean.Data.Idx
-import Mathlib.Data.Fintype.Prod
-import Mathlib.Data.Fintype.Sum
-import Mathlib.Logic.Equiv.Fin.Basic
+module
+
+public import NumLean.Data.Idx
+public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Data.Fintype.Sum
+public import Mathlib.Logic.Equiv.Fin.Basic
+
+@[expose] public section
 
 namespace NumLean
 

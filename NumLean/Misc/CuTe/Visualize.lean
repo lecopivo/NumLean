@@ -1,5 +1,9 @@
-import NumLean.Meta.Visualize
-import NumLean.Misc.CuTe
+module
+
+public import NumLean.Meta.Visualize
+public import NumLean.Misc.CuTe
+
+@[expose] public section
 
 namespace NumLean
 

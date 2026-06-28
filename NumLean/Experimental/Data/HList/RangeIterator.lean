@@ -1,7 +1,14 @@
-import NumLean.Experimental.Data.HList.Notation
-import NumLean.Data.RangeEnum
-import Std.Data.Iterators.Producers.Range
-import Mathlib.Tactic
+module
+
+public import NumLean.Experimental.Data.HList.Notation
+import all NumLean.Experimental.Data.HList.Basic
+public meta import NumLean.Experimental.Data.HList.Basic
+public import NumLean.Data.RangeEnum
+public meta import NumLean.Data.RangeEnum
+public import Std.Data.Iterators.Producers.Range
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace NumLean
 

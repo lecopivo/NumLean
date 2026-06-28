@@ -1,10 +1,13 @@
+module
 
-import Mathlib.Topology.Algebra.Module.Basic
-import Mathlib.Topology.UniformSpace.Pi
-import Mathlib.Analysis.Normed.Module.Basic
-import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Topology.Algebra.Module.Basic
+public import Mathlib.Topology.UniformSpace.Pi
+public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.Calculus.FDeriv.Mul
+
+@[expose] public section
 
 namespace NumLean
 
@@ -59,7 +62,7 @@ macro "fun " x:ident " : " X:term " =>L[" R:term "] " b:term : term =>
 macro "fun " "(" x:ident " : " X:term ")" " =>L[" R:term "] " b:term : term =>
   `(ContinuousLinearMap.mk' $R (fun ($x : $X) => $b) (by fun_prop))
 
-@[app_unexpander ContinuousLinearMap.mk'] def unexpandContinuousLinearMapMk : Lean.PrettyPrinter.Unexpander
+@[app_unexpander ContinuousLinearMap.mk'] meta def unexpandContinuousLinearMapMk : Lean.PrettyPrinter.Unexpander
 
   | `($(_) $R $f:term $_:term) =>
     match f with

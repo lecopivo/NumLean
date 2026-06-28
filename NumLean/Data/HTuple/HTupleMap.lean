@@ -1,5 +1,9 @@
-import NumLean.Data.HTuple.Range
-import NumLean.Data.HTuple.Algebra
+module
+
+public import NumLean.Data.HTuple.Range
+public import NumLean.Data.HTuple.Algebra
+
+@[expose] public section
 
 namespace NumLean
 

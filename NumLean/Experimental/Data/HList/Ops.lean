@@ -1,5 +1,10 @@
-import NumLean.Experimental.Data.HList.Notation
-import NumLean.Interfaces.Order
+module
+
+public import NumLean.Experimental.Data.HList.Notation
+import all NumLean.Experimental.Data.HList.Basic
+public import NumLean.Interfaces.Order
+
+@[expose] public section
 
 namespace NumLean
 

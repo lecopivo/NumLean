@@ -1,8 +1,12 @@
-import NumLean.Data.Scalars.Float64.Basic
-import NumLean.Data.Scalars.Float64.Float64Array
-import NumLean.Data.Scalars.Float64.Float64Vector
-import NumLean.Data.Scalars.Float64.Algebra
-import NumLean.Data.Scalars.Float64.VectorType
-import NumLean.Data.Scalars.Float64.HasFlatRepr
-import NumLean.Data.Scalars.Float64.TensorType
-import NumLean.Data.Scalars.Float64.TensorAlgebra
+module
+
+public import NumLean.Data.Scalars.Float64.Basic
+public import NumLean.Data.Scalars.Float64.Float64Array
+public import NumLean.Data.Scalars.Float64.Float64Vector
+public import NumLean.Data.Scalars.Float64.Algebra
+public import NumLean.Data.Scalars.Float64.VectorType
+public import NumLean.Data.Scalars.Float64.HasFlatRepr
+public import NumLean.Data.Scalars.Float64.TensorType
+public import NumLean.Data.Scalars.Float64.TensorAlgebra
+@[expose] public section
+

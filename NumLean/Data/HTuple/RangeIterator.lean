@@ -1,6 +1,10 @@
-import NumLean.Data.HTuple.Range
-import NumLean.Data.RangeEnum
-import Std.Data.Iterators.Producers.Range
+module
+
+public import NumLean.Data.HTuple.Range
+public import NumLean.Data.RangeEnum
+public import Std.Data.Iterators.Producers.Range
+
+@[expose] public section
 
 namespace NumLean
 

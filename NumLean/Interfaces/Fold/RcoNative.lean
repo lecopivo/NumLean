@@ -1,4 +1,8 @@
-import NumLean.Interfaces.Fold.Basic
+module
+
+public import NumLean.Interfaces.Fold.Basic
+
+@[expose] public section
 
 public section
 

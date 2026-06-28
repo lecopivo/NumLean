@@ -1,5 +1,9 @@
-import NumLean.Data.Scalars.UInt8.Basic
-import NumLean.Data.Scalars.UInt8.ByteVector
-import NumLean.Data.Scalars.UInt8.Algebra
-import NumLean.Data.Scalars.UInt8.VectorType
-import NumLean.Data.Scalars.UInt8.HasFlatRepr
+module
+
+public import NumLean.Data.Scalars.UInt8.Basic
+public import NumLean.Data.Scalars.UInt8.ByteVector
+public import NumLean.Data.Scalars.UInt8.Algebra
+public import NumLean.Data.Scalars.UInt8.VectorType
+public import NumLean.Data.Scalars.UInt8.HasFlatRepr
+@[expose] public section
+

@@ -1,6 +1,10 @@
-import NumLean.Interfaces.Algebra.NormedGroup.Lawful
-import NumLean.Data.Prod.Algebra.Group
-import Mathlib.Analysis.Normed.Group.Constructions
+module
+
+public import NumLean.Interfaces.Algebra.NormedGroup.Lawful
+public import NumLean.Data.Prod.Algebra.Group
+public import Mathlib.Analysis.Normed.Group.Constructions
+
+@[expose] public section
 
 namespace NumLean
 

@@ -1,6 +1,10 @@
-import NumLean.Data.HTuple.Algebra
-import NumLean.Data.HTuple.GetElemTacticInit
-import Mathlib.Data.List.Lex
+module
+
+public import NumLean.Data.HTuple.Algebra
+public import NumLean.Data.HTuple.GetElemTacticInit
+public import Mathlib.Data.List.Lex
+
+@[expose] public section
 
 open Lean Std PRange
 

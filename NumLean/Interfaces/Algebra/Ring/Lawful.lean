@@ -1,5 +1,9 @@
-import NumLean.Interfaces.Algebra.Ring.Basic
-import NumLean.Interfaces.Algebra.Group.Lawful
+module
+
+public import NumLean.Interfaces.Algebra.Ring.Basic
+public import NumLean.Interfaces.Algebra.Group.Lawful
+
+@[expose] public section
 
 namespace NumLean
 namespace Interfaces

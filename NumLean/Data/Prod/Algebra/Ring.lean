@@ -1,6 +1,10 @@
-import NumLean.Interfaces.Algebra.Ring.Lawful
-import NumLean.Data.Prod.Algebra.Group
-import Mathlib.Algebra.Notation.Prod
+module
+
+public import NumLean.Interfaces.Algebra.Ring.Lawful
+public import NumLean.Data.Prod.Algebra.Group
+public import Mathlib.Algebra.Notation.Prod
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

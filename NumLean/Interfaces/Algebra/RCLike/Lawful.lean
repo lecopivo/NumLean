@@ -1,11 +1,15 @@
-import NumLean.Interfaces.Algebra.RCLike.Basic
+module
+
+public import NumLean.Interfaces.Algebra.RCLike.Basic
+
+@[expose] public section
 
 namespace NumLean
 
-private noncomputable def complexToRCLike {K : Type v} [RCLike K] (z : ℂ) : K :=
+noncomputable def complexToRCLike {K : Type v} [RCLike K] (z : ℂ) : K :=
   (algebraMap ℝ K) z.re + (algebraMap ℝ K) z.im * RCLike.I
 
-private noncomputable def rclikeToComplex {K : Type v} [RCLike K] (z : K) : ℂ where
+noncomputable def rclikeToComplex {K : Type v} [RCLike K] (z : K) : ℂ where
   re := RCLike.re z
   im := RCLike.im z
 
@@ -89,7 +93,7 @@ noncomputable instance (priority := 50) instLawfulRCOpsOfRCLike {K : Type v}
   cpow_eq_ofComplex := by intro z w; rfl
 
 @[reducible]
-private def partialOrderOfRCOps {R : Type u} {K : Type v} [RCOps R K] [Zero R]
+def partialOrderOfRCOps {R : Type u} {K : Type v} [RCOps R K] [Zero R]
     [LawfulDataRCOps (R := R) K] [LawfulRCOps (R := R) K] : PartialOrder K where
   le := RCOps.le (R := R)
   lt := RCOps.lt (R := R)

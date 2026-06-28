@@ -1,5 +1,9 @@
-import Mathlib.Data.Real.Basic
-import Mathlib.Tactic
+module
+
+public import Mathlib.Data.Real.Basic
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace NumLean
 

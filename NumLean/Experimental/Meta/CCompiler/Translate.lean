@@ -1,4 +1,8 @@
-import NumLean.Experimental.Meta.CCompiler.Basic
+module
+
+public import NumLean.Experimental.Meta.CCompiler.Basic
+
+@[expose] public section
 
 namespace NumLean.Experimental.Meta.CCompiler
 

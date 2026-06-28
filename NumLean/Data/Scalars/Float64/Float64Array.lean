@@ -1,4 +1,10 @@
-import Batteries.Data.FloatArray
+module
+
+public import Batteries.Data.FloatArray
+import all Batteries.Data.FloatArray
+import all Init.Data.FloatArray.Basic
+
+@[expose] public section
 
 namespace FloatArray
 

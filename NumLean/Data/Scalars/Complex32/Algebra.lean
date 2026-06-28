@@ -1,6 +1,10 @@
-import NumLean.Data.Scalars.Complex32.Basic
-import NumLean.Data.Scalars.Float32.Algebra
-import NumLean.Interfaces.Algebra.RCLike.Basic
+module
+
+public import NumLean.Data.Scalars.Complex32.Basic
+public import NumLean.Data.Scalars.Float32.Algebra
+public import NumLean.Interfaces.Algebra.RCLike.Basic
+
+@[expose] public section
 
 namespace NumLean
 
@@ -49,12 +53,12 @@ instance : BEq Complex32 where
   beq x y := x.re == y.re && x.im == y.im
 
 -- todo: implement by in log(n) steps by halving n
-private def npowRec : Complex32 → Nat → Complex32
+def npowRec : Complex32 → Nat → Complex32
   | _, 0 => 1
   | z, n + 1 => npowRec z n * z
 
 -- todo: implement by in log(n) steps by halving n
-private def zpowRec : Complex32 → Int → Complex32
+def zpowRec : Complex32 → Int → Complex32
   | z, .ofNat n => npowRec z n
   | z, .negSucc n => (npowRec z (n + 1))⁻¹
 

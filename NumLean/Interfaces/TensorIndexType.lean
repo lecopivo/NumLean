@@ -1,5 +1,9 @@
-import NumLean.Data.FinHTuple
-import NumLean.Interfaces.IndexType
+module
+
+public import NumLean.Data.FinHTuple
+public import NumLean.Interfaces.IndexType
+
+@[expose] public section
 
 namespace NumLean
 

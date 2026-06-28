@@ -1,4 +1,8 @@
-import NumLean.Experimental.Meta.CCompiler.Semantics
+module
+
+public import NumLean.Experimental.Meta.CCompiler.Semantics
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

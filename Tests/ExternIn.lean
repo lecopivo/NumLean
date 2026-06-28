@@ -1,4 +1,9 @@
-import NumLean.Experimental.Meta.CCompiler
+module
+
+public import NumLean.Experimental.Meta.CCompiler
+public meta import NumLean.Experimental.Meta.CCompiler.Extern
+
+@[expose] public section
 
 set_option backward.do.legacy false
 

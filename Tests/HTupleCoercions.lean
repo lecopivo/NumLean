@@ -1,4 +1,8 @@
-import NumLean.Data.FinHTuple.FinHTupleMap
+module
+
+public import NumLean.Data.FinHTuple.FinHTupleMap
+
+@[expose] public section
 
 open NumLean
 open NumLean.HTuple

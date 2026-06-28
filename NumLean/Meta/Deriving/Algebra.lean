@@ -1,8 +1,14 @@
-import Lean.Elab.Deriving.Util
-import Mathlib.Tactic.ProxyType
-import NumLean.Interfaces.Algebra.Equiv
-import NumLean.Data.Sigma
-import NumLean.Meta.RewriteBy
+module
+
+public import Lean.Elab.Deriving.Util
+public import Mathlib.Tactic.ProxyType
+public meta import Mathlib.Tactic.ProxyType
+public meta import NumLean.Meta.ExposedProxyType
+public import NumLean.Interfaces.Algebra.Equiv
+public import NumLean.Data.Sigma
+public import NumLean.Meta.RewriteBy
+
+@[expose] public section
 
 namespace NumLean
 
@@ -11,7 +17,7 @@ open Lean.Elab.Deriving
 
 namespace Algebra.Deriving
 
-private def checkSupported (indVal : InductiveVal) : CommandElabM Unit := do
+meta def checkSupported (indVal : InductiveVal) : CommandElabM Unit := do
   if indVal.isRec then
     throwError "deriving algebra ops only supports non-recursive structures"
   if indVal.numIndices != 0 then
@@ -19,7 +25,7 @@ private def checkSupported (indVal : InductiveVal) : CommandElabM Unit := do
   if indVal.numCtors != 1 then
     throwError "deriving algebra ops only supports structures/single-constructor inductives"
 
-private def hasPropField (indVal : InductiveVal) : TermElabM Bool := do
+meta def hasPropField (indVal : InductiveVal) : TermElabM Bool := do
   forallBoundedTelescope indVal.type indVal.numParams fun params _ => do
     let ctorInfo ← getConstInfoCtor indVal.ctors[0]!
     let ctorType ← inferType <|
@@ -28,11 +34,11 @@ private def hasPropField (indVal : InductiveVal) : TermElabM Bool := do
       xs.anyM fun x => do
         isProp (← inferType x)
 
-private def checkNoPropFields (indVal : InductiveVal) : CommandElabM Unit := do
+meta def checkNoPropFields (indVal : InductiveVal) : CommandElabM Unit := do
   if ← liftTermElabM <| hasPropField indVal then
     throwError "deriving algebra ops does not support structures with proof fields"
 
-private def mkInstanceCmd
+meta def mkInstanceCmd
     (className ofEquivName : Name) (indVal : InductiveVal) : TermElabM Command := do
   let argNames ← mkInductArgNames indVal
   let binders ← mkImplicitBinders argNames
@@ -49,7 +55,7 @@ private def mkInstanceCmd
           Sigma.neg_mk, Sigma.mk_mul_mk, Sigma.mk_div_mk, Sigma.inv_mk,
           Sigma.nat_smul_mk, Sigma.int_smul_mk, Sigma.mk_npow, Sigma.mk_zpow])
 
-private def mkAddGroupOpsCmds (indVal : InductiveVal) : TermElabM (Array Command) := do
+meta def mkAddGroupOpsCmds (indVal : InductiveVal) : TermElabM (Array Command) := do
   return #[]
     |>.push (← mkInstanceCmd ``Add ``Add.ofEquiv indVal)
     |>.push (← mkInstanceCmd ``Sub ``Sub.ofEquiv indVal)
@@ -57,7 +63,7 @@ private def mkAddGroupOpsCmds (indVal : InductiveVal) : TermElabM (Array Command
     |>.push (← mkInstanceCmd ``Zero ``Zero.ofEquiv indVal)
     |>.push (← mkInstanceCmd ``AddGroupOps ``AddGroupOps.ofEquiv indVal)
 
-private def mkGroupOpsCmds (indVal : InductiveVal) : TermElabM (Array Command) := do
+meta def mkGroupOpsCmds (indVal : InductiveVal) : TermElabM (Array Command) := do
   return #[]
     |>.push (← mkInstanceCmd ``Mul ``Mul.ofEquiv indVal)
     |>.push (← mkInstanceCmd ``Div ``Div.ofEquiv indVal)
@@ -65,30 +71,31 @@ private def mkGroupOpsCmds (indVal : InductiveVal) : TermElabM (Array Command) :
     |>.push (← mkInstanceCmd ``One ``One.ofEquiv indVal)
     |>.push (← mkInstanceCmd ``GroupOps ``GroupOps.ofEquiv indVal)
 
-private def mkOpsInstances
+meta def mkOpsInstances
     (typeName : Name) (mkCmds : InductiveVal → TermElabM (Array Command)) : CommandElabM Unit := do
   let indVal ← getConstInfoInduct typeName
   checkSupported indVal
   checkNoPropFields indVal
   liftTermElabM <|
-    Mathlib.ProxyType.ensureProxyEquiv (Mathlib.ProxyType.ProxyEquivConfig.default indVal) indVal
+    NumLean.Meta.ExposedProxyType.ensureProxyEquivExposed
+      (Mathlib.ProxyType.ProxyEquivConfig.default indVal) indVal
   let cmds ← liftTermElabM <| mkCmds indVal
   trace[Elab.Deriving.Algebra] "instance commands:\n{cmds}"
   elabCommand <| mkNullNode cmds
 
-def addGroupOpsDerivingHandler (declNames : Array Name) : CommandElabM Bool := do
+meta def addGroupOpsDerivingHandler (declNames : Array Name) : CommandElabM Bool := do
   if declNames.size != 1 then
     return false
   mkOpsInstances declNames[0]! mkAddGroupOpsCmds
   return true
 
-def groupOpsDerivingHandler (declNames : Array Name) : CommandElabM Bool := do
+meta def groupOpsDerivingHandler (declNames : Array Name) : CommandElabM Bool := do
   if declNames.size != 1 then
     return false
   mkOpsInstances declNames[0]! mkGroupOpsCmds
   return true
 
-initialize
+meta initialize
   registerDerivingHandler ``AddGroupOps addGroupOpsDerivingHandler
   registerDerivingHandler ``GroupOps groupOpsDerivingHandler
   registerTraceClass `Elab.Deriving.Algebra

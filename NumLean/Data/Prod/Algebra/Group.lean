@@ -1,6 +1,10 @@
-import NumLean.Interfaces.Algebra.Group.Lawful
-import Mathlib.Algebra.Group.Prod
-import Mathlib.Algebra.Notation.Prod
+module
+
+public import NumLean.Interfaces.Algebra.Group.Lawful
+public import Mathlib.Algebra.Group.Prod
+public import Mathlib.Algebra.Notation.Prod
+
+@[expose] public section
 
 namespace NumLean
 namespace Interfaces

@@ -1,4 +1,8 @@
-import NumLean.Interfaces.Algebra.Group.Basic
+module
+
+public import NumLean.Interfaces.Algebra.Group.Basic
+
+@[expose] public section
 
 namespace NumLean
 namespace Interfaces

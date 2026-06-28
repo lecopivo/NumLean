@@ -1,5 +1,9 @@
-import NumLean.Data.Scalars.Float32.Basic
-import NumLean.Data.Scalars.Float64.Algebra
+module
+
+public import NumLean.Data.Scalars.Float32.Basic
+public import NumLean.Data.Scalars.Float64.Algebra
+
+@[expose] public section
 
 namespace NumLean
 
@@ -12,7 +16,7 @@ instance : NatCast Float32 where
 instance : IntCast Float32 where
   intCast n := n.toInt32.toFloat32
 
-private def ratToFloat32 (q : ℚ) : Float32 :=
+def ratToFloat32 (q : ℚ) : Float32 :=
   q.num.toInt32.toFloat32 / q.den.toFloat32
 
 instance : NNRatCast Float32 where

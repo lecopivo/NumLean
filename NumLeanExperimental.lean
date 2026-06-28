@@ -1,35 +1,39 @@
-import NumLean.Experimental.Data.BTuple
-import NumLean.Experimental.Data.BTuple.Basic
-import NumLean.Experimental.Data.BTuple.Fold
-import NumLean.Experimental.Data.BTuple.Order
-import NumLean.Experimental.Data.BTuple.Range
-import NumLean.Experimental.Data.DyadicInterval
-import NumLean.Experimental.Data.DyadicInterval.Basic
-import NumLean.Experimental.Data.FloatP
-import NumLean.Experimental.Data.HList
-import NumLean.Experimental.Data.HList.Basic
-import NumLean.Experimental.Data.HList.Notation
-import NumLean.Experimental.Data.HList.Ops
-import NumLean.Experimental.Data.HList.RangeIterator
-import NumLean.Experimental.Data.HVector
-import NumLean.Experimental.Data.HVector.Basic
-import NumLean.Experimental.Data.HVector.Ops
-import NumLean.Experimental.Data.IdxP
-import NumLean.Experimental.Data.KernelExpr
-import NumLean.Experimental.Data.KernelExpr.Basic
-import NumLean.Experimental.Data.KernelExpr.HasKernelExpr
-import NumLean.Experimental.Data.KernelExpr.Register
-import NumLean.Experimental.Data.RatInterval
-import NumLean.Experimental.Data.RatInterval.Basic
-import NumLean.Experimental.Interfaces.Device.Basic
-import NumLean.Experimental.Interfaces.Interval
-import NumLean.Experimental.Interfaces.Interval.Basic
-import NumLean.Experimental.Interfaces.Interval.Lawful
-import NumLean.Experimental.Meta.CCompiler
-import NumLean.Experimental.Meta.CCompiler.Basic
-import NumLean.Experimental.Meta.CCompiler.Command
-import NumLean.Experimental.Meta.CCompiler.Compile
-import NumLean.Experimental.Meta.CCompiler.Extern
-import NumLean.Experimental.Meta.CCompiler.IR
-import NumLean.Experimental.Meta.CCompiler.Semantics
-import NumLean.Experimental.Meta.CCompiler.Translate
+module
+
+public import NumLean.Experimental.Data.BTuple
+public import NumLean.Experimental.Data.BTuple.Basic
+public import NumLean.Experimental.Data.BTuple.Fold
+public import NumLean.Experimental.Data.BTuple.Order
+public import NumLean.Experimental.Data.BTuple.Range
+public import NumLean.Experimental.Data.DyadicInterval
+public import NumLean.Experimental.Data.DyadicInterval.Basic
+public import NumLean.Experimental.Data.FloatP
+public import NumLean.Experimental.Data.HList
+public import NumLean.Experimental.Data.HList.Basic
+public import NumLean.Experimental.Data.HList.Notation
+public import NumLean.Experimental.Data.HList.Ops
+public import NumLean.Experimental.Data.HList.RangeIterator
+public import NumLean.Experimental.Data.HVector
+public import NumLean.Experimental.Data.HVector.Basic
+public import NumLean.Experimental.Data.HVector.Ops
+public import NumLean.Experimental.Data.IdxP
+public import NumLean.Experimental.Data.KernelExpr
+public import NumLean.Experimental.Data.KernelExpr.Basic
+public import NumLean.Experimental.Data.KernelExpr.HasKernelExpr
+public import NumLean.Experimental.Data.KernelExpr.Register
+public import NumLean.Experimental.Data.RatInterval
+public import NumLean.Experimental.Data.RatInterval.Basic
+public import NumLean.Experimental.Interfaces.Device.Basic
+public import NumLean.Experimental.Interfaces.Interval
+public import NumLean.Experimental.Interfaces.Interval.Basic
+public import NumLean.Experimental.Interfaces.Interval.Lawful
+public import NumLean.Experimental.Meta.CCompiler
+public import NumLean.Experimental.Meta.CCompiler.Basic
+public import NumLean.Experimental.Meta.CCompiler.Command
+public import NumLean.Experimental.Meta.CCompiler.Compile
+public import NumLean.Experimental.Meta.CCompiler.Extern
+public import NumLean.Experimental.Meta.CCompiler.IR
+public import NumLean.Experimental.Meta.CCompiler.Semantics
+public import NumLean.Experimental.Meta.CCompiler.Translate
+@[expose] public section
+

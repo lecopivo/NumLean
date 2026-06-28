@@ -1,5 +1,9 @@
-import NumLean.Interfaces.Algebra.Field.Lawful
-import NumLean.Data.Prod.Algebra.Ring
+module
+
+public import NumLean.Interfaces.Algebra.Field.Lawful
+public import NumLean.Data.Prod.Algebra.Ring
+
+@[expose] public section
 
 namespace NumLean
 namespace Interfaces

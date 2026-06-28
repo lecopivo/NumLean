@@ -1,5 +1,9 @@
-import NumLean.Data.Scalars.UInt8.ByteVector
-import NumLean.Interfaces.VectorType.Basic
+module
+
+public import NumLean.Data.Scalars.UInt8.ByteVector
+public import NumLean.Interfaces.VectorType.Basic
+
+@[expose] public section
 
 namespace NumLean
 

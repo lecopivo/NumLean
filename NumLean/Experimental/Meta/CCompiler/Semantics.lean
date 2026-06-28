@@ -1,4 +1,8 @@
-import NumLean.Experimental.Meta.CCompiler.IR
+module
+
+public import NumLean.Experimental.Meta.CCompiler.IR
+
+@[expose] public section
 
 namespace NumLean.Experimental.Meta.CCompiler.IR
 

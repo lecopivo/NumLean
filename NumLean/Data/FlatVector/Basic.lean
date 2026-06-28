@@ -1,9 +1,13 @@
-import NumLean.Interfaces.IndexType
-import NumLean.Interfaces.SetElem
-import NumLean.Interfaces.VectorType.Basic
-import NumLean.Interfaces.HasFlatRepr.Basic
-import NumLean.Data.FinHTuple
-import NumLean.Tactic.TBounds
+module
+
+public import NumLean.Interfaces.IndexType
+public import NumLean.Interfaces.SetElem
+public import NumLean.Interfaces.VectorType.Basic
+public import NumLean.Interfaces.HasFlatRepr.Basic
+public import NumLean.Data.FinHTuple
+public import NumLean.Tactic.TBounds
+
+@[expose] public section
 
 namespace NumLean
 

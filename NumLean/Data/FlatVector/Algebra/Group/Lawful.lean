@@ -1,10 +1,14 @@
-import NumLean.Data.FlatVector.Algebra.Group.Ops
-import NumLean.Interfaces.TensorAlgebra
-import NumLean.Interfaces.Module.Lawful
-import NumLean.Interfaces.HasFlatRepr.Lawful
-import NumLean.Interfaces.UntypedIndex
-import NumLean.Interfaces.Algebra.Ring.Lawful
-import Mathlib.Analysis.Normed.Lp.PiLp
+module
+
+public import NumLean.Data.FlatVector.Algebra.Group.Ops
+public import NumLean.Interfaces.TensorAlgebra
+public import NumLean.Interfaces.Module.Lawful
+public import NumLean.Interfaces.HasFlatRepr.Lawful
+public import NumLean.Interfaces.UntypedIndex
+public import NumLean.Interfaces.Algebra.Ring.Lawful
+public import Mathlib.Analysis.Normed.Lp.PiLp
+
+@[expose] public section
 
 namespace NumLean.FlatVector
 

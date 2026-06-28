@@ -1,4 +1,8 @@
-import Mathlib.Tactic
+module
+
+public import Mathlib.Tactic
+
+@[expose] public section
 
 /-! Discusting AI generated tactic that is proving inequalities like `i * nX + j < nI * nX` that
 show up all the time.
@@ -64,7 +68,7 @@ theorem stride_lt_rco_of_bound {xoff xinc xn n i : Nat}
 
 end TBounds
 
-private def isNatLtHyp (decl : LocalDecl) : MetaM Bool := do
+private meta def isNatLtHyp (decl : LocalDecl) : MetaM Bool := do
   if !decl.isImplementationDetail then
     let t := decl.type
     let args := t.getAppArgs
@@ -75,20 +79,20 @@ private def isNatLtHyp (decl : LocalDecl) : MetaM Bool := do
   else
     return false
 
-private def isNatVar (decl : LocalDecl) : MetaM Bool := do
+private meta def isNatVar (decl : LocalDecl) : MetaM Bool := do
   if !decl.isImplementationDetail then
     isDefEq decl.type (mkConst ``Nat)
   else
     return false
 
-private def finBoundSource? (decl : LocalDecl) : MetaM (Option Expr) := do
+private meta def finBoundSource? (decl : LocalDecl) : MetaM (Option Expr) := do
   if decl.isImplementationDetail then
     return none
   if decl.type.getAppFn.isConstOf ``Fin && decl.type.getAppNumArgs == 1 then
     return some decl.toExpr
   return none
 
-private def tboundsCore (sources : Array Expr) : TacticM Unit := do
+private meta def tboundsCore (sources : Array Expr) : TacticM Unit := do
   try
     evalTactic (← `(tactic| first
       | omega

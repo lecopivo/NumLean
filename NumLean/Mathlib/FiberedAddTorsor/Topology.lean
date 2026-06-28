@@ -1,5 +1,9 @@
-import Mathlib.Topology.Algebra.Group.Basic
-import NumLean.Mathlib.FiberedAddTorsor.Prod
+module
+
+public import Mathlib.Topology.Algebra.Group.Basic
+public import NumLean.Mathlib.FiberedAddTorsor.Prod
+
+@[expose] public section
 
 namespace NumLean
 

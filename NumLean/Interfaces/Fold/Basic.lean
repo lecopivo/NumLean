@@ -1,6 +1,10 @@
-import Init.Data.Range.Polymorphic.Basic
-import Mathlib.Logic.Equiv.Defs
-import Mathlib.Data.List.Nodup
+module
+
+public import Init.Data.Range.Polymorphic.Basic
+public import Mathlib.Logic.Equiv.Defs
+public import Mathlib.Data.List.Nodup
+
+@[expose] public section
 
 public section
 

@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 namespace NumLean
 
 def Tensor (R : Type) (I : Type) : Type := Unit

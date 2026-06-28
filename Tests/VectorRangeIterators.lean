@@ -1,4 +1,9 @@
-import NumLean.Data.Vector
+module
+
+public import NumLean.Data.Vector
+public meta import NumLean.Data.Vector.RangeIterator
+
+@[expose] public section
 
 open NumLean
 

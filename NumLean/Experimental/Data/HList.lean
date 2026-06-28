@@ -1,4 +1,8 @@
-import NumLean.Experimental.Data.HList.Basic
-import NumLean.Experimental.Data.HList.Notation
-import NumLean.Experimental.Data.HList.Ops
-import NumLean.Experimental.Data.HList.RangeIterator
+module
+
+public import NumLean.Experimental.Data.HList.Basic
+public import NumLean.Experimental.Data.HList.Notation
+public import NumLean.Experimental.Data.HList.Ops
+public import NumLean.Experimental.Data.HList.RangeIterator
+@[expose] public section
+

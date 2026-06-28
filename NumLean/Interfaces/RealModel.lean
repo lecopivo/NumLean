@@ -1,10 +1,14 @@
-import NumLean.Interfaces.Algebra.RNorm
-import NumLean.Interfaces.Algebra.RCLike.Basic
-import NumLean.Interfaces.Algebra.RCLike.Lawful
-import NumLean.Interfaces.VectorType.Basic
-import NumLean.Interfaces.TensorAlgebra
-import NumLean.Interfaces.TensorType
-import NumLean.Data.FlatVector.Ops
+module
+
+public import NumLean.Interfaces.Algebra.RNorm
+public import NumLean.Interfaces.Algebra.RCLike.Basic
+public import NumLean.Interfaces.Algebra.RCLike.Lawful
+public import NumLean.Interfaces.VectorType.Basic
+public import NumLean.Interfaces.TensorAlgebra
+public import NumLean.Interfaces.TensorType
+public import NumLean.Data.FlatVector.Ops
+
+@[expose] public section
 
 namespace NumLean
 

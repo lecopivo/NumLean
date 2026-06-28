@@ -1,4 +1,8 @@
-import NumLean.Interfaces.Algebra.Ring.Basic
+module
+
+public import NumLean.Interfaces.Algebra.Ring.Basic
+
+@[expose] public section
 
 namespace NumLean
 

@@ -1,5 +1,9 @@
-import Lean.Elab.Tactic.Config
-import Lean.Meta.Tactic.SolveByElim
+module
+
+public import Lean.Elab.Tactic.Config
+public import Lean.Meta.Tactic.SolveByElim
+
+@[expose] public section
 
 namespace NumLean.Tactic.ApplyRuleSets
 

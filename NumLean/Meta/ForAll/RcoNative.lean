@@ -1,4 +1,8 @@
-import NumLean.Meta.ForAll.Basic
+module
+
+public import NumLean.Meta.ForAll.Basic
+
+@[expose] public section
 
 public section
 
@@ -468,7 +472,7 @@ private theorem rcoNativeEntriesFrom_nat_nodup (xs : Std.Rco Nat)
 termination_by xs.upper - i
 decreasing_by omega
 
-private theorem rcoNativeEntries_nat_nodup (xs : Std.Rco Nat) :
+theorem rcoNativeEntries_nat_nodup (xs : Std.Rco Nat) :
     (rcoNativeEntries xs).Nodup :=
   rcoNativeEntriesFrom_nat_nodup xs xs.lower (RcoNativeStep.le_refl xs.lower)
 
@@ -533,7 +537,7 @@ private theorem rcoNativeEntriesFrom_int_nodup (xs : Std.Rco Int)
 termination_by (xs.upper - i).toNat
 decreasing_by omega
 
-private theorem rcoNativeEntries_int_nodup (xs : Std.Rco Int) :
+theorem rcoNativeEntries_int_nodup (xs : Std.Rco Int) :
     (rcoNativeEntries xs).Nodup :=
   rcoNativeEntriesFrom_int_nodup xs xs.lower (RcoNativeStep.le_refl xs.lower)
 
@@ -610,7 +614,7 @@ decreasing_by
   have hlt := UInt64.lt_iff_toNat_lt.mp (by assumption)
   omega
 
-private theorem rcoNativeEntries_uint64_nodup (xs : Std.Rco UInt64) :
+theorem rcoNativeEntries_uint64_nodup (xs : Std.Rco UInt64) :
     (rcoNativeEntries xs).Nodup :=
   rcoNativeEntriesFrom_uint64_nodup xs xs.lower (RcoNativeStep.le_refl xs.lower)
 

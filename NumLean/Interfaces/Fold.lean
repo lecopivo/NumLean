@@ -1,8 +1,12 @@
-import NumLean.Interfaces.Fold.Basic
-import NumLean.Interfaces.Fold.Commute
-import NumLean.Interfaces.Fold.RangeIso
-import NumLean.Interfaces.Fold.Embedding
-import NumLean.Interfaces.Fold.Filter
-import NumLean.Interfaces.Fold.Lemmas
-import NumLean.Interfaces.Fold.RcoNative
-import NumLean.Data.Prod.Fold
+module
+
+public import NumLean.Interfaces.Fold.Basic
+public import NumLean.Interfaces.Fold.Commute
+public import NumLean.Interfaces.Fold.RangeIso
+public import NumLean.Interfaces.Fold.Embedding
+public import NumLean.Interfaces.Fold.Filter
+public import NumLean.Interfaces.Fold.Lemmas
+public import NumLean.Interfaces.Fold.RcoNative
+public import NumLean.Data.Prod.Fold
+@[expose] public section
+

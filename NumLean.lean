@@ -1,137 +1,141 @@
-import NumLean.Data.FinHTuple
-import NumLean.Data.FinHTuple.Basic
-import NumLean.Data.FinHTuple.FinHTupleMap
-import NumLean.Data.FinHTuple.Fold
-import NumLean.Data.FlatVector.Algebra
-import NumLean.Data.FlatVector.Basic
-import NumLean.Data.FlatVector.HasFlatRepr
-import NumLean.Data.FlatVector.Ops
-import NumLean.Data.Scalars.Float32.Float32Array
-import NumLean.Data.HTuple
-import NumLean.Data.HTuple.Algebra
-import NumLean.Data.HTuple.Basic
-import NumLean.Data.HTuple.Fold
-import NumLean.Data.HTuple.GetElemTactic
-import NumLean.Data.HTuple.GetElemTacticInit
-import NumLean.Data.HTuple.HTupleMap
-import NumLean.Data.HTuple.Ops
-import NumLean.Data.HTuple.Order
-import NumLean.Data.HTuple.Range
-import NumLean.Data.HTuple.RangeIterator
-import NumLean.Data.HTuple.RangeIteratorSpec
-import NumLean.Data.HTuple.RangeNotation
-import NumLean.Data.Idx
-import NumLean.Data.Prod
-import NumLean.Data.Prod.Algebra.Field
-import NumLean.Data.Prod.Algebra.Group
-import NumLean.Data.Prod.Algebra.NormedField
-import NumLean.Data.Prod.Algebra.NormedGroup
-import NumLean.Data.Prod.Algebra.NormedRing
-import NumLean.Data.Prod.Algebra.Ring
-import NumLean.Data.Prod.Fold
-import NumLean.Data.Prod.Order
-import NumLean.Data.Prod.OrderInit
-import NumLean.Data.RangeEnum
-import NumLean.Data.ScalarArrays
-import NumLean.Data.Scalars
-import NumLean.Data.Sigma
-import NumLean.Data.Tensor
-import NumLean.Data.Tensor.Index
-import NumLean.Data.Tensor.Layout
-import NumLean.Data.Tensor.Rank
-import NumLean.Data.Tensor.Shape
-import NumLean.Data.Vector
-import NumLean.Data.Vector.Algebra
-import NumLean.Data.Vector.Basic
-import NumLean.Data.Vector.Ops
-import NumLean.Data.Vector.RangeIterator
-import NumLean.Data.Vector.TensorAlgebra
-import NumLean.Data.Vector.TensorAlgebra.Core
-import NumLean.Data.Vector.TensorAlgebra.Lemmas
+module
+
+public import NumLean.Data.FinHTuple
+public import NumLean.Data.FinHTuple.Basic
+public import NumLean.Data.FinHTuple.FinHTupleMap
+public import NumLean.Data.FinHTuple.Fold
+public import NumLean.Data.FlatVector.Algebra
+public import NumLean.Data.FlatVector.Basic
+public import NumLean.Data.FlatVector.HasFlatRepr
+public import NumLean.Data.FlatVector.Ops
+public import NumLean.Data.Scalars.Float32.Float32Array
+public import NumLean.Data.HTuple
+public import NumLean.Data.HTuple.Algebra
+public import NumLean.Data.HTuple.Basic
+public import NumLean.Data.HTuple.Fold
+public import NumLean.Data.HTuple.GetElemTactic
+public import NumLean.Data.HTuple.GetElemTacticInit
+public import NumLean.Data.HTuple.HTupleMap
+public import NumLean.Data.HTuple.Ops
+public import NumLean.Data.HTuple.Order
+public import NumLean.Data.HTuple.Range
+public import NumLean.Data.HTuple.RangeIterator
+public import NumLean.Data.HTuple.RangeIteratorSpec
+public import NumLean.Data.HTuple.RangeNotation
+public import NumLean.Data.Idx
+public import NumLean.Data.Prod
+public import NumLean.Data.Prod.Algebra.Field
+public import NumLean.Data.Prod.Algebra.Group
+public import NumLean.Data.Prod.Algebra.NormedField
+public import NumLean.Data.Prod.Algebra.NormedGroup
+public import NumLean.Data.Prod.Algebra.NormedRing
+public import NumLean.Data.Prod.Algebra.Ring
+public import NumLean.Data.Prod.Fold
+public import NumLean.Data.Prod.Order
+public import NumLean.Data.Prod.OrderInit
+public import NumLean.Data.RangeEnum
+public import NumLean.Data.ScalarArrays
+public import NumLean.Data.Scalars
+public import NumLean.Data.Sigma
+public import NumLean.Data.Tensor
+public import NumLean.Data.Tensor.Index
+public import NumLean.Data.Tensor.Layout
+public import NumLean.Data.Tensor.Rank
+public import NumLean.Data.Tensor.Shape
+public import NumLean.Data.Vector
+public import NumLean.Data.Vector.Algebra
+public import NumLean.Data.Vector.Basic
+public import NumLean.Data.Vector.Ops
+public import NumLean.Data.Vector.RangeIterator
+public import NumLean.Data.Vector.TensorAlgebra
+public import NumLean.Data.Vector.TensorAlgebra.Core
+public import NumLean.Data.Vector.TensorAlgebra.Lemmas
+
 -- import NumLean.Doodle
-import NumLean.Interfaces.Algebra.Field
-import NumLean.Interfaces.Algebra.Field.Basic
-import NumLean.Interfaces.Algebra.Field.Lawful
-import NumLean.Interfaces.Algebra.Equiv
-import NumLean.Interfaces.Algebra.Group
-import NumLean.Interfaces.Algebra.Group.Basic
-import NumLean.Interfaces.Algebra.Group.Lawful
-import NumLean.Interfaces.Algebra.NormedAlgebra
-import NumLean.Interfaces.Algebra.NormedAlgebra.Basic
-import NumLean.Interfaces.Algebra.NormedAlgebra.Lawful
-import NumLean.Interfaces.Algebra.NormedField
-import NumLean.Interfaces.Algebra.NormedField.Basic
-import NumLean.Interfaces.Algebra.NormedField.Lawful
-import NumLean.Interfaces.Algebra.NormedGroup
-import NumLean.Interfaces.Algebra.NormedGroup.Basic
-import NumLean.Interfaces.Algebra.NormedGroup.Lawful
-import NumLean.Interfaces.Algebra.NormedRing
-import NumLean.Interfaces.Algebra.NormedRing.Basic
-import NumLean.Interfaces.Algebra.NormedRing.Lawful
-import NumLean.Interfaces.Algebra.RCLike
-import NumLean.Interfaces.Algebra.RCLike.Basic
-import NumLean.Interfaces.Algebra.RCLike.Lawful
-import NumLean.Interfaces.Algebra.RNorm
-import NumLean.Interfaces.Algebra.Ring
-import NumLean.Interfaces.Algebra.Ring.Basic
-import NumLean.Interfaces.Algebra.Ring.Lawful
-import NumLean.Interfaces.Fold
-import NumLean.Interfaces.Fold.Basic
-import NumLean.Interfaces.Fold.Commute
-import NumLean.Interfaces.Fold.Embedding
-import NumLean.Interfaces.Fold.Filter
-import NumLean.Interfaces.Fold.Lemmas
-import NumLean.Interfaces.Fold.RangeIso
-import NumLean.Interfaces.Fold.RcoNative
-import NumLean.Interfaces.HasFlatRepr
-import NumLean.Interfaces.HasFlatRepr.Basic
-import NumLean.Interfaces.HasFlatRepr.Deriving
-import NumLean.Interfaces.HasFlatRepr.Equiv
-import NumLean.Interfaces.HasFlatRepr.Lawful
-import NumLean.Interfaces.HasFlatRepr.Prod
-import NumLean.Interfaces.HasFlatRepr.Sigma
-import NumLean.Interfaces.IndexType
-import NumLean.Interfaces.MachinePrecision
-import NumLean.Interfaces.Module
-import NumLean.Interfaces.Module.Basic
-import NumLean.Interfaces.Module.Lawful
-import NumLean.Interfaces.Order
-import NumLean.Interfaces.RealModel
-import NumLean.Interfaces.SetElem
-import NumLean.Interfaces.TensorAlgebra
-import NumLean.Interfaces.TensorIndexType
-import NumLean.Interfaces.UntypedIndex
-import NumLean.Interfaces.VectorType.Basic
-import NumLean.Mathlib.Calculus
-import NumLean.Mathlib.Calculus.TDeriv
-import NumLean.Mathlib.FiberedAddTorsor
-import NumLean.Mathlib.FiberedAddTorsor.Basic
-import NumLean.Mathlib.FiberedAddTorsor.Discrete
-import NumLean.Mathlib.FiberedAddTorsor.MProd
-import NumLean.Mathlib.FiberedAddTorsor.Prod
-import NumLean.Mathlib.FiberedAddTorsor.Topology
-import NumLean.Mathlib.IsContinuousLinearMap
-import NumLean.Meta
-import NumLean.Meta.ForAll
-import NumLean.Meta.ForAll.Basic
-import NumLean.Meta.ForAll.HTuple
-import NumLean.Meta.ForAll.Notation
-import NumLean.Meta.ForAll.RcoNat
-import NumLean.Meta.ForAll.RcoNative
-import NumLean.Meta.Deriving.Algebra
-import NumLean.Meta.HierarchyGraph
-import NumLean.Meta.RewriteBy
-import NumLean.Meta.Visualize
-import NumLean.Meta.Visualize.Basic
-import NumLean.Meta.Visualize.Command
-import NumLean.Meta.Visualize.Visualizers
-import NumLean.Misc.CuTe
-import NumLean.Misc.CuTe.Visualize
-import NumLean.Misc.VerifiedTensor
-import NumLean.Tactic.ApplyRuleSets
-import NumLean.Tactic.ApplyRuleSets.Attr
-import NumLean.Tactic.ApplyRuleSets.Core
-import NumLean.Tactic.ApplyRuleSets.Elab
-import NumLean.Tactic.ApplyRuleSets.RuleProc
-import NumLean.Tactic.ApplyRuleSets.Types
-import NumLean.Tactic.TBounds
+public import NumLean.Interfaces.Algebra.Field
+public import NumLean.Interfaces.Algebra.Field.Basic
+public import NumLean.Interfaces.Algebra.Field.Lawful
+public import NumLean.Interfaces.Algebra.Equiv
+public import NumLean.Interfaces.Algebra.Group
+public import NumLean.Interfaces.Algebra.Group.Basic
+public import NumLean.Interfaces.Algebra.Group.Lawful
+public import NumLean.Interfaces.Algebra.NormedAlgebra
+public import NumLean.Interfaces.Algebra.NormedAlgebra.Basic
+public import NumLean.Interfaces.Algebra.NormedAlgebra.Lawful
+public import NumLean.Interfaces.Algebra.NormedField
+public import NumLean.Interfaces.Algebra.NormedField.Basic
+public import NumLean.Interfaces.Algebra.NormedField.Lawful
+public import NumLean.Interfaces.Algebra.NormedGroup
+public import NumLean.Interfaces.Algebra.NormedGroup.Basic
+public import NumLean.Interfaces.Algebra.NormedGroup.Lawful
+public import NumLean.Interfaces.Algebra.NormedRing
+public import NumLean.Interfaces.Algebra.NormedRing.Basic
+public import NumLean.Interfaces.Algebra.NormedRing.Lawful
+public import NumLean.Interfaces.Algebra.RCLike
+public import NumLean.Interfaces.Algebra.RCLike.Basic
+public import NumLean.Interfaces.Algebra.RCLike.Lawful
+public import NumLean.Interfaces.Algebra.RNorm
+public import NumLean.Interfaces.Algebra.Ring
+public import NumLean.Interfaces.Algebra.Ring.Basic
+public import NumLean.Interfaces.Algebra.Ring.Lawful
+public import NumLean.Interfaces.Fold
+public import NumLean.Interfaces.Fold.Basic
+public import NumLean.Interfaces.Fold.Commute
+public import NumLean.Interfaces.Fold.Embedding
+public import NumLean.Interfaces.Fold.Filter
+public import NumLean.Interfaces.Fold.Lemmas
+public import NumLean.Interfaces.Fold.RangeIso
+public import NumLean.Interfaces.Fold.RcoNative
+public import NumLean.Interfaces.HasFlatRepr
+public import NumLean.Interfaces.HasFlatRepr.Basic
+public import NumLean.Interfaces.HasFlatRepr.Deriving
+public import NumLean.Interfaces.HasFlatRepr.Equiv
+public import NumLean.Interfaces.HasFlatRepr.Lawful
+public import NumLean.Interfaces.HasFlatRepr.Prod
+public import NumLean.Interfaces.HasFlatRepr.Sigma
+public import NumLean.Interfaces.IndexType
+public import NumLean.Interfaces.MachinePrecision
+public import NumLean.Interfaces.Module
+public import NumLean.Interfaces.Module.Basic
+public import NumLean.Interfaces.Module.Lawful
+public import NumLean.Interfaces.Order
+public import NumLean.Interfaces.RealModel
+public import NumLean.Interfaces.SetElem
+public import NumLean.Interfaces.TensorAlgebra
+public import NumLean.Interfaces.TensorIndexType
+public import NumLean.Interfaces.UntypedIndex
+public import NumLean.Interfaces.VectorType.Basic
+public import NumLean.Mathlib.Calculus
+public import NumLean.Mathlib.Calculus.TDeriv
+public import NumLean.Mathlib.FiberedAddTorsor
+public import NumLean.Mathlib.FiberedAddTorsor.Basic
+public import NumLean.Mathlib.FiberedAddTorsor.Discrete
+public import NumLean.Mathlib.FiberedAddTorsor.MProd
+public import NumLean.Mathlib.FiberedAddTorsor.Prod
+public import NumLean.Mathlib.FiberedAddTorsor.Topology
+public import NumLean.Mathlib.IsContinuousLinearMap
+public import NumLean.Meta
+public import NumLean.Meta.ForAll
+public import NumLean.Meta.ForAll.Basic
+public import NumLean.Meta.ForAll.HTuple
+public import NumLean.Meta.ForAll.Notation
+public import NumLean.Meta.ForAll.RcoNat
+public import NumLean.Meta.ForAll.RcoNative
+public import NumLean.Meta.Deriving.Algebra
+public import NumLean.Meta.HierarchyGraph
+public import NumLean.Meta.RewriteBy
+public import NumLean.Meta.Visualize
+public import NumLean.Meta.Visualize.Basic
+public import NumLean.Meta.Visualize.Command
+public import NumLean.Meta.Visualize.Visualizers
+public import NumLean.Misc.CuTe
+public import NumLean.Misc.CuTe.Visualize
+public import NumLean.Misc.VerifiedTensor
+public import NumLean.Tactic.ApplyRuleSets
+public import NumLean.Tactic.ApplyRuleSets.Attr
+public import NumLean.Tactic.ApplyRuleSets.Core
+public import NumLean.Tactic.ApplyRuleSets.Elab
+public import NumLean.Tactic.ApplyRuleSets.RuleProc
+public import NumLean.Tactic.ApplyRuleSets.Types
+public import NumLean.Tactic.TBounds
+@[expose] public section

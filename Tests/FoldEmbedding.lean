@@ -1,5 +1,9 @@
-import NumLean.Interfaces.Fold
-import NumLean.Data.FinHTuple.Fold
+module
+
+public import NumLean.Interfaces.Fold
+public import NumLean.Data.FinHTuple.Fold
+
+@[expose] public section
 
 namespace NumLean
 

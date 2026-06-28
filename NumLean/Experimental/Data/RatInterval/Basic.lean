@@ -1,7 +1,11 @@
-import Mathlib.Tactic
-import NumLean.Data.Scalars.Real.Algebra
-import NumLean.Interfaces.Algebra.RNorm
-import NumLean.Experimental.Interfaces.Interval
+module
+
+public import Mathlib.Tactic
+public import NumLean.Data.Scalars.Real.Algebra
+public import NumLean.Interfaces.Algebra.RNorm
+public import NumLean.Experimental.Interfaces.Interval
+
+@[expose] public section
 
 namespace NumLean
 

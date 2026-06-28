@@ -1,6 +1,10 @@
-import Init.Data.Float
-import Init.Ext
-import Init.Data.Array.DecidableEq
+module
+
+public import Init.Data.Float
+public import Init.Ext
+public import Init.Data.Array.DecidableEq
+
+@[expose] public section
 
 namespace NumLean
 

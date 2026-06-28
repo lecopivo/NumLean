@@ -1,9 +1,13 @@
-import Batteries.Data.FloatArray
-import NumLean.Experimental.Data.KernelExpr.Basic
-import NumLean.Experimental.Data.KernelExpr.Register
-import NumLean.Tactic.ApplyRuleSets
-import NumLean.Tactic.ApplyRuleSets.RuleProc
-import Mathlib.Logic.Equiv.Basic
+module
+
+public import Batteries.Data.FloatArray
+public import NumLean.Experimental.Data.KernelExpr.Basic
+public import NumLean.Experimental.Data.KernelExpr.Register
+public import NumLean.Tactic.ApplyRuleSets
+public import NumLean.Tactic.ApplyRuleSets.RuleProc
+public import Mathlib.Logic.Equiv.Basic
+
+@[expose] public section
 
 namespace NumLean
 #exit

@@ -1,5 +1,9 @@
-import Mathlib.Algebra.Star.Basic
-import NumLean.Interfaces.Algebra
+module
+
+public import Mathlib.Algebra.Star.Basic
+public import NumLean.Interfaces.Algebra
+
+@[expose] public section
 
 namespace NumLean
 

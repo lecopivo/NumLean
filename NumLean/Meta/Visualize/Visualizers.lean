@@ -1,4 +1,8 @@
-import NumLean.Meta.Visualize.Basic
+module
+
+public import NumLean.Meta.Visualize.Basic
+
+@[expose] public section
 
 namespace NumLean
 

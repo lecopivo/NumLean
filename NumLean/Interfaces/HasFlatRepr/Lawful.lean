@@ -1,6 +1,10 @@
-import NumLean.Interfaces.HasFlatRepr.Basic
-import NumLean.Interfaces.Algebra
-import NumLean.Interfaces.Module
+module
+
+public import NumLean.Interfaces.HasFlatRepr.Basic
+public import NumLean.Interfaces.Algebra
+public import NumLean.Interfaces.Module
+
+@[expose] public section
 
 namespace NumLean
 

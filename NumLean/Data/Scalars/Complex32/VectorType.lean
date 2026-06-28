@@ -1,5 +1,9 @@
-import NumLean.Data.Scalars.Complex32.Complex32Vector
-import NumLean.Interfaces.VectorType.Basic
+module
+
+public import NumLean.Data.Scalars.Complex32.Complex32Vector
+public import NumLean.Interfaces.VectorType.Basic
+
+@[expose] public section
 
 namespace NumLean
 

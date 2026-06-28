@@ -1,1 +1,5 @@
-import NumLean.Tactic.ApplyRuleSets.Elab
+module
+
+public import NumLean.Tactic.ApplyRuleSets.Elab
+@[expose] public section
+

@@ -1,3 +1,7 @@
+module
+
+public section
+
 namespace NumLean
 
 set_option linter.unnecessarySimpa false
@@ -41,20 +45,20 @@ inductive OfProfile : HList α → Profile → Prop where
 
 namespace OfProfile
 
-theorem value_node_false {a : α} {ps : List Profile} : OfProfile (.value a) (.node ps) → False := by
+private theorem value_node_false {a : α} {ps : List Profile} : OfProfile (.value a) (.node ps) → False := by
   intro h
   cases h
 
-theorem node_leaf_false {as : List (HList α)} : OfProfile (.node as) .leaf → False := by
+private theorem node_leaf_false {as : List (HList α)} : OfProfile (.node as) .leaf → False := by
   intro h
   cases h
 
-theorem node_nil_cons_false {α : Type u} {p : Profile} {ps : List Profile} :
+private theorem node_nil_cons_false {α : Type u} {p : Profile} {ps : List Profile} :
     OfProfile (α := α) (.node []) (.node (p :: ps)) → False := by
   intro h
   cases h
 
-theorem node_cons_nil_false {t : HList α} {ts : List (HList α)} :
+private theorem node_cons_nil_false {t : HList α} {ts : List (HList α)} :
     OfProfile (.node (t :: ts)) (.node []) → False := by
   intro h
   cases h
@@ -104,7 +108,7 @@ def fold (leaf : α → β) (node : List β → β) : HList α → β
   | .node as => node (as.map (fold leaf node))
 
 /-- `map` preserves profile proofs. -/
-theorem map_ofProfile (f : α → β) : (t : HList α) → (p : Profile) →
+private theorem map_ofProfile (f : α → β) : (t : HList α) → (p : Profile) →
     t.OfProfile p → (t.map f).OfProfile p
   | _, _, .value a => by
       simpa [map] using (OfProfile.value (α := β) (f a))
@@ -117,7 +121,7 @@ theorem map_ofProfile (f : α → β) : (t : HList α) → (p : Profile) →
         (OfProfile.node_cons (map_ofProfile f _ _ ht) hts')
 
 /-- `map₂` preserves profile proofs. -/
-theorem map₂_ofProfile (f : α → β → γ) : (t : HList α) → (u : HList β) → (p : Profile) →
+private theorem map₂_ofProfile (f : α → β → γ) : (t : HList α) → (u : HList β) → (p : Profile) →
     t.OfProfile p → u.OfProfile p → (map₂ f t u).OfProfile p
   | _, _, _, .value a, hu => by
       cases hu with
@@ -155,7 +159,7 @@ structure NodePayload (α : Type u) (ps : List Profile) where
   of_profile : (HList.node vals).OfProfile (.node ps)
 
 /-- Leaf constructor. -/
-@[match_pattern, inline]
+@[match_pattern, inline, expose]
 def leaf (a : α) : HPTuple α .leaf where
   val := .value a
   of_profile := .value a
@@ -167,13 +171,13 @@ def node {ps : List Profile} (as : List (HList α)) (h : (HList.node as).OfProfi
   of_profile := h
 
 /-- Empty variadic node. -/
-@[match_pattern, inline]
+@[match_pattern, inline, expose]
 def nil : HPTuple α (.node []) where
   val := .node []
   of_profile := .node_nil
 
 /-- Prepend one hierarchical tuple to a variadic node tuple. -/
-@[match_pattern, inline]
+@[match_pattern, inline, expose]
 def cons {p : Profile} {ps : List Profile} (x : HPTuple α p) (xs : HPTuple α (.node ps)) :
     HPTuple α (.node (p :: ps)) where
   val := match xs.val with
@@ -269,16 +273,16 @@ def modify {p : Profile} (x : HPTuple α p) (i : Index p) (f : α → α) : HPTu
   x.set i (f (x.get i))
 
 @[simp]
-theorem get_leaf (a : α) : get (leaf a) Index.leaf = a := rfl
+private theorem get_leaf (a : α) : get (leaf a) Index.leaf = a := rfl
 
 @[simp]
-theorem set_leaf (old value : α) : set (leaf old) Index.leaf value = leaf value := rfl
+private theorem set_leaf (old value : α) : set (leaf old) Index.leaf value = leaf value := rfl
 
 @[simp]
-theorem ofFn_leaf (f : Index .leaf → α) : ofFn f = leaf (f .leaf) := rfl
+private theorem ofFn_leaf (f : Index .leaf → α) : ofFn f = leaf (f .leaf) := rfl
 
 @[simp]
-theorem get_ofFn : {p : Profile} → (f : Index p → α) → (i : Index p) → (ofFn f).get i = f i
+private theorem get_ofFn : {p : Profile} → (f : Index p → α) → (i : Index p) → (ofFn f).get i = f i
   | .leaf, _, .leaf => rfl
   | .node (_ :: _), f, .head i => by
       simpa [ofFn, ofFnPayload, get] using get_ofFn (fun i => f (.head i)) i
@@ -286,7 +290,7 @@ theorem get_ofFn : {p : Profile} → (f : Index p → α) → (i : Index p) → 
       simpa [ofFn, ofFnPayload, get] using get_ofFn (p := .node ps) (fun i => f (.tail i)) i
 
 @[simp]
-theorem get_cons_head {p : Profile} {ps : List Profile} (x : HPTuple α p)
+private theorem get_cons_head {p : Profile} {ps : List Profile} (x : HPTuple α p)
     (xs : HPTuple α (.node ps)) (i : Index p) :
     (cons x xs).get (.head i) = x.get i := by
   cases hxs : xs.val with
@@ -296,7 +300,7 @@ theorem get_cons_head {p : Profile} {ps : List Profile} (x : HPTuple α p)
       simp [cons, get, hxs]
 
 @[simp]
-theorem get_cons_tail {p : Profile} {ps : List Profile} (x : HPTuple α p)
+private theorem get_cons_tail {p : Profile} {ps : List Profile} (x : HPTuple α p)
     (xs : HPTuple α (.node ps)) (i : Index (.node ps)) :
     (cons x xs).get (.tail i) = xs.get i := by
   cases xs with
@@ -306,7 +310,7 @@ theorem get_cons_tail {p : Profile} {ps : List Profile} (x : HPTuple α p)
       | node_cons ht hts => simp [cons, get]
 
 @[simp]
-theorem head_cons {p : Profile} {ps : List Profile} (x : HPTuple α p)
+private theorem head_cons {p : Profile} {ps : List Profile} (x : HPTuple α p)
     (xs : HPTuple α (.node ps)) :
     (cons x xs).head = x := by
   cases xs with
@@ -316,7 +320,7 @@ theorem head_cons {p : Profile} {ps : List Profile} (x : HPTuple α p)
       | node_cons ht hts => simp [head]
 
 @[simp]
-theorem tail_cons {p : Profile} {ps : List Profile} (x : HPTuple α p)
+private theorem tail_cons {p : Profile} {ps : List Profile} (x : HPTuple α p)
     (xs : HPTuple α (.node ps)) :
     (cons x xs).tail = xs := by
   cases xs with

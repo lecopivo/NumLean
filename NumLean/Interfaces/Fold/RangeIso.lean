@@ -1,4 +1,8 @@
-import NumLean.Interfaces.Fold.Commute
+module
+
+public import NumLean.Interfaces.Fold.Commute
+
+@[expose] public section
 
 public section
 

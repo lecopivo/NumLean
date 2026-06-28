@@ -1,8 +1,12 @@
-import NumLean.Data.Vector.Basic
-import NumLean.Data.Tensor
-import NumLean.Interfaces.Fold.Lemmas
-import NumLean.Meta.ForAll
-import NumLean.Meta.GetElemSetElemLinter
+module
+
+public import NumLean.Data.Vector.Basic
+public import NumLean.Data.Tensor
+public import NumLean.Interfaces.Fold.Lemmas
+public import NumLean.Meta.ForAll
+public import NumLean.Meta.GetElemSetElemLinter
+
+@[expose] public section
 
 set_option backward.do.legacy false
 set_option linter.unusedVariables false

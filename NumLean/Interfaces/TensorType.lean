@@ -1,6 +1,10 @@
-import NumLean.Data.Tensor
-import NumLean.Data.Vector.TensorType
-import NumLean.Interfaces.VectorType.Basic
+module
+
+public import NumLean.Data.Tensor
+public import NumLean.Data.Vector.TensorType
+public import NumLean.Interfaces.VectorType.Basic
+
+@[expose] public section
 
 namespace NumLean
 

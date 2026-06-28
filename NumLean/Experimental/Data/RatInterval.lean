@@ -1,1 +1,5 @@
-import NumLean.Experimental.Data.RatInterval.Basic
+module
+
+public import NumLean.Experimental.Data.RatInterval.Basic
+@[expose] public section
+

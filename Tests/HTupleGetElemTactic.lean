@@ -1,5 +1,9 @@
-import NumLean.Data.HTuple
-import NumLean.Data.FinHTuple
+module
+
+public import NumLean.Data.HTuple
+public import NumLean.Data.FinHTuple
+
+@[expose] public section
 
 open Lean Std PRange
 

@@ -1,6 +1,10 @@
-import NumLean.Data.Scalars.Complex64.Basic
-import NumLean.Data.Scalars.Float64.Algebra
-import NumLean.Interfaces.Algebra.RCLike.Basic
+module
+
+public import NumLean.Data.Scalars.Complex64.Basic
+public import NumLean.Data.Scalars.Float64.Algebra
+public import NumLean.Interfaces.Algebra.RCLike.Basic
+
+@[expose] public section
 
 namespace NumLean
 
@@ -71,12 +75,12 @@ instance : BEq Complex64 where
   beq x y := x.re == y.re && x.im == y.im
 
 -- todo: make log(n)
-private def npowRecComplex64 : Complex64 → Nat → Complex64
+def npowRecComplex64 : Complex64 → Nat → Complex64
   | _, 0 => 1
   | z, n + 1 => npowRecComplex64 z n * z
 
 -- todo: make log(n)
-private def zpowRecComplex64 : Complex64 → Int → Complex64
+def zpowRecComplex64 : Complex64 → Int → Complex64
   | z, .ofNat n => npowRecComplex64 z n
   | z, .negSucc n => (npowRecComplex64 z (n + 1))⁻¹
 

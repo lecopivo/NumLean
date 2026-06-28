@@ -1,4 +1,8 @@
-import NumLean.Data.Scalars.Float64.Algebra
+module
+
+public import NumLean.Data.Scalars.Float64.Algebra
+
+@[expose] public section
 
 namespace NumLean
 

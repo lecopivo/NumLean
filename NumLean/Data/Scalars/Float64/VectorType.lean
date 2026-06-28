@@ -1,13 +1,20 @@
-import NumLean.Data.Scalars.Float64.Float64Vector
-import NumLean.Interfaces.VectorType.Basic
+module
+
+public import NumLean.Data.Scalars.Float64.Float64Vector
+import all NumLean.Data.Scalars.Float64.Float64Vector
+public import Init.Data.FloatArray.Basic
+public import NumLean.Interfaces.VectorType.Basic
+import all Init.Data.FloatArray.Basic
+
+@[expose] public section
 
 namespace NumLean
 
 namespace Float64Vector
 
 instance : VectorType Float64Vector Float64 where
-  toVector xs := ⟨xs.data.1, xs.2⟩
-  fromVector xs := ⟨⟨xs.1⟩, xs.2⟩
+  toVector xs := ⟨xs.data.1, by change FloatArray.size xs.data = _; exact xs.2⟩
+  fromVector xs := ⟨⟨xs.1⟩, by change FloatArray.size { data := xs.toArray } = _; exact xs.2⟩
   left_inv := by
     intro n xs
     cases xs with

@@ -1,7 +1,11 @@
-import NumLean.Data.Scalars.Real.Algebra
-import NumLean.Interfaces.Algebra.RNorm
-import NumLean.Experimental.Data.DyadicInterval.ExtDyadic
-import NumLean.Experimental.Interfaces.Interval
+module
+
+public import NumLean.Data.Scalars.Real.Algebra
+public import NumLean.Interfaces.Algebra.RNorm
+public import NumLean.Experimental.Data.DyadicInterval.ExtDyadic
+public import NumLean.Experimental.Interfaces.Interval
+
+@[expose] public section
 
 namespace NumLean
 

@@ -1,5 +1,9 @@
-import NumLean.Data.FinHTuple
-import NumLean.Data.Prod.Fold
+module
+
+public import NumLean.Data.FinHTuple
+public import NumLean.Data.Prod.Fold
+
+@[expose] public section
 
 public section
 

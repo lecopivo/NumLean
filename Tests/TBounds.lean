@@ -1,5 +1,9 @@
-import NumLean.Tactic.TBounds
-import NumLean.Interfaces.IndexType
+module
+
+public import NumLean.Tactic.TBounds
+public import NumLean.Interfaces.IndexType
+
+@[expose] public section
 
 namespace NumLean.Tests.TBounds
 

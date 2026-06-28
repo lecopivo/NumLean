@@ -1,10 +1,15 @@
-import NumLean.Tactic.ApplyRuleSets.RuleProc
+module
+
+public import NumLean.Tactic.ApplyRuleSets.RuleProc
+public meta import NumLean.Tactic.ApplyRuleSets.RuleProc
+
+@[expose] public section
 
 namespace NumLean.Tactic.ApplyRuleSets
 
 open Lean Meta Elab
 
-initialize ruleSetsExt : SimpleScopedEnvExtension RuleSetExtEntry RuleSets <-
+meta initialize ruleSetsExt : SimpleScopedEnvExtension RuleSetExtEntry RuleSets <-
   registerSimpleScopedEnvExtension {
     name := by exact decl_name%
     initial := {}
@@ -15,13 +20,13 @@ initialize ruleSetsExt : SimpleScopedEnvExtension RuleSetExtEntry RuleSets <-
       { ruleSets := s.ruleSets.insert e.ruleSetName rs, nextOrder := s.nextOrder + 1 }
   }
 
-def isRuleSetName (name : Name) : CoreM Bool := do
+meta def isRuleSetName (name : Name) : CoreM Bool := do
   return (ruleSetsExt.getState (← getEnv)).ruleSets.contains name
 
-def getRuleSet (name : Name) : CoreM RuleSet := do
+meta def getRuleSet (name : Name) : CoreM RuleSet := do
   return (ruleSetsExt.getState (← getEnv)).ruleSets.getD name {}
 
-def addTheoremRule (ruleSetName declName : Name) (kind : AttributeKind)
+meta def addTheoremRule (ruleSetName declName : Name) (kind : AttributeKind)
     (prio : Nat := eval_prio default) : MetaM Unit := do
   let info ← getConstInfo declName
   let value := mkConst declName (info.levelParams.map Level.param)
@@ -37,7 +42,7 @@ def addTheoremRule (ruleSetName declName : Name) (kind : AttributeKind)
   ruleSetsExt.add { ruleSetName, rule } kind
   trace[Meta.Tactic.apply_rulesets.attr] "added theorem rule {declName} to {ruleSetName}"
 
-def addProcRule (ruleSetName declName : Name) (kind : AttributeKind)
+meta def addProcRule (ruleSetName declName : Name) (kind : AttributeKind)
     (prio : Nat := eval_prio default) : MetaM Unit := do
   let some decl ← getRuleProcDecl? declName
     | throwError "invalid ruleproc attribute: `{.ofConstName declName}` has no registered pattern"
@@ -55,7 +60,7 @@ def addProcRule (ruleSetName declName : Name) (kind : AttributeKind)
   ruleSetsExt.add { ruleSetName, rule } kind
   trace[Meta.Tactic.apply_rulesets.attr] "added ruleproc {declName} to {ruleSetName}"
 
-def registerRuleSetAttr (ruleSetName : Name) (descr : String) : IO Unit := do
+meta def registerRuleSetAttr (ruleSetName : Name) (descr : String) : IO Unit := do
   registerBuiltinAttribute {
     name := ruleSetName
     descr := descr
@@ -73,7 +78,7 @@ macro (name := registerRulesetCmd) doc:(docComment)? "register_ruleset " id:iden
   let str := id.getId.toString
   let idParser := mkIdentFrom id (`Parser.Attr ++ id.getId)
   let descr := quote ((doc.map (·.getDocString) |>.getD s!"ruleset {id.getId}").removeLeadingSpaces)
-  `($[$doc:docComment]? initialize registerRuleSetAttr $(quote id.getId) $descr
+  `($[$doc:docComment]? meta initialize registerRuleSetAttr $(quote id.getId) $descr
     $[$doc:docComment]? syntax (name := $idParser:ident) $(quote str):str (prio)? : attr)
 
 end NumLean.Tactic.ApplyRuleSets

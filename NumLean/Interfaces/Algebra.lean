@@ -1,5 +1,9 @@
-import NumLean.Interfaces.Algebra.Field
-import NumLean.Interfaces.Algebra.RNorm
+module
+
+public import NumLean.Interfaces.Algebra.Field
+public import NumLean.Interfaces.Algebra.RNorm
+
+@[expose] public section
 
 namespace NumLean
 

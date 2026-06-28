@@ -1,2 +1,6 @@
-import NumLean
-import NumLeanExperimental
+module
+
+public import NumLean
+public import NumLeanExperimental
+@[expose] public section
+

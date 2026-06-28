@@ -1,6 +1,10 @@
-import Mathlib.Algebra.Group.Basic
-import Mathlib.Algebra.AddTorsor.Defs
-import Mathlib.Algebra.AddTorsor.Basic
+module
+
+public import Mathlib.Algebra.Group.Basic
+public import Mathlib.Algebra.AddTorsor.Defs
+public import Mathlib.Algebra.AddTorsor.Basic
+
+@[expose] public section
 
 namespace NumLean
 

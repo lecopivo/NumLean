@@ -1,4 +1,8 @@
-import Mathlib.Data.Set.Basic
+module
+
+public import Mathlib.Data.Set.Basic
+
+@[expose] public section
 
 namespace NumLean
 

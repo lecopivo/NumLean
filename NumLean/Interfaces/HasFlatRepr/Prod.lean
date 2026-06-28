@@ -1,5 +1,9 @@
-import NumLean.Data.Prod
-import NumLean.Interfaces.HasFlatRepr.Basic
+module
+
+public import NumLean.Data.Prod
+public import NumLean.Interfaces.HasFlatRepr.Basic
+
+@[expose] public section
 
 namespace NumLean
 

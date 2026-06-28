@@ -1,1 +1,5 @@
-import NumLean.Data.FlatVector.Algebra.Lawful
+module
+
+public import NumLean.Data.FlatVector.Algebra.Lawful
+@[expose] public section
+

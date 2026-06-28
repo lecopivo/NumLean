@@ -1,5 +1,9 @@
-import NumLean.Data.Vector.Basic
-import NumLean.Interfaces.Fold.Filter
-import NumLean.Data.Vector.Ops
-import NumLean.Data.Vector.Algebra
-import NumLean.Data.Vector.RangeIterator
+module
+
+public import NumLean.Data.Vector.Basic
+public import NumLean.Interfaces.Fold.Filter
+public import NumLean.Data.Vector.Ops
+public import NumLean.Data.Vector.Algebra
+public import NumLean.Data.Vector.RangeIterator
+@[expose] public section
+

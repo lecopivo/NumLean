@@ -1,16 +1,21 @@
-import NumLean.Tactic.ApplyRuleSets.Attr
+module
+
+public import NumLean.Tactic.ApplyRuleSets.Attr
+public meta import NumLean.Tactic.ApplyRuleSets.Attr
+
+@[expose] public section
 
 namespace NumLean.Tactic.ApplyRuleSets
 
 open Lean Meta
 
-def checkStep : ApplyRuleSetsM Unit := do
+meta def checkStep : ApplyRuleSetsM Unit := do
   let n := (← get).numSteps
   if n >= (← read).config.maxSteps then
     throwError "apply_rulesets failed, maximum number of steps exceeded"
   modify fun s => { s with numSteps := n + 1 }
 
-def withIncreasedSearchDepth {α} (x : ApplyRuleSetsM α) : ApplyRuleSetsM α := do
+meta def withIncreasedSearchDepth {α} (x : ApplyRuleSetsM α) : ApplyRuleSetsM α := do
   let depth := (← get).depth
   modify fun s => { s with depth := depth + 1 }
   try
@@ -21,11 +26,11 @@ def withIncreasedSearchDepth {α} (x : ApplyRuleSetsM α) : ApplyRuleSetsM α :=
     modify fun s => { s with depth := depth }
     throw e
 
-def sortRules (rules : Array Rule) : Array Rule :=
+meta def sortRules (rules : Array Rule) : Array Rule :=
   rules.qsort fun a b =>
     if a.priority != b.priority then a.priority > b.priority else a.order < b.order
 
-def Rule.instantiate (rule : Rule) : MetaM (RuleType × Expr) := do
+meta def Rule.instantiate (rule : Rule) : MetaM (RuleType × Expr) := do
   let levelParams := rule.allLevelParams
   let us ← levelParams.mapM fun _ => mkFreshLevelMVar
   let pattern := rule.pattern.instantiateLevelParamsArray levelParams us
@@ -36,10 +41,10 @@ def Rule.instantiate (rule : Rule) : MetaM (RuleType × Expr) := do
 
 mutual
 
-partial def applyRuleSets (origin : ArgOrigin) (goalType : Expr) : ApplyRuleSetsM (Option Expr) :=
+meta partial def applyRuleSets (origin : ArgOrigin) (goalType : Expr) : ApplyRuleSetsM (Option Expr) :=
   applyRuleSetsCoreSearch origin goalType
 
-partial def applyRuleSetsCoreSearch (origin : ArgOrigin) (goalType : Expr) : ApplyRuleSetsM (Option Expr) := do
+meta partial def applyRuleSetsCoreSearch (origin : ArgOrigin) (goalType : Expr) : ApplyRuleSetsM (Option Expr) := do
   checkStep
   if (← get).depth > (← read).config.maxDepth then
     return none
@@ -67,7 +72,7 @@ partial def applyRuleSetsCoreSearch (origin : ArgOrigin) (goalType : Expr) : App
         return some proof
   return none
 
-partial def assumption? (goalType : Expr) : ApplyRuleSetsM (Option Expr) := do
+meta partial def assumption? (goalType : Expr) : ApplyRuleSetsM (Option Expr) := do
   unless ← isProp goalType do
     return none
   for localDecl in ← getLCtx do
@@ -77,7 +82,7 @@ partial def assumption? (goalType : Expr) : ApplyRuleSetsM (Option Expr) := do
           return some (mkFVar localDecl.fvarId)
   return none
 
-partial def synthesizeArgs (ruleName : Name) (args : Array Expr) : ApplyRuleSetsM Bool := do
+meta partial def synthesizeArgs (ruleName : Name) (args : Array Expr) : ApplyRuleSetsM Bool := do
   let mut ok := true
   for h : i in [:args.size] do
     let arg ← instantiateMVars args[i]
@@ -95,7 +100,7 @@ partial def synthesizeArgs (ruleName : Name) (args : Array Expr) : ApplyRuleSets
         ok := false
   return ok
 
-partial def tryRule? (origin : ArgOrigin) (rule : Rule) (goalType : Expr) : ApplyRuleSetsM (Option Expr) := do
+meta partial def tryRule? (origin : ArgOrigin) (rule : Rule) (goalType : Expr) : ApplyRuleSetsM (Option Expr) := do
   if rule.hasExprMVar then
     return none
   let (ruleType, pattern) ← rule.instantiate

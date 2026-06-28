@@ -1,4 +1,8 @@
-import NumLean.Experimental.Data.HList.Basic
+module
+
+public import NumLean.Experimental.Data.HList.Basic
+
+@[expose] public section
 
 namespace NumLean
 
@@ -11,13 +15,13 @@ syntax (priority := high) "(" hlist_profile_stx ")" : hlist_profile_stx
 
 open Lean Macro
 
-private def mkListTerm (xs : Array Term) : MacroM Term := do
+meta def mkListTerm (xs : Array Term) : MacroM Term := do
   let mut out ← `(List.nil)
   for x in xs.reverse do
     out ← `(List.cons $x $out)
   pure out
 
-private partial def profileItems : TSyntax `hlist_profile_stx → MacroM (Array (TSyntax `hlist_profile_stx))
+meta partial def profileItems : TSyntax `hlist_profile_stx → MacroM (Array (TSyntax `hlist_profile_stx))
   | `(hlist_profile_stx| ( $x:hlist_profile_stx ) ) => do
       let grouped ← `(hlist_profile_stx| ($x:hlist_profile_stx))
       pure #[grouped]
@@ -55,7 +59,7 @@ macro_rules
       | some x => pure x
       | none => Macro.throwUnsupported
 
-private partial def mkProfileStx : Array (TSyntax `hlist_profile_stx) → Lean.PrettyPrinter.UnexpandM (TSyntax `hlist_profile_stx)
+meta partial def mkProfileStx : Array (TSyntax `hlist_profile_stx) → Lean.PrettyPrinter.UnexpandM (TSyntax `hlist_profile_stx)
   | #[] => throw ()
   | #[x] => pure x
   | xs => do
@@ -63,14 +67,14 @@ private partial def mkProfileStx : Array (TSyntax `hlist_profile_stx) → Lean.P
       let rest ← mkProfileStx (xs.extract 1 xs.size)
       `(hlist_profile_stx| $x:hlist_profile_stx, $rest:hlist_profile_stx)
 
-private def profileStxOfTerm : TSyntax `term → Lean.PrettyPrinter.UnexpandM (TSyntax `hlist_profile_stx)
+meta def profileStxOfTerm : TSyntax `term → Lean.PrettyPrinter.UnexpandM (TSyntax `hlist_profile_stx)
   | `(term| hlp($x:hlist_profile_stx)) => pure x
   | _ => throw ()
 
-@[app_unexpander Profile.leaf] def unexpandHListProfileLeaf : Lean.PrettyPrinter.Unexpander
+@[app_unexpander Profile.leaf] meta def unexpandHListProfileLeaf : Lean.PrettyPrinter.Unexpander
   | `($(_)) => `(hlp(•))
 
-@[app_unexpander Profile.node] def unexpandHListProfileNode : Lean.PrettyPrinter.Unexpander
+@[app_unexpander Profile.node] meta def unexpandHListProfileNode : Lean.PrettyPrinter.Unexpander
   | `($(_) [$x:term, $xs:term,*]) => do
       let elems ← (#[x.raw] ++ xs.getElems).mapM fun stx => profileStxOfTerm ⟨stx⟩
       let profile ← mkProfileStx elems
@@ -82,12 +86,12 @@ syntax term : hlist_value_stx
 syntax (priority := high) hlist_value_stx ", " hlist_value_stx,* : hlist_value_stx
 syntax (priority := high) "(" hlist_value_stx ")" : hlist_value_stx
 
-private structure Parts where
+structure Parts where
   value : Term
   profile : Term
   deriving Inhabited
 
-private partial def partsOf : TSyntax `hlist_value_stx → MacroM Parts
+meta partial def partsOf : TSyntax `hlist_value_stx → MacroM Parts
   | `(hlist_value_stx| ( $x:hlist_value_stx ) ) => partsOf x
   | `(hlist_value_stx| $x:term ) => do
       pure { value := ← `(HList.value $x), profile := ← `(Profile.leaf) }
@@ -101,7 +105,7 @@ private partial def partsOf : TSyntax `hlist_value_stx → MacroM Parts
       }
   | _ => Macro.throwUnsupported
 
-private partial def tupleItems : TSyntax `hlist_value_stx → MacroM (Array (TSyntax `hlist_value_stx))
+meta partial def tupleItems : TSyntax `hlist_value_stx → MacroM (Array (TSyntax `hlist_value_stx))
   | `(hlist_value_stx| ( $x:hlist_value_stx ) ) => do
       let grouped ← `(hlist_value_stx| ($x:hlist_value_stx))
       pure #[grouped]
@@ -115,7 +119,7 @@ private partial def tupleItems : TSyntax `hlist_value_stx → MacroM (Array (TSy
       pure out
   | _ => Macro.throwUnsupported
 
-private partial def tupleOf : TSyntax `hlist_value_stx → MacroM Term
+meta partial def tupleOf : TSyntax `hlist_value_stx → MacroM Term
   | `(hlist_value_stx| ( $x:hlist_value_stx ) ) => tupleOf x
   | `(hlist_value_stx| $x:term ) => `(HPTuple.leaf $x)
   | `(hlist_value_stx| $x:hlist_value_stx, $xs:hlist_value_stx,* ) => do
@@ -142,11 +146,11 @@ macro_rules
   | `(term| hl($x:hlist_value_stx)) => do
       tupleOf x
 
-@[app_unexpander HPTuple.leaf] def unexpandHPTupleLeaf : Lean.PrettyPrinter.Unexpander
+@[app_unexpander HPTuple.leaf] meta def unexpandHPTupleLeaf : Lean.PrettyPrinter.Unexpander
   | `($(_) $x:term) => `(hl($x:term))
   | _ => throw ()
 
-@[app_unexpander HPTuple.cons] def unexpandHPTupleCons : Lean.PrettyPrinter.Unexpander
+@[app_unexpander HPTuple.cons] meta def unexpandHPTupleCons : Lean.PrettyPrinter.Unexpander
   | `($(_) hl($x:hlist_value_stx) HPTuple.nil) => `(hl($x:hlist_value_stx))
   | `($(_) hl($x:hlist_value_stx) hl($y:hlist_value_stx)) => `(hl($x:hlist_value_stx, $y:hlist_value_stx))
   | _ => throw ()

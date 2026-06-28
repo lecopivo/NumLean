@@ -1,6 +1,10 @@
-import NumLean.Interfaces.HasFlatRepr.Basic
-import NumLean.Interfaces.HasFlatRepr.Deriving
-import NumLean.Interfaces.HasFlatRepr.Equiv
-import NumLean.Interfaces.HasFlatRepr.Lawful
-import NumLean.Interfaces.HasFlatRepr.Prod
-import NumLean.Interfaces.HasFlatRepr.Sigma
+module
+
+public import NumLean.Interfaces.HasFlatRepr.Basic
+public import NumLean.Interfaces.HasFlatRepr.Deriving
+public import NumLean.Interfaces.HasFlatRepr.Equiv
+public import NumLean.Interfaces.HasFlatRepr.Lawful
+public import NumLean.Interfaces.HasFlatRepr.Prod
+public import NumLean.Interfaces.HasFlatRepr.Sigma
+@[expose] public section
+

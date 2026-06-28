@@ -1,6 +1,10 @@
-import NumLean.Data.Scalars.Complex32.Basic
-import NumLean.Data.Scalars.Float32.Float32Array
-import Mathlib.Tactic
+module
+
+public import NumLean.Data.Scalars.Complex32.Basic
+public import NumLean.Data.Scalars.Float32.Float32Array
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace NumLean
 
@@ -95,8 +99,8 @@ def append {m n : Nat} (xs : Complex32Vector m) (ys : Complex32Vector n) :
     size_eq := by simp [xs.size_eq, ys.size_eq]; omega }
 
 @[ext]
-axiom ext {n : Nat} {xs ys : Complex32Vector n} (h : ∀ i : Nat, (h : i < n) → xs[i] = ys[i]) :
-    xs = ys
+theorem ext {n : Nat} {xs ys : Complex32Vector n} (h : ∀ i : Nat, (h : i < n) → xs[i] = ys[i]) :
+    xs = ys := sorry
 
 -- use extensionality
 @[simp]
@@ -110,9 +114,6 @@ theorem toVector_ofVector {n : Nat} (xs : Vector Complex32 n) :
     change (ofVector xs).data[2 * i + 1]'_ = (xs[i]).im
     exact ofVector_get_im xs i _
 
-@[simp]
-axiom ofVector_toVector {n : Nat} (xs : Complex32Vector n) :
-    ofVector (toVector xs) = xs
 
 theorem uget_spec {n : Nat} (xs : Complex32Vector n) (i : USize) (h : i.toNat < n) :
     uget xs i h = (toVector xs)[i.toNat]'h := by

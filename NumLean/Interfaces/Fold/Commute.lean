@@ -1,6 +1,10 @@
-import NumLean.Interfaces.Fold.Basic
-import Mathlib.Data.List.Perm.Basic
-import Mathlib.Data.List.Perm.Subperm
+module
+
+public import NumLean.Interfaces.Fold.Basic
+public import Mathlib.Data.List.Perm.Basic
+public import Mathlib.Data.List.Perm.Subperm
+
+@[expose] public section
 
 public section
 

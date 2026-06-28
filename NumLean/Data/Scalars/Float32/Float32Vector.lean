@@ -1,6 +1,10 @@
-import NumLean.Data.Scalars.Float32.Basic
-import NumLean.Data.Scalars.Float32.Float32Array
-import Mathlib.Tactic
+module
+
+public import NumLean.Data.Scalars.Float32.Basic
+public import NumLean.Data.Scalars.Float32.Float32Array
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace NumLean
 

@@ -1,7 +1,11 @@
-import NumLean.Data.HTuple.Algebra
-import Init.Data.Vector.Lemmas
-import Init.Data.Vector.OfFn
-import Init.Data.Vector.Zip
+module
+
+public import NumLean.Data.HTuple.Algebra
+public import Init.Data.Vector.Lemmas
+public import Init.Data.Vector.OfFn
+public import Init.Data.Vector.Zip
+
+@[expose] public section
 
 namespace NumLean
 

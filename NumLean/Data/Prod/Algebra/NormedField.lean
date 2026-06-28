@@ -1,5 +1,9 @@
-import NumLean.Interfaces.Algebra.NormedField.Lawful
-import NumLean.Data.Prod.Algebra.Field
+module
+
+public import NumLean.Interfaces.Algebra.NormedField.Lawful
+public import NumLean.Data.Prod.Algebra.Field
+
+@[expose] public section
 
 namespace NumLean
 

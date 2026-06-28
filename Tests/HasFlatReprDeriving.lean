@@ -1,4 +1,8 @@
-import NumLean.Interfaces.HasFlatRepr.Deriving
+module
+
+public import NumLean.Interfaces.HasFlatRepr.Deriving
+
+@[expose] public section
 
 namespace NumLean.Tests.HasFlatReprDeriving
 

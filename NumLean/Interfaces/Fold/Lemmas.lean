@@ -1,7 +1,11 @@
-import NumLean.Interfaces.Fold.Basic
-import NumLean.Interfaces.Fold.Filter
-import Mathlib.Algebra.Group.Defs
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+module
+
+public import NumLean.Interfaces.Fold.Basic
+public import NumLean.Interfaces.Fold.Filter
+public import Mathlib.Algebra.Group.Defs
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+
+@[expose] public section
 
 namespace NumLean
 

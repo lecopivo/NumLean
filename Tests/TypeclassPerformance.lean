@@ -1,4 +1,8 @@
-import NumLean
+module
+
+public import NumLean
+
+@[expose] public section
 
 /-!
 Regression tests for typeclass searches that became expensive when scalar algebra instances are

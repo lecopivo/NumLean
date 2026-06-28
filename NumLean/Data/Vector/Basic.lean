@@ -1,7 +1,11 @@
-import Init.Data.Vector.Lemmas
-import Init.Data.Vector.OfFn
-import Init.Data.Vector.Zip
-import NumLean.Interfaces.SetElem
+module
+
+public import Init.Data.Vector.Lemmas
+public import Init.Data.Vector.OfFn
+public import Init.Data.Vector.Zip
+public import NumLean.Interfaces.SetElem
+
+@[expose] public section
 
 namespace NumLean
 

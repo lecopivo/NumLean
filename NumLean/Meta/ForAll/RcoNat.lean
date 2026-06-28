@@ -1,4 +1,8 @@
-import NumLean.Meta.ForAll.Basic
+module
+
+public import NumLean.Meta.ForAll.Basic
+
+@[expose] public section
 
 public section
 

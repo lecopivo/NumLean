@@ -1,4 +1,8 @@
-import NumLean.Experimental.Data.HVector.Basic
+module
+
+public import NumLean.Experimental.Data.HVector.Basic
+
+@[expose] public section
 
 namespace NumLean
 

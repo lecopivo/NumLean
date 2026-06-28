@@ -1,8 +1,12 @@
-import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Order.Defs.LinearOrder
-import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Int.Basic
-import Mathlib.Data.UInt
+module
+
+public import Mathlib.Order.Defs.PartialOrder
+public import Mathlib.Order.Defs.LinearOrder
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.Data.Int.Basic
+public import Mathlib.Data.UInt
+
+@[expose] public section
 
 namespace NumLean
 

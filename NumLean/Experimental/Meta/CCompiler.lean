@@ -1,2 +1,6 @@
-import NumLean.Experimental.Meta.CCompiler.Command
-import NumLean.Experimental.Meta.CCompiler.Semantics
+module
+
+public import NumLean.Experimental.Meta.CCompiler.Command
+public import NumLean.Experimental.Meta.CCompiler.Semantics
+@[expose] public section
+

@@ -1,4 +1,10 @@
-import NumLean.Misc.CuTe.Visualize
+module
+
+public import NumLean.Misc.CuTe.Visualize
+public meta import NumLean.Misc.CuTe.Visualize
+public meta import NumLean.Meta.Visualize.Visualizers
+
+@[expose] public section
 
 namespace NumLean
 namespace VisualizeExamples

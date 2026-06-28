@@ -1,13 +1,17 @@
-import NumLean.Data.Sigma
-import NumLean.Interfaces.HasFlatRepr.Equiv
-import NumLean.Interfaces.HasFlatRepr.Prod
+module
+
+public import NumLean.Data.Sigma
+public import NumLean.Interfaces.HasFlatRepr.Equiv
+public import NumLean.Interfaces.HasFlatRepr.Prod
+
+@[expose] public section
 
 namespace NumLean
 
 namespace HasFlatRepr
 
 -- todo: move this to Data.Sigma and use this to infer instances on sigma
-private def sigmaEquivProd (X : Type u) (Y : Type v) : ((_ : X) × Y) ≃ X × Y where
+def sigmaEquivProd (X : Type u) (Y : Type v) : ((_ : X) × Y) ≃ X × Y where
   toFun xy := (xy.1, xy.2)
   invFun xy := ⟨xy.1, xy.2⟩
   left_inv := by

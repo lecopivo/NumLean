@@ -1,6 +1,13 @@
-import Lean.Elab.Command
-import Qq
-import NumLean.Meta.Visualize.Visualizers
+module
+
+public import Lean.Elab.Command
+public meta import Lean.Elab.Command
+public meta import Lean.Meta.Eval
+public meta import Lean.Widget.UserWidget
+public import Qq
+public import NumLean.Meta.Visualize.Visualizers
+
+@[expose] public section
 
 namespace NumLean
 
@@ -19,7 +26,7 @@ syntax (name := visualizeCmd) "#visualize" term : command
 
 open Meta Elab Term Qq in
 @[command_elab visualizeCmd]
-def elabVisualize : CommandElab := fun stx => do
+meta def elabVisualize : CommandElab := fun stx => do
   match stx with
   | `(#visualize $x:term) => do
       let (rpc, js) ← liftTermElabM <| do

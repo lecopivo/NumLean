@@ -1,5 +1,9 @@
-import NumLean.Interfaces.Algebra.RNorm
-import NumLean.Experimental.Interfaces.Interval.Basic
+module
+
+public import NumLean.Interfaces.Algebra.RNorm
+public import NumLean.Experimental.Interfaces.Interval.Basic
+
+@[expose] public section
 
 namespace NumLean
 

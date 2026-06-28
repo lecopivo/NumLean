@@ -1,5 +1,9 @@
-import NumLean.Data.HTuple
-import NumLean.Data.HTuple.Algebra
+module
+
+public import NumLean.Data.HTuple
+public import NumLean.Data.HTuple.Algebra
+
+@[expose] public section
 
 /-! This file somewhat closely follows the paper
 

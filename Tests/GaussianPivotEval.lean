@@ -1,4 +1,9 @@
-import Tests.CCompiler
+module
+
+public import Tests.CCompiler
+public meta import Tests.CCompiler
+
+@[expose] public section
 
 open NumLean
 

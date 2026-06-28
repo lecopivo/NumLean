@@ -1,4 +1,8 @@
-import NumLean.Experimental.Data.DyadicInterval.Basic
+module
+
+public import NumLean.Experimental.Data.DyadicInterval.Basic
+
+@[expose] public section
 
 namespace NumLean
 

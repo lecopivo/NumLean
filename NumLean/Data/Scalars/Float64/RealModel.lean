@@ -1,5 +1,9 @@
-import NumLean.Data.Scalars.Float64.TensorAlgebra
-import NumLean.Interfaces.RealModel
+module
+
+public import NumLean.Data.Scalars.Float64.TensorAlgebra
+public import NumLean.Interfaces.RealModel
+
+@[expose] public section
 
 namespace NumLean
 

@@ -1,4 +1,8 @@
-import NumLean.Interfaces.Algebra.NormedField.Basic
+module
+
+public import NumLean.Interfaces.Algebra.NormedField.Basic
+
+@[expose] public section
 
 namespace NumLean
 

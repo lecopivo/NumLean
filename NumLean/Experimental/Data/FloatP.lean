@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 
 namespace NumLean
 
@@ -31,7 +35,7 @@ macro "Float[" p:term "]" : term => do
 
 open Lean PrettyPrinter in
 @[app_unexpander FloatP]
-def floatPUnexpander : Unexpander
+meta def floatPUnexpander : Unexpander
  | `($_ Float.Precision.single) => `(Float[32])
  | `($_ Float.Precision.double) => `(Float[64])
  | `($_ $p) => `(Float[$p])

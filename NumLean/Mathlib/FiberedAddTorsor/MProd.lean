@@ -1,4 +1,8 @@
-import NumLean.Mathlib.FiberedAddTorsor.Basic
+module
+
+public import NumLean.Mathlib.FiberedAddTorsor.Basic
+
+@[expose] public section
 
 namespace NumLean
 

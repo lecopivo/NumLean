@@ -1,4 +1,8 @@
-import NumLean.Experimental.Meta.CCompiler.Translate
+module
+
+public import NumLean.Experimental.Meta.CCompiler.Translate
+
+@[expose] public section
 
 namespace NumLean.Experimental.Meta.CCompiler
 

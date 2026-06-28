@@ -1,7 +1,11 @@
-import NumLean.Data.HTuple
-import NumLean.Interfaces.SetElem
-import Mathlib.Logic.Equiv.Fin.Basic
-import Mathlib.Logic.Equiv.Prod
+module
+
+public import NumLean.Data.HTuple
+public import NumLean.Interfaces.SetElem
+public import Mathlib.Logic.Equiv.Fin.Basic
+public import Mathlib.Logic.Equiv.Prod
+
+@[expose] public section
 
 namespace NumLean
 

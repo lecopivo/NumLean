@@ -1,6 +1,10 @@
-import NumLean.Interfaces.VectorType.Basic
-import NumLean.Interfaces.Algebra.Ring
-import NumLean.Data.Vector.TensorAlgebra.Lemmas
+module
+
+public import NumLean.Interfaces.VectorType.Basic
+public import NumLean.Interfaces.Algebra.Ring
+public import NumLean.Data.Vector.TensorAlgebra.Lemmas
+
+@[expose] public section
 
 /-!
 Interfaces for tensor algebra operations on vector-like storage types.

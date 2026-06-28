@@ -1,6 +1,10 @@
-import Mathlib.Data.Fin.Basic
-import Mathlib.Data.List.TakeDrop
-import Mathlib.Tactic
+module
+
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.List.TakeDrop
+public import Mathlib.Tactic
+
+@[expose] public section
 
 /-!
 # Binary tuples with tensor-product and direct-sum structure

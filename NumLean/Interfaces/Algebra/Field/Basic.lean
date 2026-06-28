@@ -1,5 +1,9 @@
-import Mathlib.Algebra.Field.Defs
-import NumLean.Interfaces.Algebra.Ring.Basic
+module
+
+public import Mathlib.Algebra.Field.Defs
+public import NumLean.Interfaces.Algebra.Ring.Basic
+
+@[expose] public section
 
 namespace NumLean
 namespace Interfaces

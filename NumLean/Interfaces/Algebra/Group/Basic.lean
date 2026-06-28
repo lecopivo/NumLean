@@ -1,5 +1,9 @@
-import Mathlib.Algebra.Group.Defs
-import NumLean.Meta.HierarchyGraph
+module
+
+public import Mathlib.Algebra.Group.Defs
+public import NumLean.Meta.HierarchyGraph
+
+@[expose] public section
 
 namespace NumLean
 namespace Interfaces

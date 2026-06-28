@@ -1,5 +1,9 @@
-import NumLean.Data.HTuple.Order
-import NumLean.Experimental.Data.HList.Ops
+module
+
+public import NumLean.Data.HTuple.Order
+public import NumLean.Experimental.Data.HList.Ops
+
+@[expose] public section
 
 open NumLean
 open NumLean.HList

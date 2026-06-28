@@ -1,5 +1,9 @@
-import NumLean.Experimental.Data.BTuple.Range
-import NumLean.Interfaces.Fold
+module
+
+public import NumLean.Experimental.Data.BTuple.Range
+public import NumLean.Interfaces.Fold
+
+@[expose] public section
 
 /-!
 # Folding over unbundled `BTuple` ranges

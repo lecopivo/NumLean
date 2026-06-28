@@ -1,5 +1,9 @@
-import Mathlib.Analysis.Normed.Group.Defs
-import NumLean.Interfaces.Algebra.RNorm
+module
+
+public import Mathlib.Analysis.Normed.Group.Defs
+public import NumLean.Interfaces.Algebra.RNorm
+
+@[expose] public section
 
 namespace NumLean
 

@@ -1,5 +1,11 @@
-import NumLean.Tactic.ApplyRuleSets.Types
-import Lean.Elab.Tactic.ElabTerm
+module
+
+public meta import NumLean.Tactic.ApplyRuleSets.Types
+public import NumLean.Tactic.ApplyRuleSets.Types
+public import Lean.Elab.Tactic.ElabTerm
+public meta import Lean.Elab.Command
+
+@[expose] public section
 
 namespace NumLean.Tactic.ApplyRuleSets
 
@@ -14,21 +20,21 @@ structure RuleProcDecl where
   defaultProc? : Option Expr := none
 deriving Inhabited
 
-initialize ruleProcDeclExt : SimpleScopedEnvExtension RuleProcDecl (Std.HashMap Name RuleProcDecl) <-
+meta initialize ruleProcDeclExt : SimpleScopedEnvExtension RuleProcDecl (Std.HashMap Name RuleProcDecl) <-
   registerSimpleScopedEnvExtension {
     name := by exact decl_name%
     initial := {}
     addEntry := fun s e => s.insert e.declName e
   }
 
-def registerRuleProcPattern (declName : Name) (pattern : Expr) (levelParams : Array Name := #[])
+meta def registerRuleProcPattern (declName : Name) (pattern : Expr) (levelParams : Array Name := #[])
     (defaultProc? : Option Expr := none) : MetaM Unit := do
   if pattern.hasExprMVar then
     throwError "invalid ruleproc pattern for `{.ofConstName declName}` contains expression metavariables"
   let levelParams := levelParams ++ (exprLevelParams pattern).filter (!levelParams.contains ·)
   modifyEnv fun env => ruleProcDeclExt.addEntry env { declName, pattern, levelParams, defaultProc? }
 
-def getRuleProcDecl? (declName : Name) : CoreM (Option RuleProcDecl) := do
+meta def getRuleProcDecl? (declName : Name) : CoreM (Option RuleProcDecl) := do
   return (ruleProcDeclExt.getState (← getEnv)).get? declName
 
 unsafe def evalRuleProcImpl (proc : Expr) : MetaM RuleProc := do
@@ -37,7 +43,7 @@ unsafe def evalRuleProcImpl (proc : Expr) : MetaM RuleProc := do
 @[implemented_by evalRuleProcImpl]
 opaque evalRuleProc (proc : Expr) : MetaM RuleProc
 
-def explicitRuleProcRule? (origin : Origin) (proc : Expr) : MetaM (Option Rule) := do
+meta def explicitRuleProcRule? (origin : Origin) (proc : Expr) : MetaM (Option Rule) := do
   let some declName := proc.getAppFn.constName? | return none
   let some decl ← getRuleProcDecl? declName | return none
   unless ← isDefEq (← inferType proc) (mkConst ``RuleProc) do
@@ -47,7 +53,7 @@ def explicitRuleProcRule? (origin : Origin) (proc : Expr) : MetaM (Option Rule) 
     throwError "explicit ruleproc `{.ofConstName declName}` contains expression metavariables"
   return some rule
 
-private def removeUnusedForallBinders (e : Expr) (keepPrefix : Nat := 0) : MetaM Expr := do
+private meta def removeUnusedForallBinders (e : Expr) (keepPrefix : Nat := 0) : MetaM Expr := do
   forallTelescope e fun xs body => do
     let mut result := body
     for _h : i in [:xs.size] do
@@ -58,7 +64,7 @@ private def removeUnusedForallBinders (e : Expr) (keepPrefix : Nat := 0) : MetaM
         result := Expr.forallE decl.userName decl.type (result.abstract #[x]) decl.binderInfo
     return result
 
-private def closeRuleProcPattern (pat : Term) : TermElabM (Expr × Array Name × Array (Nat × Name)) := do
+private meta def closeRuleProcPattern (pat : Term) : TermElabM (Expr × Array Name × Array (Nat × Name)) := do
   let pattern ← Term.withAutoBoundImplicit <| Term.elabType pat
   Term.synthesizeSyntheticMVars
   let pattern ← abstractMVars (← instantiateMVars pattern)
@@ -74,7 +80,7 @@ private def closeRuleProcPattern (pat : Term) : TermElabM (Expr × Array Name ×
     return names
   return (pattern, levelParams, names)
 
-private def mkRuleProcBody (xs : Ident) (names : Array (Nat × Name)) (body : Term) : MacroM Term := do
+meta def mkRuleProcBody (xs : Ident) (names : Array (Nat × Name)) (body : Term) : MacroM Term := do
   let mut result := body
   for i in [0:names.size] do
     let i := names.size - 1 - i
@@ -84,7 +90,7 @@ private def mkRuleProcBody (xs : Ident) (names : Array (Nat × Name)) (body : Te
     result ← `(let $id:ident : Lean.Expr := $xs[$idx]!; $result)
   return result
 
-private def attrInstancesOfAttributes (attrs : TSyntax ``Lean.Parser.Term.attributes) :
+meta def attrInstancesOfAttributes (attrs : TSyntax ``Lean.Parser.Term.attributes) :
     Array (TSyntax ``Lean.Parser.Term.attrInstance) :=
   attrs.raw[1].getArgs.filterMap fun stx =>
     if stx.isOfKind ``Lean.Parser.Term.attrInstance then
@@ -96,23 +102,23 @@ syntax (name := ruleprocCmd) (docComment)? (Lean.Parser.Term.attributes)? "rulep
   (ppSpace bracketedBinder)* "," (ppSpace bracketedBinder)* " : " term " := " term : command
 
 @[command_elab ruleprocCmd]
-def elabRuleProc : Command.CommandElab := fun stx => do
+meta def elabRuleProc : Lean.Elab.Command.CommandElab := fun stx => do
   let `(command| $[$doc?:docComment]? $[$attrs?:attributes]? ruleproc $n:ident $procBs*,
       $patternBs* : $pat:term := $body:term) := stx
     | throwUnsupportedSyntax
-  let (pattern, levelParams, names) ← Command.liftTermElabM <|
+  let (pattern, levelParams, names) ← Lean.Elab.Command.liftTermElabM <|
     closeRuleProcPattern (← `(∀ $patternBs*, $pat))
   let xs := mkIdent `__ruleprocArgs
   let body ← liftMacroM <| mkRuleProcBody xs names body
   let cmd ← `($[$doc?:docComment]? unsafe def $n $procBs* :
     NumLean.Tactic.ApplyRuleSets.RuleProc := fun $xs:ident => $body)
-  Command.elabCommand cmd
-  Command.liftTermElabM do
+  Lean.Elab.Command.elabCommand cmd
+  Lean.Elab.Command.liftTermElabM do
     let declName ← realizeGlobalConstNoOverload n
     let info ← getConstInfo declName
     registerRuleProcPattern declName pattern levelParams (some <| mkConst declName (info.levelParams.map Level.param))
   if let some attrs := attrs? then
     for attr in attrInstancesOfAttributes attrs do
-      Command.elabCommand (← `(command| attribute [$attr:attrInstance] $n:ident))
+      Lean.Elab.Command.elabCommand (← `(command| attribute [$attr:attrInstance] $n:ident))
 
 end NumLean.Tactic.ApplyRuleSets

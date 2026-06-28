@@ -1,4 +1,8 @@
-import NumLean.Interfaces.Fold.RangeIso
+module
+
+public import NumLean.Interfaces.Fold.RangeIso
+
+@[expose] public section
 
 public section
 

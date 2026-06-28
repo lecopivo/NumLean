@@ -1,6 +1,10 @@
-import NumLean.Data.HTuple.Basic
-import NumLean.Data.HTuple.GetElemTactic
-import Lean
+module
+
+public import NumLean.Data.HTuple.Basic
+public import NumLean.Data.HTuple.GetElemTactic
+public import Lean
+
+@[expose] public section
 
 namespace NumLean
 
@@ -38,25 +42,25 @@ syntax term ":" term : hrange_axis
 
 open Lean Elab Term Meta Macro
 
-private abbrev TermStx := TSyntax `term
+abbrev TermStx := TSyntax `term
 
-private def mkNatLit (n : Nat) : TermStx := Syntax.mkNumLit (toString n)
+meta def mkNatLit (n : Nat) : TermStx := Syntax.mkNumLit (toString n)
 
-private def mkProfileStx : Nat → MacroM TermStx
+meta def mkProfileStx : Nat → MacroM TermStx
   | 0 => Macro.throwError "range notation needs at least one ':' axis; all-point indexing is not a range"
   | 1 => `(HTuple.Profile.leaf)
   | n + 2 => do
       let right ← mkProfileStx (n + 1)
       `(HTuple.Profile.prod HTuple.Profile.leaf $right)
 
-private def mkTupleStx : List TermStx → MacroM TermStx
+meta def mkTupleStx : List TermStx → MacroM TermStx
   | [] => Macro.throwError "internal error: range slice tuple is empty"
   | [x] => `(HTuple.leaf $x)
   | x :: xs => do
       let rest ← mkTupleStx xs
       `(HTuple.prod (HTuple.leaf $x) $rest)
 
-private partial def htupleLeafTerms : TSyntax `htuple_stx → MacroM (Array TermStx)
+meta partial def htupleLeafTerms : TSyntax `htuple_stx → MacroM (Array TermStx)
   | `(htuple_stx| ( $x:htuple_stx ) ) => htupleLeafTerms x
   | `(htuple_stx| $x:term ) => pure #[x]
   | `(htuple_stx| $x:htuple_stx , $y:htuple_stx, $ys:htuple_stx,* ) => do
@@ -70,24 +74,24 @@ private partial def htupleLeafTerms : TSyntax `htuple_stx → MacroM (Array Term
       pure ((← htupleLeafTerms x) ++ (← htupleLeafTerms y))
   | _ => Macro.throwUnsupported
 
-private def shapeDims? (shape : TermStx) : MacroM (Option (Array TermStx)) := do
+meta def shapeDims? (shape : TermStx) : MacroM (Option (Array TermStx)) := do
   match shape with
   | `(term| h($xs:htuple_stx)) => pure (some (← htupleLeafTerms xs))
   | _ => pure none
 
-private def dimAtStx (shape : TermStx) (shapeDims? : Option (Array TermStx)) (i : Nat) : MacroM TermStx := do
+meta def dimAtStx (shape : TermStx) (shapeDims? : Option (Array TermStx)) (i : Nat) : MacroM TermStx := do
   if let some dims := shapeDims? then
     if h : i < dims.size then
       return dims[i]
   let idx := mkNatLit i
   `(HTuple.toList $shape |>.getD $idx 0)
 
-private def normalizeBoundStx (dim : TermStx) (bound : TermStx) : MacroM TermStx := do
+meta def normalizeBoundStx (dim : TermStx) (bound : TermStx) : MacroM TermStx := do
   match bound with
   | `(term| - $n:num) => `($dim - $n)
   | _ => pure bound
 
-private def axisBoundsStx (shape : TermStx) (shapeDims? : Option (Array TermStx))
+meta def axisBoundsStx (shape : TermStx) (shapeDims? : Option (Array TermStx))
     (axis : Syntax) (i : Nat) : MacroM (Option (TermStx × TermStx)) := do
   let dim ← dimAtStx shape shapeDims? i
   match axis with
@@ -107,11 +111,11 @@ private def axisBoundsStx (shape : TermStx) (shapeDims? : Option (Array TermStx)
       pure none
   | _ => Macro.throwUnsupported
 
-private def inputAtStx (profile : TermStx) (x : Ident) (i : Nat) : MacroM TermStx := do
+meta def inputAtStx (profile : TermStx) (x : Ident) (i : Nat) : MacroM TermStx := do
   let idx := mkNatLit i
   `(HTuple.get $x (HTuple.Index.ofFin $profile (⟨$idx, by decide⟩ : Fin ($profile).size)))
 
-private def axisValueStx (shape : TermStx) (shapeDims? : Option (Array TermStx))
+meta def axisValueStx (shape : TermStx) (shapeDims? : Option (Array TermStx))
     (profile : TermStx) (x : Ident) (axis : Syntax) (axisIdx sliceIdx : Nat) :
     MacroM (TermStx × Nat) := do
   let dim ← dimAtStx shape shapeDims? axisIdx
@@ -123,7 +127,7 @@ private def axisValueStx (shape : TermStx) (shapeDims? : Option (Array TermStx))
       let value ← inputAtStx profile x sliceIdx
       pure (value, sliceIdx + 1)
 
-private def mkAxisValueStx (shape : TermStx) (shapeDims? : Option (Array TermStx))
+meta def mkAxisValueStx (shape : TermStx) (shapeDims? : Option (Array TermStx))
     (profile : TermStx) (x : Ident) (axes : List Syntax) (axisIdx : Nat) (sliceIdx : Nat)
     (outIdx : TermStx) : MacroM TermStx := do
   match axes with
@@ -134,21 +138,21 @@ private def mkAxisValueStx (shape : TermStx) (shapeDims? : Option (Array TermStx
       let idx := mkNatLit axisIdx
       `(if ($outIdx).toFin.val = $idx then $value else $fallback)
 
-private def mkEmbedStx (shape : TermStx) (shapeDims? : Option (Array TermStx))
+meta def mkEmbedStx (shape : TermStx) (shapeDims? : Option (Array TermStx))
     (profile : TermStx) (axes : List Syntax) : MacroM TermStx := do
   let x := mkIdent `x
   let i := mkIdent `i
   let value ← mkAxisValueStx shape shapeDims? profile x axes 0 0 i
   `(fun $x => HTuple.ofFn (fun $i => $value))
 
-private structure RangePartsStx where
+structure RangePartsStx where
   profile : TermStx
   lower : TermStx
   upper : TermStx
   embed : TermStx
   range : TermStx
 
-private def mkRangePartsStx (shape : TermStx) (axes : List Syntax) : MacroM (Option RangePartsStx) := do
+meta def mkRangePartsStx (shape : TermStx) (axes : List Syntax) : MacroM (Option RangePartsStx) := do
   let shapeDims? ← shapeDims? shape
   let mut lows : List Term := []
   let mut highs : List Term := []
@@ -177,7 +181,7 @@ structure RangeParts where
   embed : Expr
   range : Expr
 
-private def inferHTupleNatProfile (shape : Expr) : TermElabM Expr := do
+meta def inferHTupleNatProfile (shape : Expr) : TermElabM Expr := do
   let type ← whnf (← inferType shape)
   match type.getAppFnArgs with
   | (``HTuple, #[natTy, profile]) =>
@@ -189,7 +193,7 @@ private def inferHTupleNatProfile (shape : Expr) : TermElabM Expr := do
 /-- Elaborate `hr[shape](axes...)` into clean expression pieces.
 
 Returns `none` when all axes are point axes, so callers can fall back to point indexing. -/
-def elabRangeParts (shapeStx : TermStx) (axes : Array (TSyntax `hrange_axis)) :
+meta def elabRangeParts (shapeStx : TermStx) (axes : Array (TSyntax `hrange_axis)) :
     TermElabM (Option RangeParts) := do
   let some partsStx ← liftMacroM <| mkRangePartsStx shapeStx axes.toList
     | return none
@@ -217,7 +221,7 @@ Examples:
 syntax (name := hRangeNotation) "hr[" htuple_stx "](" hrange_axis,* ")" : term
 
 @[term_elab hRangeNotation]
-def elabHRangeNotation : TermElab := fun stx _expectedType? => do
+meta def elabHRangeNotation : TermElab := fun stx _expectedType? => do
   match stx with
   | `(term| hr[$shape:htuple_stx]($axes:hrange_axis,*)) => do
       let shape ← `(term| h($shape:htuple_stx))

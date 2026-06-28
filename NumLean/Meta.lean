@@ -1,8 +1,12 @@
-import NumLean.Meta.ForAll
-import NumLean.Meta.GetElemSetElemLinter
-import NumLean.Meta.HierarchyGraph
-import NumLean.Meta.RewriteBy
-import NumLean.Meta.Visualize
-import NumLean.Meta.Visualize.Basic
-import NumLean.Meta.Visualize.Command
-import NumLean.Meta.Visualize.Visualizers
+module
+
+public import NumLean.Meta.ForAll
+public import NumLean.Meta.GetElemSetElemLinter
+public import NumLean.Meta.HierarchyGraph
+public import NumLean.Meta.RewriteBy
+public import NumLean.Meta.Visualize
+public import NumLean.Meta.Visualize.Basic
+public import NumLean.Meta.Visualize.Command
+public import NumLean.Meta.Visualize.Visualizers
+@[expose] public section
+

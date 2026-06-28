@@ -1,4 +1,9 @@
-import NumLean.Data.Scalars.Float32.Float32Array
+module
+
+public import NumLean.Data.Scalars.Float32.Float32Array
+public meta import NumLean.Data.Scalars.Float32.Float32Array
+
+@[expose] public section
 
 open NumLean
 

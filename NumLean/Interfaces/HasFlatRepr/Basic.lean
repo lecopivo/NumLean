@@ -1,5 +1,9 @@
-import NumLean.Interfaces.VectorType.Basic
-import NumLean.Tactic.TBounds
+module
+
+public import NumLean.Interfaces.VectorType.Basic
+public import NumLean.Tactic.TBounds
+
+@[expose] public section
 
 namespace NumLean
 

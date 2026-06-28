@@ -1,2 +1,6 @@
-import NumLean.Interfaces.Module.Basic
-import NumLean.Interfaces.Module.Lawful
+module
+
+public import NumLean.Interfaces.Module.Basic
+public import NumLean.Interfaces.Module.Lawful
+@[expose] public section
+

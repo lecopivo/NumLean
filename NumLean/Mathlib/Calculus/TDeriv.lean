@@ -1,11 +1,15 @@
-import Mathlib.Analysis.Calculus.FDeriv.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Add
-import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.Analysis.Calculus.FDeriv.Comp
-import Mathlib.Analysis.Calculus.FDeriv.Congr
-import Mathlib.Analysis.Calculus.FDeriv.Prod
-import Mathlib.Analysis.InnerProductSpace.Calculus
-import NumLean.Mathlib.FiberedAddTorsor
+module
+
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.Calculus.FDeriv.Add
+public import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Analysis.Calculus.FDeriv.Comp
+public import Mathlib.Analysis.Calculus.FDeriv.Congr
+public import Mathlib.Analysis.Calculus.FDeriv.Prod
+public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import NumLean.Mathlib.FiberedAddTorsor
+
+@[expose] public section
 
 namespace NumLean
 

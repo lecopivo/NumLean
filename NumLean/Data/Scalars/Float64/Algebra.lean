@@ -1,9 +1,13 @@
-import NumLean.Interfaces.Algebra.RNorm
-import NumLean.Interfaces.Algebra.RCLike.Basic
+module
+
+public import NumLean.Interfaces.Algebra.RNorm
+public import NumLean.Interfaces.Algebra.RCLike.Basic
+
+@[expose] public section
 
 namespace NumLean
 
-private def ratToFloat (q : ℚ) : Float :=
+def ratToFloat (q : ℚ) : Float :=
   q.num.toInt64.toFloat / q.den.toFloat
 
 instance : NatCast Float where

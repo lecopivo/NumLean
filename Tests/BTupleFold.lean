@@ -1,4 +1,10 @@
-import NumLean.Experimental.Data.BTuple
+module
+
+public import NumLean.Experimental.Data.BTuple
+import all NumLean.Experimental.Data.BTuple.Range
+public meta import NumLean.Experimental.Data.BTuple.Range
+
+@[expose] public section
 
 namespace NumLean
 

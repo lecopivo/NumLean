@@ -1,5 +1,9 @@
-import NumLean.Data.HTuple.Basic
-import NumLean.Interfaces.Order
+module
+
+public import NumLean.Data.HTuple.Basic
+public import NumLean.Interfaces.Order
+
+@[expose] public section
 
 namespace NumLean
 

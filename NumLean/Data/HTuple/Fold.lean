@@ -1,6 +1,10 @@
-import NumLean.Data.HTuple.RangeIterator
-import NumLean.Data.Prod.Fold
-import NumLean.Interfaces.Fold
+module
+
+public import NumLean.Data.HTuple.RangeIterator
+public import NumLean.Data.Prod.Fold
+public import NumLean.Interfaces.Fold
+
+@[expose] public section
 
 public section
 

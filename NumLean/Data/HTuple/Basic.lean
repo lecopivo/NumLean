@@ -1,7 +1,11 @@
-import Mathlib.Data.Fin.Basic
-import Mathlib.Data.List.TakeDrop
-import Mathlib.Tactic
-import NumLean.Interfaces.SetElem
+module
+
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.List.TakeDrop
+public import Mathlib.Tactic
+public import NumLean.Interfaces.SetElem
+
+@[expose] public section
 
 set_option linter.unnecessarySimpa false
 
@@ -170,11 +174,11 @@ macro_rules
     | some x => return x
     | none => Macro.throwUnsupported
 
-@[app_unexpander HTuple.leaf] def unexpandHTupleLeaf : Lean.PrettyPrinter.Unexpander
+@[app_unexpander HTuple.leaf] meta def unexpandHTupleLeaf : Lean.PrettyPrinter.Unexpander
   | `($(_) $x:term) => `(h($x:term))
   | _ => throw ()
 
-@[app_unexpander HTuple.prod] def unexpandHTupleProd : Lean.PrettyPrinter.Unexpander
+@[app_unexpander HTuple.prod] meta def unexpandHTupleProd : Lean.PrettyPrinter.Unexpander
   | `($(_) h($x:term) h($y:htuple_stx) ) => `(h($x:term, $y))
   | `($(_) h($x:htuple_stx) h($y:htuple_stx) ) => `(h(($x), $y))
   | _ => throw ()
@@ -206,10 +210,10 @@ macro_rules
     | some x => return x
     | none => Macro.throwUnsupported
 
-@[app_unexpander Profile.leaf] def unexpandHTupleProfileLeaf : Lean.PrettyPrinter.Unexpander
+@[app_unexpander Profile.leaf] meta def unexpandHTupleProfileLeaf : Lean.PrettyPrinter.Unexpander
   | `($(_)) => `(hp(•))
 
-@[app_unexpander Profile.prod] def unexpandHTupleProfileProd : Lean.PrettyPrinter.Unexpander
+@[app_unexpander Profile.prod] meta def unexpandHTupleProfileProd : Lean.PrettyPrinter.Unexpander
   | `($(_) hp(•) hp($y:htuple_profile_stx)) => `(hp(•, $y))
   | `($(_) hp($x:htuple_profile_stx) hp($y:htuple_profile_stx)) => `(hp(($x), $y))
   | _ => throw ()

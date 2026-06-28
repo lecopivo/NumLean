@@ -1,2 +1,6 @@
-import NumLean.Data.Prod.Order
-import NumLean.Data.Prod.Fold
+module
+
+public import NumLean.Data.Prod.Order
+public import NumLean.Data.Prod.Fold
+@[expose] public section
+

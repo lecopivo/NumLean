@@ -1,5 +1,9 @@
-import NumLean.Interfaces.Order
-import NumLean.Data.Vector.Basic
+module
+
+public import NumLean.Interfaces.Order
+public import NumLean.Data.Vector.Basic
+
+@[expose] public section
 
 namespace Vector
 

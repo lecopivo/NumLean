@@ -1,5 +1,9 @@
-import Mathlib.Logic.Equiv.Basic
-import NumLean.Interfaces.Algebra
+module
+
+public import Mathlib.Logic.Equiv.Basic
+public import NumLean.Interfaces.Algebra
+
+@[expose] public section
 
 namespace Zero
 

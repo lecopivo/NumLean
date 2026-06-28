@@ -1,5 +1,9 @@
-import NumLean.Data.Vector.TensorAlgebra.Core
-import NumLean.Data.Vector.TensorType
+module
+
+public import NumLean.Data.Vector.TensorAlgebra.Core
+public import NumLean.Data.Vector.TensorType
+
+@[expose] public section
 
 namespace NumLean.Vector
 

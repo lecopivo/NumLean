@@ -1,5 +1,9 @@
-import NumLean.Data.HTuple.RangeIterator
-import Std.Tactic.Do
+module
+
+public import NumLean.Data.HTuple.RangeIterator
+public import Std.Tactic.Do
+
+@[expose] public section
 
 namespace NumLean
 

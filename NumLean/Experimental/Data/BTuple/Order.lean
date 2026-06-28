@@ -1,6 +1,10 @@
-import NumLean.Experimental.Data.BTuple.Basic
-import NumLean.Interfaces.Order
-import Mathlib.Data.List.Lex
+module
+
+public import NumLean.Experimental.Data.BTuple.Basic
+public import NumLean.Interfaces.Order
+public import Mathlib.Data.List.Lex
+
+@[expose] public section
 
 /-!
 # Orders for `BTuple`

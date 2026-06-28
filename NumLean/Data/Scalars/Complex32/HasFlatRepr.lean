@@ -1,7 +1,11 @@
-import NumLean.Data.Scalars.Complex32.VectorType
+module
+
+public import NumLean.Data.Scalars.Complex32.VectorType
 -- import NumLean.Data.Scalars.Float32.VectorType
 -- import NumLean.Data.Scalars.UInt8.VectorType
-import NumLean.Interfaces.HasFlatRepr.Basic
+public import NumLean.Interfaces.HasFlatRepr.Basic
+
+@[expose] public section
 
 namespace NumLean
 

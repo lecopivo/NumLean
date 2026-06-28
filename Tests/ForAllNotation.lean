@@ -1,5 +1,11 @@
-import NumLean.Meta.ForAll
-import NumLean.Data.FinHTuple.FinHTupleMap
+module
+
+public import NumLean.Meta.ForAll
+public import NumLean.Data.FinHTuple.FinHTupleMap
+import all NumLean.Data.FinHTuple.FinHTupleMap
+import all NumLean.Data.HTuple.Basic
+
+@[expose] public section
 
 set_option backward.do.legacy false
 

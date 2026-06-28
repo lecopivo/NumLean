@@ -1,4 +1,8 @@
-import Init.Data.Array.DecidableEq
+module
+
+public import Init.Data.Array.DecidableEq
+
+@[expose] public section
 
 namespace NumLean
 

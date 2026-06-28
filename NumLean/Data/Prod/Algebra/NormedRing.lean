@@ -1,6 +1,10 @@
-import NumLean.Interfaces.Algebra.NormedRing.Lawful
-import NumLean.Data.Prod.Algebra.Ring
-import Mathlib.Analysis.Normed.Ring.Basic
+module
+
+public import NumLean.Interfaces.Algebra.NormedRing.Lawful
+public import NumLean.Data.Prod.Algebra.Ring
+public import Mathlib.Analysis.Normed.Ring.Basic
+
+@[expose] public section
 
 namespace NumLean
 

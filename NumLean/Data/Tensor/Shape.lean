@@ -1,4 +1,8 @@
-import NumLean.Data.Tensor.Rank
+module
+
+public import NumLean.Data.Tensor.Rank
+
+@[expose] public section
 
 namespace NumLean
 namespace Tensor

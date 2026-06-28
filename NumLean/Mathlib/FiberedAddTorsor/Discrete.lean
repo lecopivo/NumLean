@@ -1,6 +1,10 @@
-import NumLean.Mathlib.FiberedAddTorsor.Basic
-import Mathlib.Algebra.Group.PUnit
-import Mathlib.Topology.Order
+module
+
+public import NumLean.Mathlib.FiberedAddTorsor.Basic
+public import Mathlib.Algebra.Group.PUnit
+public import Mathlib.Topology.Order
+
+@[expose] public section
 
 namespace NumLean
 

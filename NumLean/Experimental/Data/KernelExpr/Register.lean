@@ -1,4 +1,8 @@
-import NumLean.Tactic.ApplyRuleSets
+module
+
+public import NumLean.Tactic.ApplyRuleSets
+
+@[expose] public section
 
 open NumLean.Tactic.ApplyRuleSets
 

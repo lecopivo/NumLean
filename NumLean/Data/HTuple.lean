@@ -1,9 +1,13 @@
-import NumLean.Data.HTuple.Basic
-import NumLean.Data.HTuple.Ops
-import NumLean.Data.HTuple.Algebra
-import NumLean.Data.HTuple.HTupleMap
-import NumLean.Data.HTuple.Range
-import NumLean.Data.HTuple.RangeIterator
-import NumLean.Data.HTuple.Fold
-import NumLean.Data.HTuple.Order
-import NumLean.Data.HTuple.RangeNotation
+module
+
+public import NumLean.Data.HTuple.Basic
+public import NumLean.Data.HTuple.Ops
+public import NumLean.Data.HTuple.Algebra
+public import NumLean.Data.HTuple.HTupleMap
+public import NumLean.Data.HTuple.Range
+public import NumLean.Data.HTuple.RangeIterator
+public import NumLean.Data.HTuple.Fold
+public import NumLean.Data.HTuple.Order
+public import NumLean.Data.HTuple.RangeNotation
+@[expose] public section
+

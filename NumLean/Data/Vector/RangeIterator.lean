@@ -1,7 +1,11 @@
-import NumLean.Data.Vector.Basic
-import NumLean.Data.RangeEnum
-import Std.Data.Iterators.Producers.Range
-import Mathlib.Tactic
+module
+
+public import NumLean.Data.Vector.Basic
+public import NumLean.Data.RangeEnum
+public import Std.Data.Iterators.Producers.Range
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace Vector
 
@@ -9,15 +13,15 @@ namespace Range
 
 open Std Std.PRange Std.Iterators
 
-@[always_inline, inline] private def cons {α : Type u} {n : Nat} (x : α)
+@[always_inline, inline] def cons {α : Type u} {n : Nat} (x : α)
     (xs : Vector α n) : Vector α (n + 1) :=
   ⟨#[x] ++ xs.toArray, by simp [xs.size_toArray, Nat.add_comm]⟩
 
-@[simp] private theorem head_cons {α : Type u} {n : Nat} (x : α) (xs : Vector α n) :
+@[simp] theorem head_cons {α : Type u} {n : Nat} (x : α) (xs : Vector α n) :
     (cons x xs).head = x := by
   simp [head, cons]
 
-@[simp] private theorem tail_cons {α : Type u} {n : Nat} (x : α) (xs : Vector α n) :
+@[simp] theorem tail_cons {α : Type u} {n : Nat} (x : α) (xs : Vector α n) :
     (cons x xs).tail = xs := by
   apply Vector.ext
   intro i hi

@@ -1,6 +1,10 @@
-import Mathlib.Analysis.Normed.Field.Basic
-import NumLean.Interfaces.Algebra.NormedRing
-import NumLean.Interfaces.Algebra.Field
+module
+
+public import Mathlib.Analysis.Normed.Field.Basic
+public import NumLean.Interfaces.Algebra.NormedRing
+public import NumLean.Interfaces.Algebra.Field
+
+@[expose] public section
 
 namespace NumLean
 

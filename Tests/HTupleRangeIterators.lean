@@ -1,4 +1,10 @@
-import NumLean.Data.HTuple.RangeIterator
+module
+
+public import NumLean.Data.HTuple.RangeIterator
+public meta import NumLean.Data.HTuple.Basic
+public meta import NumLean.Data.HTuple.RangeIterator
+
+@[expose] public section
 
 open NumLean
 

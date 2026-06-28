@@ -1,4 +1,8 @@
-import NumLean.Data.Scalars.Complex64.Basic
+module
+
+public import NumLean.Data.Scalars.Complex64.Basic
+
+@[expose] public section
 
 namespace NumLean
 

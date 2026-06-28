@@ -1,4 +1,8 @@
-import NumLean.Interfaces.Algebra.Field.Lawful
+module
+
+public import NumLean.Interfaces.Algebra.Field.Lawful
+
+@[expose] public section
 
 open NumLean.HierarchyGraph
 

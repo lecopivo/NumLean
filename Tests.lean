@@ -1,26 +1,30 @@
-import Tests.BTupleFold
-import Tests.AlgebraDeriving
-import Tests.CCompiler
-import Tests.CCompilerIRSemantics
-import Tests.DyadicInterval
-import Tests.ExternIn
-import Tests.Float32ArrayEval
-import Tests.FoldEmbedding
-import Tests.ForAllNotation
-import Tests.GaussianPivotEval
-import Tests.HTupleCoercions
-import Tests.HTupleGetElemTactic
-import Tests.HTupleProfileRefines
-import Tests.HTupleRangeIterators
-import Tests.HVector
-import Tests.HasFlatReprDeriving
-import Tests.OrderInstances
-import Tests.ScalarArrays
-import Tests.TBounds
-import Tests.TupleOrderNotation
-import Tests.TypeclassPerformance
-import Tests.VectorRangeIterators
-import Tests.Visualize
+module
+
+public import Tests.BTupleFold
+public import Tests.AlgebraDeriving
+public import Tests.CCompiler
+public import Tests.CCompilerIRSemantics
+public import Tests.DyadicInterval
+public import Tests.ExternIn
+public import Tests.Float32ArrayEval
+public import Tests.FoldEmbedding
+public import Tests.ForAllNotation
+public import Tests.GaussianPivotEval
+public import Tests.HTupleCoercions
+public import Tests.HTupleGetElemTactic
+public import Tests.HTupleProfileRefines
+public import Tests.HTupleRangeIterators
+public import Tests.HVector
+public import Tests.HasFlatReprDeriving
+public import Tests.OrderInstances
+public import Tests.ScalarArrays
+public import Tests.TBounds
+public import Tests.TupleOrderNotation
+public import Tests.TypeclassPerformance
+public import Tests.VectorRangeIterators
+public import Tests.Visualize
+
+@[expose] public section
 
 def main : IO Unit := do
   IO.println "tests done!"

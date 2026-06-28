@@ -1,5 +1,9 @@
-import NumLean.Data.Prod.Order
-import NumLean.Interfaces.Fold.RangeIso
+module
+
+public import NumLean.Data.Prod.Order
+public import NumLean.Interfaces.Fold.RangeIso
+
+@[expose] public section
 
 public section
 

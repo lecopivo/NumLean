@@ -1,4 +1,8 @@
-import NumLean.Data.HTuple.Ops
+module
+
+public import NumLean.Data.HTuple.Ops
+
+@[expose] public section
 
 namespace NumLean
 

@@ -1,7 +1,11 @@
-import NumLean.Interfaces.Algebra.RCLike
-import NumLean.Interfaces.Module
-import NumLean.Data.FlatVector.Basic
-import NumLean.Interfaces.TensorAlgebra
+module
+
+public import NumLean.Interfaces.Algebra.RCLike
+public import NumLean.Interfaces.Module
+public import NumLean.Data.FlatVector.Basic
+public import NumLean.Interfaces.TensorAlgebra
+
+@[expose] public section
 
 namespace NumLean.FlatVector
 

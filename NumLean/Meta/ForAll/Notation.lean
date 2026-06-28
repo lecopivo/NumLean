@@ -1,8 +1,12 @@
-import NumLean.Interfaces.Fold
-import NumLean.Meta.ForAll.Basic
-import Lean.Elab.BuiltinDo.Basic
-import Lean.Parser.Do
-import Lean.PrettyPrinter.Delaborator
+module
+
+public import NumLean.Interfaces.Fold
+public import NumLean.Meta.ForAll.Basic
+public import Lean.Elab.BuiltinDo.Basic
+public import Lean.Parser.Do
+public import Lean.PrettyPrinter.Delaborator
+
+@[expose] public section
 
 public section
 
@@ -11,7 +15,7 @@ namespace Meta.ForAll
 
 open Lean Lean.Elab Lean.Elab.Do Lean.Meta Lean.Parser.Term
 
-private def mkMProdMkN (es : Array Expr) (u : Level) : MetaM (Expr × Expr) := do
+meta def mkMProdMkN (es : Array Expr) (u : Level) : MetaM (Expr × Expr) := do
   if h : es.size > 0 then
     let mut tuple := es.back
     let mut tupleTy ← inferType tuple
@@ -26,7 +30,7 @@ private def mkMProdMkN (es : Array Expr) (u : Level) : MetaM (Expr × Expr) := d
   else
     return (mkConst ``PUnit.unit [mkLevelSucc u], mkConst ``PUnit [mkLevelSucc u])
 
-private def getMProdFields (tuple tupleTy : Expr) : MetaM (Expr × Expr × Expr × Expr) := do
+private meta def getMProdFields (tuple tupleTy : Expr) : MetaM (Expr × Expr × Expr × Expr) := do
   let tupleTy ← instantiateMVarsIfMVarApp tupleTy
   let_expr c@MProd fstTy sndTy := tupleTy
     | throwError "Internal error: Expected MProd, got {tuple} of type {tupleTy}"
@@ -34,7 +38,7 @@ private def getMProdFields (tuple tupleTy : Expr) : MetaM (Expr × Expr × Expr 
   let snd := mkApp3 (mkConst ``MProd.snd c.constLevels!) fstTy sndTy tuple
   return (fst, fstTy, snd, sndTy)
 
-private def bindMutVarsFromMProd (vars : List Name) (tupleVar : FVarId) (k : DoElabM Expr) : DoElabM Expr :=
+private meta def bindMutVarsFromMProd (vars : List Name) (tupleVar : FVarId) (k : DoElabM Expr) : DoElabM Expr :=
   do go vars tupleVar (← tupleVar.getType) #[]
 where
   go vars tupleVar tupleTy letFVars := do
@@ -60,7 +64,7 @@ syntax (name := doForAllFast)
 --       `(doElem| for_all $x:ident in $xs do $body:term)
 --   | _ => throw ()
 
-@[macro doForAll] def expandDoForAll : Macro := fun stx => do
+@[macro doForAll] meta def expandDoForAll : Macro := fun stx => do
   match stx with
   | `(doForAll| for_all $[$_ : ]? $_:ident in $_ do $_) =>
       Macro.throwUnsupported
@@ -78,7 +82,7 @@ syntax (name := doForAllFast)
       `(doElem| for_all $[$h? : ]? $x:ident in $xs do $body)
   | _ => Macro.throwUnsupported
 
-@[macro doForAllFast] def expandDoForAllFast : Macro := fun stx => do
+@[macro doForAllFast] meta def expandDoForAllFast : Macro := fun stx => do
   match stx with
   | `(doForAllFast| for_all_fast $[$_ : ]? $_:ident in $_ do $_) =>
       Macro.throwUnsupported
@@ -107,7 +111,14 @@ def inferForAllControlInfo : ControlInfoHandler := fun stx => do
   return { info with numRegularExits := 1, breaks := false, continues := false, returnsEarly := false }
 
 @[doElem_control_info NumLean.Meta.ForAll.doForAll]
-def inferForAllControlInfoNested : ControlInfoHandler := inferForAllControlInfo
+meta def inferForAllControlInfoNested : ControlInfoHandler := fun stx => do
+  let `(doForAll| for_all $[$_ : ]? $_:ident in $_ do $body) := stx | throwUnsupportedSyntax
+  let info ← inferControlInfoSeq body
+  if info.breaks then
+    throwErrorAt stx "`for_all` does not support `break`; use `for` for early exit"
+  if info.returnsEarly then
+    throwErrorAt stx "`for_all` does not support `return` from the loop body"
+  return { info with numRegularExits := 1, breaks := false, continues := false, returnsEarly := false }
 
 @[builtin_doElem_control_info NumLean.Meta.ForAll.doForAllFast]
 def inferForAllFastControlInfo : ControlInfoHandler := fun stx => do
@@ -120,9 +131,16 @@ def inferForAllFastControlInfo : ControlInfoHandler := fun stx => do
   return { info with numRegularExits := 1, breaks := false, continues := false, returnsEarly := false }
 
 @[doElem_control_info NumLean.Meta.ForAll.doForAllFast]
-def inferForAllFastControlInfoNested : ControlInfoHandler := inferForAllFastControlInfo
+meta def inferForAllFastControlInfoNested : ControlInfoHandler := fun stx => do
+  let `(doForAllFast| for_all_fast $[$_ : ]? $_:ident in $_ do $body) := stx | throwUnsupportedSyntax
+  let info ← inferControlInfoSeq body
+  if info.breaks then
+    throwErrorAt stx "`for_all_fast` does not support `break`; use `for` for early exit"
+  if info.returnsEarly then
+    throwErrorAt stx "`for_all_fast` does not support `return` from the loop body"
+  return { info with numRegularExits := 1, breaks := false, continues := false, returnsEarly := false }
 
-@[doElem_elab NumLean.Meta.ForAll.doForAll] def elabDoForAll : DoElab := fun stx dec => do
+@[doElem_elab NumLean.Meta.ForAll.doForAll] meta def elabDoForAll : DoElab := fun stx dec => do
   let `(doForAll| for_all $[$h? : ]? $x:ident in $xs do $body) := stx | throwUnsupportedSyntax
   checkMutVarsForShadowing #[x]
 
@@ -133,7 +151,7 @@ def inferForAllFastControlInfoNested : ControlInfoHandler := inferForAllFastCont
   let xsTy ← mkFreshExprMVar (mkSort (mi.u.succ)) (userName := `ρ)
   let xs ← Term.elabTermEnsuringType xs xsTy
 
-  let info ← inferForAllControlInfo stx
+  let info ← inferForAllControlInfoNested stx
   let mutVars := (← read).mutVars
   let loopMutVars := mutVars.filter fun x => info.reassigns.contains x.getId
   let loopMutVarNames := (loopMutVars.map (·.getId)).toList
@@ -197,7 +215,7 @@ def inferForAllFastControlInfoNested : ControlInfoHandler := inferForAllFastCont
 
   mkBindApp σ γ folded rest
 
-@[doElem_elab NumLean.Meta.ForAll.doForAllFast] def elabDoForAllFast : DoElab := fun stx dec => do
+@[doElem_elab NumLean.Meta.ForAll.doForAllFast] meta def elabDoForAllFast : DoElab := fun stx dec => do
   let `(doForAllFast| for_all_fast $[$h? : ]? $x:ident in $xs do $body) := stx | throwUnsupportedSyntax
   checkMutVarsForShadowing #[x]
 
@@ -208,7 +226,7 @@ def inferForAllFastControlInfoNested : ControlInfoHandler := inferForAllFastCont
   let xsTy ← mkFreshExprMVar (mkSort (mi.u.succ)) (userName := `ρ)
   let xs ← Term.elabTermEnsuringType xs xsTy
 
-  let info ← inferForAllFastControlInfo stx
+  let info ← inferForAllFastControlInfoNested stx
   let mutVars := (← read).mutVars
   let loopMutVars := mutVars.filter fun x => info.reassigns.contains x.getId
   let loopMutVarNames := (loopMutVars.map (·.getId)).toList

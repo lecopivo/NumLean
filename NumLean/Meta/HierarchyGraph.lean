@@ -1,6 +1,10 @@
-import Lean
-import Lean.Data.Json.FromToJson
-import NumLean.Meta.Visualize.Basic
+module
+
+public import Lean
+public import Lean.Data.Json.FromToJson
+public import NumLean.Meta.Visualize.Basic
+
+@[expose] public section
 
 namespace NumLean
 namespace HierarchyGraph
@@ -48,7 +52,7 @@ structure HierarchyGraphEntry where
   tags : Array Name := #[]
 deriving Inhabited, Repr
 
-initialize hierarchyGraphExt : SimpleScopedEnvExtension HierarchyGraphEntry (Array HierarchyGraphEntry) ←
+meta initialize hierarchyGraphExt : SimpleScopedEnvExtension HierarchyGraphEntry (Array HierarchyGraphEntry) ←
   registerSimpleScopedEnvExtension {
     name := by exact decl_name%
     initial := #[]
@@ -57,11 +61,11 @@ initialize hierarchyGraphExt : SimpleScopedEnvExtension HierarchyGraphEntry (Arr
 
 syntax (name := hierarchyGraphAttr) "hierarchy_graph" (ppSpace ident)* : attr
 
-private def parseTags : Syntax → CoreM (Array Name)
+meta def parseTags : Syntax → CoreM (Array Name)
   | `(attr| hierarchy_graph $[$tags]*) => pure (tags.map (·.getId))
   | _ => throwUnsupportedSyntax
 
-initialize registerBuiltinAttribute {
+meta initialize registerBuiltinAttribute {
   name := `hierarchyGraphAttr
   descr := "mark a class or instance declaration for hierarchy graph generation"
   applicationTime := .afterCompilation
@@ -73,20 +77,20 @@ initialize registerBuiltinAttribute {
   erase := fun _ => throwError "can't remove hierarchy_graph attributes"
 }
 
-private def shortLabel (name : Name) : String :=
+meta def shortLabel (name : Name) : String :=
   name.components.getLast?.map toString |>.getD name.toString
 
-private def generalTag : Name := `general
+meta def generalTag : Name := `general
 
-private def otherTag : Name := `other
+meta def otherTag : Name := `other
 
-private def entryMatchesTags (tags : Array Name) (entry : HierarchyGraphEntry) : Bool :=
+meta def entryMatchesTags (tags : Array Name) (entry : HierarchyGraphEntry) : Bool :=
   tags.isEmpty || entry.tags.any (tags.contains ·) || (entry.tags.isEmpty && tags.contains generalTag)
 
-private def classEntryTags (entry : HierarchyGraphEntry) : Array Name :=
+meta def classEntryTags (entry : HierarchyGraphEntry) : Array Name :=
   if entry.tags.isEmpty then #[generalTag] else entry.tags
 
-private def appClassName? (e : Expr) : MetaM (Option Name) := do
+meta def appClassName? (e : Expr) : MetaM (Option Name) := do
   let e ← whnfR e
   let fn := e.getAppFn
   let some n := fn.constName? | return none
@@ -94,7 +98,7 @@ private def appClassName? (e : Expr) : MetaM (Option Name) := do
     return some n
   return none
 
-private def collectAssumedClasses (type : Expr) : MetaM (Array Name) := do
+meta def collectAssumedClasses (type : Expr) : MetaM (Array Name) := do
   forallTelescopeReducing type fun xs _ => do
     let mut result := #[]
     for x in xs do
@@ -105,13 +109,13 @@ private def collectAssumedClasses (type : Expr) : MetaM (Array Name) := do
             result := result.push cls
     return result
 
-private def resultClass? (type : Expr) : MetaM (Option Name) := do
+meta def resultClass? (type : Expr) : MetaM (Option Name) := do
   forallTelescopeReducing type fun _ body => appClassName? body
 
-private def typeString (e : Expr) : CoreM String :=
+meta def typeString (e : Expr) : CoreM String :=
   return toString e
 
-private def classNode? (entry : HierarchyGraphEntry) : MetaM (Option HierarchyClassNode) := do
+meta def classNode? (entry : HierarchyGraphEntry) : MetaM (Option HierarchyClassNode) := do
   unless isStructure (← getEnv) entry.declName do
     return none
   let info ← getConstInfo entry.declName
@@ -123,7 +127,7 @@ private def classNode? (entry : HierarchyGraphEntry) : MetaM (Option HierarchyCl
     tags := classEntryTags entry
   }
 
-private def parentClassEdges (className : Name) : CoreM (Array HierarchyClassEdge) := do
+meta def parentClassEdges (className : Name) : CoreM (Array HierarchyClassEdge) := do
   let env ← getEnv
   if !isStructure env className then
     return #[]
@@ -133,41 +137,44 @@ private def parentClassEdges (className : Name) : CoreM (Array HierarchyClassEdg
     edges := edges.push { source := className, target := p.structName, kind := .extends }
   return edges
 
-private def ensureClassNode (nodes : Array HierarchyClassNode) (name : Name) : Array HierarchyClassNode :=
+meta def ensureClassNode (nodes : Array HierarchyClassNode) (name : Name) : Array HierarchyClassNode :=
   if nodes.any (·.name == name) then
     nodes
   else
     nodes.push { name, label := shortLabel name, type := "", tag? := none }
 
-private def mergeTags (a b : Array Name) : Array Name := Id.run do
+meta def mergeTags (a b : Array Name) : Array Name := Id.run do
   let mut result := a
   for tag in b do
     unless result.contains tag do
       result := result.push tag
   return result
 
-private def ensureOtherClassNode (nodes : Array HierarchyClassNode) (name : Name) : Array HierarchyClassNode :=
+meta def ensureOtherClassNode (nodes : Array HierarchyClassNode) (name : Name) : Array HierarchyClassNode :=
   if nodes.any (·.name == name) then
     nodes
   else
     nodes.push { name, label := shortLabel name, type := "", tag? := some otherTag, tags := #[otherTag] }
 
-private def mergeClassNodes (nodes : Array HierarchyClassNode) : Array HierarchyClassNode := Id.run do
+meta def mergeClassNodes (nodes : Array HierarchyClassNode) : Array HierarchyClassNode := Id.run do
   let mut result := #[]
   for node in nodes do
     if let some i := result.findIdx? (·.name == node.name) then
-      let old := result[i]!
-      result := result.set! i {
-        old with
-        type := if old.type.isEmpty then node.type else old.type
-        tag? := old.tag? <|> node.tag?
-        tags := mergeTags old.tags node.tags
-      }
+      if h : i < result.size then
+        let old := result[i]
+        result := result.set i {
+          old with
+          type := if old.type.isEmpty then node.type else old.type
+          tag? := old.tag? <|> node.tag?
+          tags := mergeTags old.tags node.tags
+        } h
+      else
+        result := result.push node
     else
       result := result.push node
   return result
 
-private def closeClassNodes (nodes : Array HierarchyClassNode) (edges : Array HierarchyClassEdge)
+meta def closeClassNodes (nodes : Array HierarchyClassNode) (edges : Array HierarchyClassEdge)
     (instances : Array HierarchyInstanceEdge) : Array HierarchyClassNode := Id.run do
   let mut nodes := nodes
   for edge in edges do
@@ -179,7 +186,7 @@ private def closeClassNodes (nodes : Array HierarchyClassNode) (edges : Array Hi
       nodes := ensureOtherClassNode nodes input
   return nodes
 
-private def assumeClassEdges (className : Name) : MetaM (Array HierarchyClassEdge) := do
+meta def assumeClassEdges (className : Name) : MetaM (Array HierarchyClassEdge) := do
   let info ← getConstInfo className
   let parents ← parentClassEdges className
   let parentNames := parents.map (·.target)
@@ -190,7 +197,7 @@ private def assumeClassEdges (className : Name) : MetaM (Array HierarchyClassEdg
       edges := edges.push { source := className, target := cls, kind := .assumes }
   return edges
 
-private def instanceEdge? (entry : HierarchyGraphEntry) : MetaM (Option HierarchyInstanceEdge) := do
+meta def instanceEdge? (entry : HierarchyGraphEntry) : MetaM (Option HierarchyInstanceEdge) := do
   unless (← getInstancePriority? entry.declName).isSome do
     return none
   let info ← getConstInfo entry.declName
@@ -207,7 +214,7 @@ private def instanceEdge? (entry : HierarchyGraphEntry) : MetaM (Option Hierarch
     tags := #[]
   }
 
-def generateHierarchyGraphWithTags (tags : Array Name := #[]) : CoreM HierarchyGraph := do
+meta def generateHierarchyGraphWithTags (tags : Array Name := #[]) : CoreM HierarchyGraph := do
   let allEntries := hierarchyGraphExt.getState (← getEnv)
   MetaM.run' do
     let mut classes := #[]
@@ -225,14 +232,53 @@ def generateHierarchyGraphWithTags (tags : Array Name := #[]) : CoreM HierarchyG
     classes := mergeClassNodes (closeClassNodes classes classEdges instances)
     return { classes, classEdges, instances }
 
-def generateHierarchyGraph (tag? : Option Name := none) : CoreM HierarchyGraph := do
+meta def generateHierarchyGraph (tag? : Option Name := none) : CoreM HierarchyGraph := do
   generateHierarchyGraphWithTags (tag?.map (#[·]) |>.getD #[])
 
-def generateHierarchyGraphJson (tag? : Option Name := none) : CoreM Json := do
-  return toJson (← generateHierarchyGraph tag?)
+meta def edgeKindJson : HierarchyEdgeKind → Json
+  | .extends => Json.str "extends"
+  | .assumes => Json.str "assumes"
 
-def generateHierarchyGraphJsonWithTags (tags : Array Name := #[]) : CoreM Json := do
-  return toJson (← generateHierarchyGraphWithTags tags)
+meta def nameJson (name : Name) : Json := Json.str name.toString
+
+meta def nameArrayJson (names : Array Name) : Json := Json.arr (names.map nameJson)
+
+meta def classNodeJson (node : HierarchyClassNode) : Json := Json.mkObj [
+  ("name", nameJson node.name),
+  ("label", Json.str node.label),
+  ("type", Json.str node.type),
+  ("tag?", node.tag?.map nameJson |>.getD Json.null),
+  ("tags", nameArrayJson node.tags)
+]
+
+meta def classEdgeJson (edge : HierarchyClassEdge) : Json := Json.mkObj [
+  ("source", nameJson edge.source),
+  ("target", nameJson edge.target),
+  ("kind", edgeKindJson edge.kind)
+]
+
+meta def instanceEdgeJson (edge : HierarchyInstanceEdge) : Json := Json.mkObj [
+  ("name", nameJson edge.name),
+  ("label", Json.str edge.label),
+  ("inputs", nameArrayJson edge.inputs),
+  ("output", nameJson edge.output),
+  ("type", Json.str edge.type),
+  ("priority?", edge.priority?.map (fun n => Json.str (toString n)) |>.getD Json.null),
+  ("tag?", edge.tag?.map nameJson |>.getD Json.null),
+  ("tags", nameArrayJson edge.tags)
+]
+
+meta def hierarchyGraphJson (graph : HierarchyGraph) : Json := Json.mkObj [
+  ("classes", Json.arr (graph.classes.map classNodeJson)),
+  ("classEdges", Json.arr (graph.classEdges.map classEdgeJson)),
+  ("instances", Json.arr (graph.instances.map instanceEdgeJson))
+]
+
+meta def generateHierarchyGraphJson (tag? : Option Name := none) : CoreM Json := do
+  return hierarchyGraphJson (← generateHierarchyGraph tag?)
+
+meta def generateHierarchyGraphJsonWithTags (tags : Array Name := #[]) : CoreM Json := do
+  return hierarchyGraphJson (← generateHierarchyGraphWithTags tags)
 
 end HierarchyGraph
 
@@ -253,7 +299,7 @@ open Lean Elab Command Server ProofWidgets
 syntax (name := hierarchyGraphJsonCmd) "#hierarchy_graph_json" (ppSpace ident)* : command
 
 @[command_elab hierarchyGraphJsonCmd]
-def elabHierarchyGraphJson : CommandElab := fun stx => do
+meta def elabHierarchyGraphJson : CommandElab := fun stx => do
   let tags ← match stx with
     | `(#hierarchy_graph_json $[$tags]*) => pure (tags.map fun tag => tag.getId)
     | _ => throwUnsupportedSyntax
@@ -263,14 +309,14 @@ def elabHierarchyGraphJson : CommandElab := fun stx => do
 syntax (name := visualizeHierarchyGraphCmd) "#visualize_hierarchy_graph" (ppSpace ident)* : command
 
 @[command_elab visualizeHierarchyGraphCmd]
-def elabVisualizeHierarchyGraph : CommandElab := fun stx => do
+meta def elabVisualizeHierarchyGraph : CommandElab := fun stx => do
   let tags ← match stx with
     | `(#visualize_hierarchy_graph $[$tags]*) => pure (tags.map fun tag => tag.getId)
     | _ => throwUnsupportedSyntax
   let graph ← liftCoreM <| generateHierarchyGraphWithTags tags
   liftCoreM <| Widget.savePanelWidgetInfo
-    (hash Visualize.javascript)
-    (pure (Lean.toJson graph))
+    (hash Visualize.javascriptMeta)
+    (pure (hierarchyGraphJson graph))
     stx
 
 end HierarchyGraph

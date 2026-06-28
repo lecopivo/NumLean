@@ -1,5 +1,10 @@
-import NumLean.Tactic.ApplyRuleSets.Core
-import Lean.Elab.Tactic.ElabTerm
+module
+
+public import NumLean.Tactic.ApplyRuleSets.Core
+public meta import NumLean.Tactic.ApplyRuleSets.Core
+public import Lean.Elab.Tactic.ElabTerm
+
+@[expose] public section
 
 namespace NumLean.Tactic.ApplyRuleSets
 
@@ -10,26 +15,44 @@ syntax applyRuleSetErase := "-" term:max
 syntax applyRuleSetArg := applyRuleSetErase <|> term
 syntax applyRuleSetArgs := "[" applyRuleSetArg,* "]"
 
-declare_config_elab elabApplyRuleSetsConfig Config
+unsafe def evalApplyRuleSetsConfigUnsafe (e : Expr) : TermElabM Config :=
+  Meta.evalExpr' (safety := .unsafe) Config ``Config e
+
+@[implemented_by evalApplyRuleSetsConfigUnsafe]
+meta opaque evalApplyRuleSetsConfigExpr (e : Expr) : TermElabM Config
+
+meta def elabApplyRuleSetsConfig (optConfig : Syntax) : TacticM Config := do
+  let recover := (← read).recover
+  let go : TermElabM Config := withRef optConfig do
+    let items := mkConfigItemViews (getConfigItems optConfig)
+    if items.isEmpty then
+      return {}
+    let c ← elabConfig recover ``Config items
+    if c.hasSyntheticSorry then
+      return {}
+    if c.hasSorry then
+      throwError m!"Configuration contains an unresolved placeholder"
+    evalApplyRuleSetsConfigExpr c
+  go
 
 syntax (name := applyRuleSetsTac) "apply_rulesets" optConfig (ppSpace applyRuleSetArgs)? : tactic
 
-private def parseApplyRuleSetArgs (args : TSyntax ``applyRuleSetArgs) : Array (TSyntax ``applyRuleSetArg) :=
+meta def parseApplyRuleSetArgs (args : TSyntax ``applyRuleSetArgs) : Array (TSyntax ``applyRuleSetArg) :=
   match args with
   | `(applyRuleSetArgs| [$xs,*]) => xs.getElems
   | _ => #[]
 
-private def explicitRuleId (order : Nat) : Name :=
+meta def explicitRuleId (order : Nat) : Name :=
   `apply_rulesets.explicit ++ Name.num Name.anonymous order
 
-private def explicitOrigin (order : Nat) (ref : Syntax) (expr : Expr) : Origin :=
+meta def explicitOrigin (order : Nat) (ref : Syntax) (expr : Expr) : Origin :=
   match expr with
   | .fvar fvarId => .fvar fvarId
   | _ => match expr.constName? with
     | some declName => .decl declName
     | none => .stx (explicitRuleId order) ref
 
-private def mkExplicitExprRule (origin : Origin) (order : Nat) (e : Expr) : TacticM Rule := do
+meta def mkExplicitExprRule (origin : Origin) (order : Nat) (e : Expr) : TacticM Rule := do
   let (e, pattern, levelParams) ←
     if e.isLambda then
       pure (e, ← inferType e, #[])
@@ -42,7 +65,7 @@ private def mkExplicitExprRule (origin : Origin) (order : Nat) (e : Expr) : Tact
   return rule
 
 @[tactic applyRuleSetsTac]
-def evalApplyRuleSets : Tactic := fun stx => do
+meta def evalApplyRuleSets : Tactic := fun stx => do
   let `(tactic| apply_rulesets $cfgStx:optConfig $[$argsStx?:applyRuleSetArgs]?) := stx
     | throwUnsupportedSyntax
   let cfg ← elabApplyRuleSetsConfig cfgStx

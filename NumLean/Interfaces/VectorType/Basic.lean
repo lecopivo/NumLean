@@ -1,4 +1,8 @@
-import Batteries.Data.Array.Lemmas
+module
+
+public import Batteries.Data.Array.Lemmas
+
+@[expose] public section
 
 namespace NumLean
 

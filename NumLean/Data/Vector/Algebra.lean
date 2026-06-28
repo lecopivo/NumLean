@@ -1,6 +1,10 @@
-import NumLean.Data.Vector.Ops
-import Mathlib.Algebra.Module.Basic
-import Mathlib.Algebra.Ring.Basic
+module
+
+public import NumLean.Data.Vector.Ops
+public import Mathlib.Algebra.Module.Basic
+public import Mathlib.Algebra.Ring.Basic
+
+@[expose] public section
 
 namespace Vector
 

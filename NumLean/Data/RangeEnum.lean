@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 /-- Typeclass for half-open ranges that provide an explicitly indexed enumeration view. -/
 class Std.Rco.HasEnum (ρ : Type u) (ε : outParam (Type v)) where
   enum : ρ → ε

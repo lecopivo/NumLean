@@ -1,6 +1,11 @@
-import Batteries.Data.FloatArray
-import NumLean.Data.Scalars.Float32.Float32Array
-import NumLean.Data.ScalarArrays
+module
+
+public import Batteries.Data.FloatArray
+import all Init.Data.FloatArray.Basic
+public import NumLean.Data.Scalars.Float32.Float32Array
+public import NumLean.Data.ScalarArrays
+
+@[expose] public section
 
 open NumLean
 

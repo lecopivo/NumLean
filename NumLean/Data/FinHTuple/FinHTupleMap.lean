@@ -1,4 +1,8 @@
-import NumLean.Data.FinHTuple.Basic
+module
+
+public import NumLean.Data.FinHTuple.Basic
+
+@[expose] public section
 
 namespace NumLean
 

@@ -1,4 +1,8 @@
-import NumLean.Data.Tensor.Shape
+module
+
+public import NumLean.Data.Tensor.Shape
+
+@[expose] public section
 
 namespace NumLean
 namespace Tensor

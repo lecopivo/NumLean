@@ -1,7 +1,13 @@
-import Lean.Elab.Deriving.Util
-import Mathlib.Tactic.ProxyType
-import NumLean.Interfaces.HasFlatRepr.Equiv
-import NumLean.Interfaces.HasFlatRepr.Sigma
+module
+
+public import Lean.Elab.Deriving.Util
+public import Mathlib.Tactic.ProxyType
+public meta import Mathlib.Tactic.ProxyType
+public meta import NumLean.Meta.ExposedProxyType
+public import NumLean.Interfaces.HasFlatRepr.Equiv
+public import NumLean.Interfaces.HasFlatRepr.Sigma
+
+@[expose] public section
 
 syntax (name := deriveHasFlatReprCmd) "#derive_has_flat_repr " ident : command
 
@@ -43,7 +49,7 @@ namespace Deriving
 
 open Lean.Elab.Deriving
 
-private def checkSupported (indVal : InductiveVal) : CommandElabM Unit := do
+meta def checkSupported (indVal : InductiveVal) : CommandElabM Unit := do
   if indVal.isRec then
     throwError "deriving HasFlatRepr only supports non-recursive structures"
   if indVal.numIndices != 0 then
@@ -51,7 +57,7 @@ private def checkSupported (indVal : InductiveVal) : CommandElabM Unit := do
   if indVal.numCtors != 1 then
     throwError "deriving HasFlatRepr only supports structures/single-constructor inductives"
 
-private def typeParamIndices (indVal : InductiveVal) : TermElabM (Array Nat) := do
+meta def typeParamIndices (indVal : InductiveVal) : TermElabM (Array Nat) := do
   forallBoundedTelescope indVal.type indVal.numParams fun xs _ => do
     let mut indices := #[]
     for h : i in *...xs.size do
@@ -59,7 +65,7 @@ private def typeParamIndices (indVal : InductiveVal) : TermElabM (Array Nat) := 
         indices := indices.push i
     return indices
 
-private def ctorFieldTypesForParams
+meta def ctorFieldTypesForParams
     (indVal : InductiveVal) (params : Array Expr) : TermElabM (Array Expr) := do
   let ctorInfo ← getConstInfoCtor indVal.ctors[0]!
   let ctorType ← inferType <|
@@ -67,13 +73,13 @@ private def ctorFieldTypesForParams
   forallBoundedTelescope ctorType ctorInfo.numFields fun xs _ => do
     xs.mapM fun x => inferType x
 
-private def findSubst? (subst : Array (FVarId × Term)) (id : FVarId) : Option Term := Id.run do
+meta def findSubst? (subst : Array (FVarId × Term)) (id : FVarId) : Option Term := Id.run do
   for (id', stx) in subst do
     if id == id' then
       return some stx
   return none
 
-partial def natExprToSyntax (subst : Array (FVarId × Term)) (e : Expr) : TermElabM Term := do
+meta partial def natExprToSyntax (subst : Array (FVarId × Term)) (e : Expr) : TermElabM Term := do
   let e ← instantiateMVars e
   if e.isAppOfArity ``Nat.add 2 then
     let args := e.getAppArgs
@@ -95,27 +101,27 @@ partial def natExprToSyntax (subst : Array (FVarId × Term)) (e : Expr) : TermEl
   | .lit (.natVal n) => `($(quote n))
   | _ => exprToSyntax e
 
-private def sumNatExprList : List Expr → MetaM Expr
+meta def sumNatExprList : List Expr → MetaM Expr
   | [] => pure (mkRawNatLit 0)
   | [n] => pure n
   | n :: ns => do
       let rest ← sumNatExprList ns
       mkAppM ``Nat.add #[n, rest]
 
-private def sumNatExprs (ns : Array Expr) : MetaM Expr :=
+meta def sumNatExprs (ns : Array Expr) : MetaM Expr :=
   if ns.all (·.rawNatLit?.isSome) then
     pure <| mkRawNatLit <| ns.foldl (fun acc n => acc + n.rawNatLit?.get!) 0
   else
     sumNatExprList ns.toList
 
-private def mkHasFlatReprType (x ks n k : Expr) : TermElabM Expr := do
+meta def mkHasFlatReprType (x ks n k : Expr) : TermElabM Expr := do
   let u ← mkFreshLevelMVar
   let v ← mkFreshLevelMVar
   let w ← mkFreshLevelMVar
   let vectorTypeInst ← synthInstance (← mkAppM ``VectorType #[ks, k])
   return mkAppN (mkConst ``HasFlatRepr [u, v, w]) #[x, ks, n, k, vectorTypeInst]
 
-private def mkHasFlatReprLength (x ks k : Expr) : TermElabM Expr := do
+meta def mkHasFlatReprLength (x ks k : Expr) : TermElabM Expr := do
   let n ← mkFreshExprMVar (some (mkConst ``Nat))
   let instType ← mkHasFlatReprType x ks n k
   let inst ← synthInstance instType
@@ -126,7 +132,7 @@ private def mkHasFlatReprLength (x ks k : Expr) : TermElabM Expr := do
       return n
   instantiateMVars n
 
-private def mkConcreteHasFlatReprLength (x k : Expr) : TermElabM Expr := do
+meta def mkConcreteHasFlatReprLength (x k : Expr) : TermElabM Expr := do
   let ks ← mkAppM ``Vector #[k]
   let same ← isDefEq x k
   if same then
@@ -143,11 +149,11 @@ private def mkConcreteHasFlatReprLength (x k : Expr) : TermElabM Expr := do
     return n
   throwError "could not infer concrete HasFlatRepr length for{indentExpr x}"
 
-private def mkFieldLengthSum (fieldTypes : Array Expr) (ks k : Expr) : TermElabM Expr := do
+meta def mkFieldLengthSum (fieldTypes : Array Expr) (ks k : Expr) : TermElabM Expr := do
   let ns ← fieldTypes.mapM fun fieldType => mkHasFlatReprLength fieldType ks k
   sumNatExprs ns
 
-private def mkFieldLengthSumWithBase
+meta def mkFieldLengthSumWithBase
     (fieldTypes : Array Expr) (base baseN ks k : Expr) : TermElabM Expr := do
   let ns ← fieldTypes.mapM fun fieldType => do
     if ← isDefEq fieldType base then
@@ -156,14 +162,14 @@ private def mkFieldLengthSumWithBase
       mkHasFlatReprLength fieldType ks k
   sumNatExprs ns
 
-private def mkConcreteFieldLengthSum (fieldTypes : Array Expr) (k : Expr) : TermElabM Expr := do
+meta def mkConcreteFieldLengthSum (fieldTypes : Array Expr) (k : Expr) : TermElabM Expr := do
   let ns ← fieldTypes.mapM fun fieldType => mkConcreteHasFlatReprLength fieldType k
   sumNatExprs ns
 
-private def scalarCandidates : Array Name :=
+meta def scalarCandidates : Array Name :=
   #[`Float, `Float32, `UInt8, `Real]
 
-private def chooseConcreteScalarAndLength
+meta def chooseConcreteScalarAndLength
     (indVal : InductiveVal) (argNames : Array Name) : TermElabM (Term × Term × Term) := do
   forallBoundedTelescope indVal.type indVal.numParams fun params _ => do
     let fieldTypes ← ctorFieldTypesForParams indVal params
@@ -182,7 +188,7 @@ private def chooseConcreteScalarAndLength
     throwError "deriving HasFlatRepr could not synthesize field representations \
       for any candidate scalar"
 
-private def mkHasFlatReprInstanceNoTypeParam (indVal : InductiveVal) : TermElabM Command := do
+meta def mkHasFlatReprInstanceNoTypeParam (indVal : InductiveVal) : TermElabM Command := do
   let argNames ← mkInductArgNames indVal
   let binders ← mkImplicitBinders argNames
   let indType ← mkInductiveApp indVal argNames
@@ -192,7 +198,7 @@ private def mkHasFlatReprInstanceNoTypeParam (indVal : InductiveVal) : TermElabM
         : $(mkCIdent ``HasFlatRepr) $indType $ks $n :=
       $(mkCIdent ``HasFlatRepr.ofEquiv) $ks (proxy_equiv% $indType))
 
-private def mkHasFlatReprInstanceOneTypeParam
+meta def mkHasFlatReprInstanceOneTypeParam
     (indVal : InductiveVal) (typeParamIdx : Nat) : TermElabM Command := do
   let argNames ← mkInductArgNames indVal
   let binders ← mkImplicitBinders argNames
@@ -237,11 +243,12 @@ private def mkHasFlatReprInstanceOneTypeParam
         : $(mkCIdent ``HasFlatRepr) $indType $(mkIdent ksName) $n (K := $(mkIdent kName)) :=
       $(mkCIdent ``HasFlatRepr.ofEquiv) $(mkIdent ksName) (proxy_equiv% $indType))
 
-private def mkHasFlatReprInstance (typeName : Name) : CommandElabM Unit := do
+meta def mkHasFlatReprInstance (typeName : Name) : CommandElabM Unit := do
   let indVal ← getConstInfoInduct typeName
   checkSupported indVal
   liftTermElabM <|
-    Mathlib.ProxyType.ensureProxyEquiv (Mathlib.ProxyType.ProxyEquivConfig.default indVal) indVal
+    NumLean.Meta.ExposedProxyType.ensureProxyEquivExposed
+      (Mathlib.ProxyType.ProxyEquivConfig.default indVal) indVal
   let cmd ← liftTermElabM do
     let typeParams ← typeParamIndices indVal
     if h : typeParams.size = 0 then
@@ -253,18 +260,18 @@ private def mkHasFlatReprInstance (typeName : Name) : CommandElabM Unit := do
   trace[Elab.Deriving.HasFlatRepr] "instance command:\n{cmd}"
   elabCommand cmd
 
-def hasFlatReprDerivingHandler (declNames : Array Name) : CommandElabM Bool := do
+meta def hasFlatReprDerivingHandler (declNames : Array Name) : CommandElabM Bool := do
   if declNames.size != 1 then
     return false
   mkHasFlatReprInstance declNames[0]!
   return true
 
-initialize
+meta initialize
   registerDerivingHandler ``HasFlatRepr hasFlatReprDerivingHandler
   registerTraceClass `Elab.Deriving.HasFlatRepr
 
 @[command_elab deriveHasFlatReprCmd]
-def elabDeriveHasFlatRepr : CommandElab := fun stx => do
+meta def elabDeriveHasFlatRepr : CommandElab := fun stx => do
   let `(command| #derive_has_flat_repr $id:ident) := stx | throwUnsupportedSyntax
   let declName ← liftCoreM <| realizeGlobalConstNoOverloadWithInfo id
   mkHasFlatReprInstance declName

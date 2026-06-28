@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 namespace NumLean
 
 class HasDeviceType (device : Name) (hostType : Type) (deviceType : outParam Type) where
