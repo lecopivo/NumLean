@@ -1,6 +1,6 @@
 module
 
-public import NumLean.Data.FlatVector.Basic
+public import NumLean.Data.FlatVector.HasFlatRepr
 public import Lean.Elab.Term
 public import Lean.PrettyPrinter.Delaborator
 

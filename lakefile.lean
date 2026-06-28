@@ -14,6 +14,9 @@ partial def collectCFiles (dir : FilePath) : IO (Array FilePath) := do
 package «NumLean» where
   version := v!"0.1.0"
   keywords := #["math"]
+  leanOptions := #[
+    ⟨`backward.do.legacy, false⟩
+  ]
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.30.0"

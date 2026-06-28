@@ -26,7 +26,7 @@ instance : UntypedIndex (Fin n) Nat (· < n) where
   }
 
 instance [UntypedIndex I I' idom] [UntypedIndex J J' jdom] :
-    UntypedIndex (I × J) (I' × J') (fun ⟨i,j⟩ => idom i ∧ jdom j) where
+    UntypedIndex (I × J) (I' × J') (fun ij => idom ij.1 ∧ jdom ij.2) where
   equiv := {
     toFun := fun ⟨i,j⟩ => ⟨(equiv i, equiv j), by simp⟩
     invFun := fun ⟨(i,j),h⟩ => (equiv.symm ⟨i, by simp_all⟩, equiv.symm ⟨j, by simp_all⟩)

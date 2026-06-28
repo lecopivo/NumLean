@@ -10,10 +10,24 @@ open NumLean
 
 namespace FloatTensor
 
+variable (X : Type u) (I : Type v)
+    {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI]
 
-/-- info: [2.000000,4.000000,6.000000,8.000000] -/
-#guard_msgs in
-#eval! ⊞[1.0,2,3,4] + ⊞[1.0,2,3,4]
+instance [UntypedIndex I I' dom] : GetElem (FlatVector X I) I' X (fun _ i' => dom i') where
+  getElem xs i' h := getElem xs ((UntypedIndex.equiv (idx := I)).symm ⟨i',h⟩) .intro
+
+#check (Float^[2])^[2]
+
+#eval! (⊞[1.0,2,3,4] + ⊞[1.0,2,3,4])
+
+-- #check ⊞[⊞[1.0,2], ⊞[3.0,4]] -- (Float^[2])^[2]
+
+set_option backward.do.legacy false
+
+#eval show IO Unit from do
+  for h : i in 0...2 do
+    for h : j in 0...2 do
+      IO.println (⊞[[1.0,2],[3,4]][i,j])
 
 /-- info: 2.0 • ⊞[1.0, 2, 3, 4] : Float^[4] -/
 #guard_msgs in

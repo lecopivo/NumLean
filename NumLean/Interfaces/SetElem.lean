@@ -40,8 +40,35 @@ theorem setElem_fin [SetElem cont Nat elem dom] (xs : cont) (i : Fin n) (x : ele
 
 open Lean in
 /-- Turn an array of terms in into a tuple. -/
-private def mkTuple (xs : Array (TSyntax `term)) : MacroM (TSyntax `term) :=
+private meta def mkTuple (xs : Array (TSyntax `term)) : MacroM (TSyntax `term) :=
   `(term| ($(xs[0]!), $(xs[1:]),*))
+
+declare_syntax_cat tuple_index_stx (behavior := both)
+syntax term : tuple_index_stx
+syntax (priority := high) "[" tuple_index_stx ", " tuple_index_stx,* "]" : tuple_index_stx
+
+open Lean in
+private meta partial def tupleIndexStxToTerm : TSyntax `tuple_index_stx → MacroM (TSyntax `term)
+  | `(tuple_index_stx| [ $i:tuple_index_stx, $is:tuple_index_stx,* ] ) => do
+      let mut items := #[← tupleIndexStxToTerm i]
+      for i in is.getElems do
+        items := items.push (← tupleIndexStxToTerm ⟨i⟩)
+      mkTuple items
+  | `(tuple_index_stx| $i:term ) => pure i
+  | _ => Macro.throwUnsupported
+
+open Lean in
+/-- Comma-index notation, lowered to ordinary `getElem` with a tuple index.
+
+This intentionally only handles two or more top-level indices, so ordinary `xs[i]` remains Lean's
+builtin get-element notation. Grouped indices such as `xs[[i,j],[k,l]]` elaborate to nested product
+indices, e.g. `getElem xs ((i,j),(k,l)) (by get_elem_tactic)`. -/
+macro (priority := high) xs:term noWs "[" i:tuple_index_stx ", " is:tuple_index_stx,* "]" : term => do
+  let mut items := #[← tupleIndexStxToTerm i]
+  for i in is.getElems do
+    items := items.push (← tupleIndexStxToTerm ⟨i⟩)
+  let i ← mkTuple items
+  `(getElem $xs $i (by get_elem_tactic))
 
 class DefaultIndexOfRank (X : Type u) (r : Nat) (I : outParam (Type w))
 

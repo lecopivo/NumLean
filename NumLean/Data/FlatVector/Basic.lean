@@ -173,8 +173,10 @@ theorem getElem_replicate (x : X) (i : I) :
     (replicate (X := X) (I := I) x)[i] = x := by
   simp [replicate]
 
+instance [Inhabited X] : Inhabited (FlatVector X I) where
+  default := replicate default
 
-set_option backward.do.legacy false
+
 def ofFn [Inhabited X] (f : I → X) : FlatVector X I := Id.run do
   let mut r := replicate (I:=I) default
   for_all h : idx in 0...nI do

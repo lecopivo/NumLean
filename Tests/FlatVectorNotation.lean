@@ -112,6 +112,14 @@ section LiteralNotation
 #guard_msgs in
 #check (⊞[[[1.0], [2]], [[3], [4]]])
 
+/-- info: ⊞[⊞[1.0, 2], ⊞[3.0, 4]] : Float^[2]^[2] -/
+#guard_msgs in
+#check ⊞[⊞[1.0, 2], ⊞[3.0, 4]]
+
+/-- info: ⊞[⊞[1.0, 2], ⊞[3.0, 4]] : Float^[2]^[2] -/
+#guard_msgs in
+#check (⊞[⊞[1.0, 2], ⊞[3.0, 4]] : (Float^[2])^[2])
+
 /-- error: ill-shaped FlatVector literal: expected sub-shape [3], got [1] -/
 #guard_msgs in
 #check (⊞[[1.0, 2, 3], [4]] : Float^[2, 3])
@@ -121,5 +129,24 @@ section LiteralNotation
 #check (⊞[[1.0, 2], [3, 4]] : Float^[2, 3])
 
 end LiteralNotation
+
+section CommaGetElemNotation
+
+/-- info: fun A i j => A[(i, j)] : Float^[2, 3] → Fin 2 → Fin 3 → Float -/
+#guard_msgs in
+#check fun (A : Float^[2, 3]) (i : Fin 2) (j : Fin 3) => A[i, j]
+
+example (A : Float^[2, 3]) (i : Fin 2) (j : Fin 3) :
+    A[i, j] = A[(i, j)] := rfl
+
+/-- info: fun A i j k l => A[((i, j), k, l)] : Float^[[2, 3], [4, 5]] → Fin 2 → Fin 3 → Fin 4 → Fin 5 → Float -/
+#guard_msgs in
+#check fun (A : Float^[[2, 3], [4, 5]]) (i : Fin 2) (j : Fin 3) (k : Fin 4) (l : Fin 5) =>
+  A[[i, j], [k, l]]
+
+example (A : Float^[[2, 3], [4, 5]]) (i : Fin 2) (j : Fin 3) (k : Fin 4) (l : Fin 5) :
+    A[[i, j], [k, l]] = A[((i, j), (k, l))] := rfl
+
+end CommaGetElemNotation
 
 end Tests.FlatVectorNotation
