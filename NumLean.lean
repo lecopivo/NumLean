@@ -4,9 +4,11 @@ public import NumLean.Data.FinHTuple
 public import NumLean.Data.FinHTuple.Basic
 public import NumLean.Data.FinHTuple.FinHTupleMap
 public import NumLean.Data.FinHTuple.Fold
+public import NumLean.Data.FinHTuple.Pretty
 public import NumLean.Data.FlatVector.Algebra
 public import NumLean.Data.FlatVector.Basic
 public import NumLean.Data.FlatVector.HasFlatRepr
+public import NumLean.Data.FlatVector.Notation
 public import NumLean.Data.FlatVector.Ops
 public import NumLean.Data.Scalars.Float32.Float32Array
 public import NumLean.Data.HTuple

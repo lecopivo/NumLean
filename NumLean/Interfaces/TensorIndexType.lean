@@ -1,33 +1,35 @@
 module
 
 public import NumLean.Data.FinHTuple
+public import NumLean.Data.Tensor
 public import NumLean.Interfaces.IndexType
 
 @[expose] public section
 
 namespace NumLean
 
-#exit
+open Tensor
+
 /-- `I` is tensor index type of given rank `rank`. -/
-class TensorIndexTypeOfRank (I : Type u) (n : outParam Nat) (rank : HTuple.Profile)
-  (shape : outParam (HTuple ℕ rank))
+class TensorIndexTypeOfRank (I : Type u) (n : outParam Nat) (rank : Rank)
+  (shape : outParam (Shape rank))
     extends IndexType I n where
 
   size_eq_shape_size : n = shape.numel
 
-  layout : FinHTupleMap shape h(n)
-  compact_layout : layout.evalFin.Bijective
+  layout : Layout shape h(n)
+  compact_layout : layout.Compact
 
   -- Tensor-shaped view of this flat index type.
   tensorEquiv : I ≃ FinHTuple shape
 
   /-- The `IndexType` flat position is the dense tensor offset for the configured axis order. -/
   layout_eval_tensorEquiv_eq_toFin (i : I) :
-    layout.eval (tensorEquiv i).1 = (toFin i).1
+    layout (tensorEquiv i).1 = (toFin i).1
 
 
 /-- `I` is tensor index type of canonical rank `rank`. -/
-class TensorIndexType (I : Type u) (n : outParam Nat) (rank : outParam HTuple.Profile)
+class TensorIndexType (I : Type u) (n : outParam Nat) (rank : outParam Rank)
   (shape : outParam (HTuple ℕ rank))
     extends TensorIndexTypeOfRank I n rank shape
 
@@ -56,6 +58,7 @@ theorem toFinHTuple_fromFinHTuple (idx : FinHTuple shape) :
   simp [fromFinHTuple, toFinHTuple]
 
 end API
+
 
 /-- Any index type is tensor index type of rank 1. -/
 instance {I nI} [IndexType I nI] : TensorIndexTypeOfRank I nI .leaf (.leaf nI) where

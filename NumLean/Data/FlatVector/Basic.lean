@@ -4,8 +4,10 @@ public import NumLean.Interfaces.IndexType
 public import NumLean.Interfaces.SetElem
 public import NumLean.Interfaces.VectorType.Basic
 public import NumLean.Interfaces.HasFlatRepr.Basic
+public import NumLean.Interfaces.TensorIndexType
 public import NumLean.Data.FinHTuple
 public import NumLean.Tactic.TBounds
+public import NumLean.Meta.ForAll.Notation
 
 @[expose] public section
 
@@ -171,6 +173,34 @@ theorem getElem_replicate (x : X) (i : I) :
     (replicate (X := X) (I := I) x)[i] = x := by
   simp [replicate]
 
+
+set_option backward.do.legacy false
+def ofFn [Inhabited X] (f : I → X) : FlatVector X I := Id.run do
+  let mut r := replicate (I:=I) default
+  for_all h : idx in 0...nI do
+    let i := fromFin ⟨idx, h.2⟩
+    r[i] := f i
+  return r
+
+@[simp]
+theorem getElem_ofFn [Inhabited X] (f : I → X) (i : I) : (ofFn f)[i] = f i := by
+  unfold ofFn
+  simp [Id.run, pure, bind]
+  sorry
+
+def ofVector [Inhabited X] (xs : Vector X nI) : FlatVector X I :=
+  ofFn fun i => xs[IndexType.toFin i]
+
+@[simp]
+theorem get_ofVector [Inhabited X] (xs : Vector X nI) (i : I) :
+    get (ofVector xs) i = xs[(IndexType.toFin i).1]'(IndexType.toFin i).2 := by
+  rw [← getElem_eq_get]
+  rw [ofVector, getElem_ofFn]
+  rfl
+
+open TensorIndexType in
+instance {I nI r shape} [TensorIndexType I nI r shape] [ToString X] : ToString (FlatVector X I) where
+  toString x := FinHTuple.printTensor shape (fun i => x[fromFinHTuple (I:=I) i])
 
 end FlatVector
 

@@ -6,9 +6,11 @@ public import Tests.CCompiler
 public import Tests.CCompilerIRSemantics
 public import Tests.DyadicInterval
 public import Tests.ExternIn
+public import Tests.FlatVectorNotation
 public import Tests.Float32ArrayEval
 public import Tests.FoldEmbedding
 public import Tests.ForAllNotation
+public import Tests.FloatTensor
 public import Tests.GaussianPivotEval
 public import Tests.HTupleCoercions
 public import Tests.HTupleGetElemTactic
