@@ -18,16 +18,10 @@ instance [UntypedIndex I I' dom] : GetElem (FlatVector X I) I' X (fun _ i' => do
 
 #check (Float^[2])^[2]
 
-#eval! (⊞[1.0,2,3,4] + ⊞[1.0,2,3,4])
-
--- #check ⊞[⊞[1.0,2], ⊞[3.0,4]] -- (Float^[2])^[2]
-
-set_option backward.do.legacy false
-
-#eval show IO Unit from do
-  for h : i in 0...2 do
-    for h : j in 0...2 do
-      IO.println (⊞[[1.0,2],[3,4]][i,j])
+-- #eval show IO Unit from do
+--   for h : i in 0...2 do
+--     for h : j in 0...2 do
+--       IO.println (⊞[[1.0,2],[3,4]][i,j])
 
 /-- info: 2.0 • ⊞[1.0, 2, 3, 4] : Float^[4] -/
 #guard_msgs in
