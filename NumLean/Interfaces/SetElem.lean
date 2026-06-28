@@ -70,6 +70,30 @@ macro (priority := high) xs:term noWs "[" i:tuple_index_stx ", " is:tuple_index_
   let i ← mkTuple items
   `(getElem $xs $i (by get_elem_tactic))
 
+open Lean in
+macro (priority := high + 1) xs:term noWs "[" i:tuple_index_stx ", " is:tuple_index_stx,* "]" noWs "?" : term => do
+  let mut items := #[← tupleIndexStxToTerm i]
+  for i in is.getElems do
+    items := items.push (← tupleIndexStxToTerm ⟨i⟩)
+  let i ← mkTuple items
+  `(getElem? $xs $i)
+
+open Lean in
+macro (priority := high + 1) xs:term noWs "[" i:tuple_index_stx ", " is:tuple_index_stx,* "]" noWs "!" : term => do
+  let mut items := #[← tupleIndexStxToTerm i]
+  for i in is.getElems do
+    items := items.push (← tupleIndexStxToTerm ⟨i⟩)
+  let i ← mkTuple items
+  `(getElem! $xs $i)
+
+open Lean in
+macro (priority := high + 1) xs:term noWs "[" i:tuple_index_stx ", " is:tuple_index_stx,* "]'" h:term : term => do
+  let mut items := #[← tupleIndexStxToTerm i]
+  for i in is.getElems do
+    items := items.push (← tupleIndexStxToTerm ⟨i⟩)
+  let i ← mkTuple items
+  `(getElem $xs $i $h)
+
 class DefaultIndexOfRank (X : Type u) (r : Nat) (I : outParam (Type w))
 
 open Lean in

@@ -139,13 +139,31 @@ section CommaGetElemNotation
 example (A : Float^[2, 3]) (i : Fin 2) (j : Fin 3) :
     A[i, j] = A[(i, j)] := rfl
 
-/-- info: fun A i j k l => A[((i, j), k, l)] : Float^[[2, 3], [4, 5]] → Fin 2 → Fin 3 → Fin 4 → Fin 5 → Float -/
+/-- info: fun A i j k l => A[((i, j), k, l)] : X^[[I, J], [K, L]] → I → J → K → L → X -/
 #guard_msgs in
-#check fun (A : Float^[[2, 3], [4, 5]]) (i : Fin 2) (j : Fin 3) (k : Fin 4) (l : Fin 5) =>
+#check fun (A : X^[[I, J], [K, L]]) (i : I) (j : J) (k : K) (l : L) =>
   A[[i, j], [k, l]]
 
-example (A : Float^[[2, 3], [4, 5]]) (i : Fin 2) (j : Fin 3) (k : Fin 4) (l : Fin 5) :
+example (A : X^[[I, J], [K, L]]) (i : I) (j : J) (k : K) (l : L) :
     A[[i, j], [k, l]] = A[((i, j), (k, l))] := rfl
+
+example (A : Float^[2, 3]) (i : Fin 2) (j : Fin 3) :
+    A[i, j]? = A[(i, j)]? := rfl
+
+example (A : Float^[2, 3]) (i : Fin 2) (j : Fin 3) :
+    A[i, j]! = A[(i, j)]! := rfl
+
+example (A : Float^[2, 3]) (i : Fin 2) (j : Fin 3) (h : True) :
+    (A[i, j]'h) = getElem A (i, j) h := rfl
+
+example (A : X^[[I, J], [K, L]]) (i : I) (j : J) (k : K) (l : L) :
+    A[[i, j], [k, l]]? = A[((i, j), (k, l))]? := rfl
+
+example [Inhabited X] (A : X^[[I, J], [K, L]]) (i : I) (j : J) (k : K) (l : L) :
+    A[[i, j], [k, l]]! = A[((i, j), (k, l))]! := rfl
+
+example (A : X^[[I, J], [K, L]]) (i : I) (j : J) (k : K) (l : L) (h : True) :
+    (A[[i, j], [k, l]]'h) = getElem A ((i, j), (k, l)) h := rfl
 
 end CommaGetElemNotation
 

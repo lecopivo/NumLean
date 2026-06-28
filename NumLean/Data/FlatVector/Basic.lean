@@ -1,13 +1,14 @@
 module
 
+public import NumLean.Data.FinHTuple
+public import NumLean.Interfaces.HasFlatRepr.Basic
 public import NumLean.Interfaces.IndexType
 public import NumLean.Interfaces.SetElem
-public import NumLean.Interfaces.VectorType.Basic
-public import NumLean.Interfaces.HasFlatRepr.Basic
 public import NumLean.Interfaces.TensorIndexType
-public import NumLean.Data.FinHTuple
-public import NumLean.Tactic.TBounds
+public import NumLean.Interfaces.UntypedIndex
+public import NumLean.Interfaces.VectorType.Basic
 public import NumLean.Meta.ForAll.Notation
+public import NumLean.Tactic.TBounds
 
 @[expose] public section
 
@@ -50,12 +51,8 @@ def get (xs : FlatVector X I) (i : I) : X :=
 instance : GetElem (FlatVector X I) I X (fun _ _ => True) where
   getElem xs i _ := get xs i
 
-instance : GetElem? (FlatVector X I) I X (fun _ _ => True) where
-  getElem? xs i := some xs[i]
-
-instance : LawfulGetElem (FlatVector X I) I X (fun _ _ => True) where
-  getElem?_def xs i _ := by
-    simp [getElem?]
+instance [UntypedIndex I I' dom] : GetElem (FlatVector X I) I' X (fun _ i' => dom i') where
+  getElem xs i' h := getElem xs ((UntypedIndex.equiv (idx := I)).symm ⟨i',h⟩) .intro
 
 theorem getElem_eq_get (xs : FlatVector X I) (i : I) :
     xs[i] = get xs i := by
