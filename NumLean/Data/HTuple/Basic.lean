@@ -17,7 +17,7 @@ namespace HTuple
 inductive Profile where
   | leaf
   | prod (left right : Profile)
-  deriving DecidableEq, Repr
+  deriving DecidableEq
 
 namespace Profile
 
@@ -155,7 +155,6 @@ inductive HTuple (α : Type u) : HTuple.Profile → Type u where
   | leaf (value : α) : HTuple α .leaf
   | prod {left right : HTuple.Profile} (fst : HTuple α left) (snd : HTuple α right) :
       HTuple α (.prod left right)
-  deriving Repr
 
 namespace HTuple
 
