@@ -6,7 +6,7 @@ public import NumLean
 
 /-!
 Regression tests for typeclass searches that became expensive when scalar algebra instances are
-imported together with the generic `FlatVector` lawful group file.
+imported together with the generic `Tensor` lawful group file.
 
 These are intentionally small syntheses: if any of them needs a large search through the custom
 normed hierarchy, the instance priorities/hierarchy should be fixed rather than raising the bounds.
@@ -134,40 +134,40 @@ example : DistribMulAction K X := inferInstance
 
 end ModuleProjections
 
-section FlatVectorInstances
+section TensorInstances
 
 variable [CommRing K] [AddCommMonoid X] [Module K X]
-variable [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
+variable [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
 variable [HasFlatRepr.LawfulAddMonoidOps X Ks]
 
 set_option maxHeartbeats 9200 in
-example : AddCommMonoid (FlatVector X I) := inferInstance
+example : AddCommMonoid (Tensor X I) := inferInstance
 
 set_option maxHeartbeats 20000 in
-example : Module K (FlatVector X I) := inferInstance
+example : Module K (Tensor X I) := inferInstance
 
-end FlatVectorInstances
+end TensorInstances
 
-section NormedFlatVectorInstances
+section NormedTensorInstances
 
 noncomputable section
 
 variable [CommRing K] [NormedAddCommGroup X] [Module K X]
-variable [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
+variable [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
 variable [HasFlatRepr.LawfulAddGroupOps X Ks]
 
 set_option maxHeartbeats 20000 in
-example : NormedAddCommGroup (FlatVector X I) := inferInstance
+example : NormedAddCommGroup (Tensor X I) := inferInstance
 
 set_option maxHeartbeats 20000 in
-example : TopologicalSpace (FlatVector X I) := inferInstance
+example : TopologicalSpace (Tensor X I) := inferInstance
 
 set_option maxHeartbeats 20000 in
-example : PseudoMetricSpace (FlatVector X I) := inferInstance
+example : PseudoMetricSpace (Tensor X I) := inferInstance
 
 end
 
-end NormedFlatVectorInstances
+end NormedTensorInstances
 
 section RealModelOpsProjections
 
@@ -206,11 +206,11 @@ example : SMul R R := inferInstance
 
 set_option maxHeartbeats 10000 in
 noncomputable
-example : NormedSpace R (FlatVector R (Fin 10)) := inferInstance
+example : NormedSpace R (Tensor R (Fin 10)) := inferInstance
 
 set_option maxHeartbeats 3000 in
 noncomputable
-example : NormedAddGroup (FlatVector R (Fin 10)) := inferInstance
+example : NormedAddGroup (Tensor R (Fin 10)) := inferInstance
 
 end RealModelProjections
 

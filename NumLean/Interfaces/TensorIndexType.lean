@@ -1,7 +1,7 @@
 module
 
 public import NumLean.Data.FinHTuple
-public import NumLean.Data.Tensor
+public import NumLean.Data.Tensor.Layout
 public import NumLean.Interfaces.IndexType
 
 @[expose] public section

@@ -51,6 +51,16 @@ theorem mem_iff_Valid {p : Profile} [LE α] [LT α]
     idx ∈ (lo...hi) ↔ Valid lo hi idx := by
   rw [mem_iff_le_lt, valid_iff_le_lt]
 
+/-- Product of two zero-origin range members is a member of the zero-origin product range. -/
+@[get_tensor_elem =>]
+theorem mem_zero_prod {p q : Profile} {idx₀ : HTuple Nat p} {idx₁ : HTuple Nat q}
+    {hi₀ : HTuple Nat p} {hi₁ : HTuple Nat q}
+    (hidx₀ : idx₀ ∈ ((0 : HTuple Nat p)...hi₀))
+    (hidx₁ : idx₁ ∈ ((0 : HTuple Nat q)...hi₁)) :
+    idx₀.prod idx₁ ∈ ((0 : HTuple Nat (.prod p q))...(hi₀.prod hi₁)) := by
+  rw [mem_iff_Valid] at hidx₀ hidx₁ ⊢
+  exact ⟨hidx₀, hidx₁⟩
+
 /-- Cardinality of a half-open natural tuple range. -/
 @[inline] def card : {p : Profile} → HTuple Nat p → HTuple Nat p → Nat
   | _, lo, hi => (hi - lo).numel

@@ -4,17 +4,12 @@ module
 
 namespace NumLean
 
-def Tensor (R : Type) (I : Type) : Type := Unit
-
-macro:max R:term "^[" I:term "]" : term => `(Tensor $R $I)
-
 class VMul (α : Type u) (β : Type v) (γ : outParam (Type w)) where
   vmul : α → β → γ
 
 /-- Multiplication between matrices and vectors.
 
 In particular:
-  - `u *ᵥ v : R` is dot product for `u : R^[I]` and `v : R^[I]`
   - `A *ᵥ v : R^[I]` is matrix vector product for `A : R^[I, J]` and `v : R^[J]`
   - `u *ᵥ A : R^[J]` is vector matrix product for `u : R^[I]` and `A : R^[I, J]`
   - `A *ᵥ B : R^[I, J]` is matrix matrix product for `A : R^[I, J]` and `B : R^[J, K]`
@@ -39,81 +34,3 @@ For higher rank tensors you can reassociate the products completely with `assocl
 
  -/
 scoped infixr:73 " *ᵥ " => VMul.vmul
-
-instance {R I} : VMul R^[I] R^[I] R where
-  vmul := sorry
-
-instance {R I J} : VMul R^[I × J] R^[J] R^[I] where
-  vmul := sorry
-
-instance {R I J} : VMul R^[I] R^[I × J] R^[J] where
-  vmul := sorry
-
-instance {R I J K} : VMul R^[I × J] R^[J × K] R^[I × K] where
-  vmul := sorry
-
-variable {R I J K : Type} (u : R^[I]) (v : R^[J]) (w : R^[K]) (A : R^[I × J]) (B : R^[J × K])
-         (T : R^[I × J × K]) (S : R^[(J × K) × I])
-
-
--- Dot product
-
-/-- info: u *ᵥ u : R -/
-#guard_msgs in
-#check u *ᵥ u
-
-/-- info: A *ᵥ A : R -/
-#guard_msgs in
-#check A *ᵥ A
-
-
--- vector-matrix
-
-/-- info: u *ᵥ A : Tensor R J -/
-#guard_msgs in
-#check u *ᵥ A
-
-/-- info: u *ᵥ T : Tensor R (J × K) -/
-#guard_msgs in
-#check u *ᵥ T
-
-
--- matrix-vector
-
-/-- info: A *ᵥ v : Tensor R I -/
-#guard_msgs in
-#check A *ᵥ v
-
-/-- info: T *ᵥ B : Tensor R I -/
-#guard_msgs in
-#check T *ᵥ B
-
-
--- matrix-matrix
-
-/-- info: A *ᵥ B : Tensor R (I × K) -/
-#guard_msgs in
-#check A *ᵥ B
-
-/-- info: T *ᵥ S : Tensor R (I × I) -/
-#guard_msgs in
-#check T *ᵥ S
-
-
--- mixed
-
-/-- info: A *ᵥ B *ᵥ w : Tensor R I -/
-#guard_msgs in
-#check A *ᵥ B *ᵥ w
-
-/-- info: u *ᵥ A *ᵥ B *ᵥ w : R -/
-#guard_msgs in
-#check u *ᵥ A *ᵥ B *ᵥ w
-
-/-- info: T *ᵥ S *ᵥ u : Tensor R I -/
-#guard_msgs in
-#check T *ᵥ S *ᵥ u
-
-/-- info: u *ᵥ T *ᵥ S *ᵥ u : R -/
-#guard_msgs in
-#check u *ᵥ T *ᵥ S *ᵥ u

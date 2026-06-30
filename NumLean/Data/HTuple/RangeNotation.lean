@@ -10,29 +10,6 @@ namespace NumLean
 
 namespace HTuple
 
-/-- A parsed range slice for a source tuple profile `p`.
-
-`profile`, `lower`, and `upper` describe the actual half-open range to iterate.  `embed` maps
-indices from that reduced range back into the original profile, filling fixed axes from the slice
-notation.  This deliberately performs no bounds checking. -/
-structure RangeSlice (p : Profile) where
-  profile : Profile
-  lower : HTuple Nat profile
-  upper : HTuple Nat profile
-  embed : HTuple Nat profile → HTuple Nat p
-
-namespace RangeSlice
-
-@[inline] def ofParts {p : Profile} (_shape : HTuple Nat p) (profile : Profile)
-    (lower upper : HTuple Nat profile) (embed : HTuple Nat profile → HTuple Nat p) :
-    RangeSlice p where
-  profile := profile
-  lower := lower
-  upper := upper
-  embed := embed
-
-def toRange {p} (s : RangeSlice p) : Std.Rco (HTuple Nat s.profile) := s.lower...s.upper
-
 declare_syntax_cat hrange_axis (behavior := both)
 syntax term : hrange_axis
 syntax ":" : hrange_axis
@@ -315,8 +292,6 @@ example (n : Nat) (h : n > 10) : h(n - 2, 3) ∈ hr[n, 10](-3:, :5) := by
 end Membership
 
 end Examples
-
-end RangeSlice
 
 end HTuple
 

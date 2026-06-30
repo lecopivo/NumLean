@@ -52,10 +52,10 @@ def HasFlatRepr.ofEquiv (Ks : Nat → Type v) (equiv : X ≃ Y)
   vector_get_push_eq := by
     intro n ks y i hi
     exact inst.vector_get_push_eq ks (equiv.symm y) i hi
-  toFlatVector y := HasFlatRepr.toFlatVector (Ks := Ks) (equiv.symm y)
-  get_toFlatVector_eq_getComp := by
+  toTensor y := HasFlatRepr.toTensor (Ks := Ks) (equiv.symm y)
+  get_toTensor_eq_getComp := by
     intro y i h
-    exact inst.get_toFlatVector_eq_getComp (equiv.symm y) i h
+    exact inst.get_toTensor_eq_getComp (equiv.symm y) i h
   replicate n y := HasFlatRepr.replicate (Ks := Ks) n (equiv.symm y)
   get_replicate := by
     intro n y i j hi hj

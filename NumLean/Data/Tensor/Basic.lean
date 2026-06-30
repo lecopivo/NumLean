@@ -14,15 +14,15 @@ public import NumLean.Tactic.TBounds
 
 namespace NumLean
 
-/-- A length-indexed flat vector storing one `X` value for every index in `I`.
+/-- A length-indexed tensor storing one `X` value for every index in `I`.
 
 The underlying vector stores scalar components, so its scalar length is `nI * nX`, where `nI`
 is the cardinality of the index type and `nX` is the flat scalar width of each `X`. -/
-structure FlatVector (X : Type u) (I : Type v)
+structure Tensor (X : Type u) (I : Type v)
     {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI] where
   data : Ks (nI * nX)
 
-namespace FlatVector
+namespace Tensor
 
 variable {X : Type u} {I : Type v}
     {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI]
@@ -32,15 +32,15 @@ variable {X : Type u} {I : Type v}
 @[inline]
 def offset (i : I) : Nat := (IndexType.toFin i).1 * nX
 
-def size (_xs : FlatVector X I) : Nat := nI
+def size (_xs : Tensor X I) : Nat := nI
 
-theorem size_eq_card (xs : FlatVector X I) : xs.size = nI := rfl
+theorem size_eq_card (xs : Tensor X I) : xs.size = nI := rfl
 
-def shape {r shape} [TensorIndexType I nI r shape] (_xs : FlatVector X I) := shape
+def shape {r shape} [TensorIndexType I nI r shape] (_xs : Tensor X I) := shape
 
-def rank {r shape} [TensorIndexType I nI r shape] (_xs : FlatVector X I) := r
+def rank {r shape} [TensorIndexType I nI r shape] (_xs : Tensor X I) := r
 
-theorem offset_add_width_le_size (_xs : FlatVector X I) (i : I) :
+theorem offset_add_width_le_size (_xs : Tensor X I) (i : I) :
     offset (nX := nX) i + nX ≤ nI * nX := by
   have hi := (toFin i).2
   simp [offset]
@@ -49,33 +49,33 @@ theorem offset_add_width_le_size (_xs : FlatVector X I) (i : I) :
 /-! ### Indexing -/
 
 @[inline]
-def get (xs : FlatVector X I) (i : I) : X :=
+def get (xs : Tensor X I) (i : I) : X :=
   HasFlatRepr.get xs.data (offset (nX := nX) i) (xs.offset_add_width_le_size i)
 
-instance : GetElem (FlatVector X I) I X (fun _ _ => True) where
+instance : GetElem (Tensor X I) I X (fun _ _ => True) where
   getElem xs i _ := get xs i
 
-instance [UntypedIndex I I' dom] : GetElem (FlatVector X I) I' X (fun _ i' => dom i') where
+instance [UntypedIndex I I' dom] : GetElem (Tensor X I) I' X (fun _ i' => dom i') where
   getElem xs i' h := getElem xs ((UntypedIndex.equiv (idx := I)).symm ⟨i',h⟩) .intro
 
-theorem getElem_eq_get (xs : FlatVector X I) (i : I) :
+theorem getElem_eq_get (xs : Tensor X I) (i : I) :
     xs[i] = get xs i := by
   rfl
 
 @[simp]
 theorem getElem_mk (xs : Ks (nI * nX)) (i : I) :
-    (FlatVector.mk (X:=X) (I:=I) xs)[i]
+    (Tensor.mk (X:=X) (I:=I) xs)[i]
     =
     HasFlatRepr.get xs ((toFin i).1 * nX) (by
       have hi := (toFin i).2
       tbounds) := by
   rfl
 
-def getComp (xs : FlatVector X I) (i : I) (j : Nat) (hj : j < nX) :=
+def getComp (xs : Tensor X I) (i : I) (j : Nat) (hj : j < nX) :=
   VectorType.get xs.data ((toFin i).1 * nX + j) (by have := (toFin i).2; tbounds)
 
 @[simp]
-theorem getComp_getElem_eq_get (xs : FlatVector X I) (i : I) (j : Nat) (hj : j < nX) :
+theorem getComp_getElem_eq_get (xs : Tensor X I) (i : I) (j : Nat) (hj : j < nX) :
     HasFlatRepr.getComp (Ks := Ks) xs[i] j hj
     =
     VectorType.get xs.data ((toFin i).1 * nX + j) (by
@@ -87,24 +87,24 @@ theorem getComp_getElem_eq_get (xs : FlatVector X I) (i : I) (j : Nat) (hj : j <
 /-! ### Setting -/
 
 @[inline]
-def set (xs : FlatVector X I) (i : I) (x : X) : FlatVector X I :=
+def set (xs : Tensor X I) (i : I) (x : X) : Tensor X I :=
   { data := HasFlatRepr.set xs.data (offset (nX := nX) i) x (xs.offset_add_width_le_size i) }
 
-instance : SetElem (FlatVector X I) I X (fun _ _ => True) where
+instance : SetElem (Tensor X I) I X (fun _ _ => True) where
   setElem xs i x _ := set xs i x
   setElem_valid := by intros; simp
 
-theorem setElem_eq_set (xs : FlatVector X I) (i : I) (x : X) (h : True) :
+theorem setElem_eq_set (xs : Tensor X I) (i : I) (x : X) (h : True) :
     setElem xs i x h = set xs i x := by
   rfl
 
 @[simp]
-theorem getElem_set_eq (xs : FlatVector X I) (i : I) (x : X) (h : True) :
+theorem getElem_set_eq (xs : Tensor X I) (i : I) (x : X) (h : True) :
     (setElem xs i x h)[i] = x := by
   simp [setElem_eq_set, set, offset]
 
 @[simp]
-theorem getElem_set_ne (xs : FlatVector X I) (i j : I) (x : X)
+theorem getElem_set_ne (xs : Tensor X I) (i j : I) (x : X)
     (hi : True) (hj : True) (h : i ≠ j) :
     (setElem xs i x hi)[j] = xs[j] := by
   -- todo: this proof should be seriously simplified
@@ -137,7 +137,7 @@ theorem getElem_set_ne (xs : FlatVector X I) (i j : I) (x : X)
       (xs.offset_add_width_le_size i) hsep (xs.offset_add_width_le_size j))
 
 set_option linter.unnecessarySimpa false in
-instance : LawfulSetElem (FlatVector X I) I where
+instance : LawfulSetElem (Tensor X I) I where
   getElem_setElem_eq xs i v h := by
     simpa using getElem_set_eq xs i v h
   getElem_setElem_neq xs i j v hi hj hne := by
@@ -146,7 +146,7 @@ instance : LawfulSetElem (FlatVector X I) I where
 /-! ### Extensionality -/
 
 @[ext]
-theorem ext {xs ys : FlatVector X I} (h : (i : I) → xs[i] = ys[i]) : xs = ys := by
+theorem ext {xs ys : Tensor X I} (h : (i : I) → xs[i] = ys[i]) : xs = ys := by
   rcases xs with ⟨xs⟩
   rcases ys with ⟨ys⟩
   simp only [mk.injEq]
@@ -167,18 +167,18 @@ theorem ext {xs ys : FlatVector X I} (h : (i : I) → xs[i] = ys[i]) : xs = ys :
 
 /-! ### Construction -/
 
-def replicate (x : X) : FlatVector X I := { data := HasFlatRepr.replicate (Ks := Ks) nI x }
+def replicate (x : X) : Tensor X I := { data := HasFlatRepr.replicate (Ks := Ks) nI x }
 
 @[simp]
 theorem getElem_replicate (x : X) (i : I) :
     (replicate (X := X) (I := I) x)[i] = x := by
   simp [replicate]
 
-instance [Inhabited X] : Inhabited (FlatVector X I) where
+instance [Inhabited X] : Inhabited (Tensor X I) where
   default := replicate default
 
 
-def ofFn [Inhabited X] (f : I → X) : FlatVector X I := Id.run do
+def ofFn [Inhabited X] (f : I → X) : Tensor X I := Id.run do
   let mut r := replicate (I:=I) default
   for_all h : idx in 0...nI do
     let i := fromFin ⟨idx, h.2⟩
@@ -191,7 +191,7 @@ theorem getElem_ofFn [Inhabited X] (f : I → X) (i : I) : (ofFn f)[i] = f i := 
   simp [Id.run, pure, bind]
   sorry
 
-def ofVector [Inhabited X] (xs : Vector X nI) : FlatVector X I :=
+def ofVector [Inhabited X] (xs : Vector X nI) : Tensor X I :=
   ofFn fun i => xs[IndexType.toFin i]
 
 @[simp]
@@ -203,7 +203,7 @@ theorem get_ofVector [Inhabited X] (xs : Vector X nI) (i : I) :
 
 open TensorIndexType in
 instance {I nI r shape} [TensorIndexType I nI r shape] [ToString X] :
-    ToString (FlatVector X I) where
+    ToString (Tensor X I) where
   toString x := FinHTuple.printTensor shape (fun i => x[fromFinHTuple (I:=I) i])
 
 
@@ -211,12 +211,31 @@ instance {I nI r shape} [TensorIndexType I nI r shape] [ToString X] :
 section Reshape
 
 open Tensor
-/-- This class and its instances provide a compile time trick that converts `h(m,n,k) : Shape _`
-to the canonical index type `Fin m × Fin n × Fin k` via the output parameter `I`. -/
-class ShapeIndexType {r} (shape : Shape r) (I : outParam (Type u)) where
-instance : ShapeIndexType h(n) (Fin n) where
-instance [ShapeIndexType s I] [ShapeIndexType s' I'] :
-  ShapeIndexType (.prod s s') (I × I') where
+
+/-- Converts `shape` into product of `Fin` types.
+
+Examples:
+  - `indexTypeOfShape h(n) = Fin n`
+  - `indexTypeOfShape h(m, n) = Fin m × Fin n`
+  - `indexTypeOfShape h((m, n), (k, l)) = (Fin m × Fin n) × (Fin k × Fin l)`-/
+def indexTypeOfShape {r} (shape : Shape r) : Type :=
+  match shape with
+  | .leaf n => Fin n
+  | .prod s s' => indexTypeOfShape s × indexTypeOfShape s'
+
+/-- This class statically evaluates `indexTypeOfShape shape` and provides its result as
+`I : outParam Type`. -/
+class IndexTypeOfShape {r} (shape : Shape r) (I : outParam Type) where
+  valid : indexTypeOfShape shape = I
+instance : IndexTypeOfShape h(n) (Fin n) where
+  valid := rfl
+instance {I I'} [inst : IndexTypeOfShape s I] [inst' : IndexTypeOfShape s' I'] :
+  IndexTypeOfShape (.prod s s') (I × I') where
+    valid := by rw[indexTypeOfShape, inst.valid, inst'.valid]
+
+/-- Tactic used to prove that reshaping a tensor is valid. -/
+macro "valid_reshape_tactic" : tactic =>
+  `(tactic| (first | simp | decide | ring | (simp; ring) | (cbv; ring)))
 
 /-- Reshape tensor given `shape : Shape r` which is usually given as `h(n₁, ..., nᵣ)` where
 `n₁, ..., nᵣ` are the dimension sizes of the new shape.
@@ -225,20 +244,21 @@ Examples:
   - `x.reshape h(3,5) : Float^[3,5]` for `x : Float^[15]`
   - `A.reshape h(12) : Float^[12]` for `A : Float^[4,3]`
   - `A.reshape h(3,2,2) : Float^[3,2,2]` for `A : Float^[4,3]`
+  - `y.reshape h(m + 1, n) : Float^[m + 1, n]` for `y : Float^[m * n + n]`
 
 This function requires a proof `matching_size` that the new shape has the same number of elements
 as the old shape.
 -/
-def reshape {r : Rank} (x : FlatVector X I) (shape : Shape r)
-    {J} [ShapeIndexType shape J] [IndexType J nJ]
-    (matching_size : nI = nJ := by first | simp | decide | ring | (simp; ring) | (cbv; ring)) :
-    FlatVector X J :=
+def reshape {r : Rank} (x : Tensor X I) (shape : Shape r)
+    {J} [IndexTypeOfShape shape J] [IndexType J nJ]
+    (matching_size : nI = nJ := by valid_reshape_tactic) :
+    Tensor X J :=
   { data := matching_size ▸ x.data }
 
 -- todo: .reindex, direcly give the new index type `J`
 
 end Reshape
 
-end FlatVector
+end Tensor
 
 end NumLean

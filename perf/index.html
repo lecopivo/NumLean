@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NumLean Performance Profile</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #101216;
+      --panel: #171b22;
+      --panel-2: #1f2530;
+      --text: #e8edf5;
+      --muted: #a7b0c0;
+      --accent: #77c7ff;
+      --bad: #ff7676;
+      --good: #86efac;
+      --border: #303846;
+      --bar: #4aa3ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #1c2a3a, var(--bg) 42rem);
+      color: var(--text);
+      font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      padding: 28px clamp(16px, 4vw, 48px) 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(28px, 5vw, 48px); letter-spacing: -0.04em; }
+    h2 { margin: 0 0 14px; font-size: 18px; }
+    a { color: var(--accent); }
+    .muted { color: var(--muted); }
+    .layout { padding: 18px clamp(16px, 4vw, 48px) 48px; display: grid; gap: 18px; }
+    .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .card, .panel {
+      background: color-mix(in srgb, var(--panel) 92%, transparent);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
+    }
+    .card { padding: 16px; }
+    .card .value { font-size: 28px; font-weight: 750; letter-spacing: -0.03em; }
+    .panel { padding: 16px; min-width: 0; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr); gap: 18px; align-items: start; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    input, select, button {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font: inherit;
+    }
+    input { min-width: min(420px, 100%); flex: 1; }
+    button { cursor: pointer; }
+    .link-button {
+      color: var(--accent);
+      background: none;
+      border: 0;
+      padding: 0;
+      text-decoration: underline;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-weight: 650; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+    tr[data-path] { cursor: pointer; }
+    tr[data-path]:hover { background: rgba(119, 199, 255, 0.08); }
+    .path { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .status-ok { color: var(--good); }
+    .status-bad { color: var(--bad); }
+    .trend-up { color: var(--bad); }
+    .trend-down { color: var(--good); }
+    .trend-flat { color: var(--muted); }
+    .bar-wrap { min-width: 120px; }
+    .bar-bg { height: 8px; background: #2a3140; border-radius: 999px; overflow: hidden; }
+    .bar { height: 100%; background: linear-gradient(90deg, var(--bar), #9f7aea); border-radius: inherit; }
+    .detail-title { margin-bottom: 10px; overflow-wrap: anywhere; }
+    .pills { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
+    .pill { background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; padding: 5px 9px; color: var(--muted); }
+    .entry-list { display: grid; gap: 8px; }
+    .entry { border: 1px solid var(--border); background: rgba(255,255,255,0.02); border-radius: 12px; padding: 9px; }
+    .entry-top { display: flex; justify-content: space-between; gap: 10px; }
+    .entry-name { overflow-wrap: anywhere; }
+    .small { font-size: 12px; }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .tab.active { border-color: var(--accent); }
+    pre { overflow: auto; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; max-height: 320px; }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(0, 0, 0, 0.68);
+    }
+    .modal {
+      width: min(1100px, 100%);
+      max-height: min(860px, 92vh);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { overflow-wrap: anywhere; }
+    #logText {
+      max-height: none;
+      height: 100%;
+      margin: 0;
+      border: 0;
+      border-radius: 0;
+      white-space: pre-wrap;
+    }
+    .hidden { display: none; }
+    @media (max-width: 980px) {
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .cards { grid-template-columns: 1fr; }
+      th:nth-child(3), td:nth-child(3), th:nth-child(5), td:nth-child(5) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NumLean Performance Profile</h1>
+    <div id="subtitle" class="muted">Loading profile data...</div>
+  </header>
+
+  <main class="layout">
+    <section class="cards">
+      <div class="card"><div class="muted">Files</div><div id="fileCount" class="value">-</div></div>
+      <div class="card"><div class="muted">Failures</div><div id="failureCount" class="value">-</div></div>
+      <div class="card"><div class="muted">Normal Elab Total</div><div id="normalTotal" class="value">-</div></div>
+      <div class="card"><div class="muted">Profile Elab Total</div><div id="profileTotal" class="value">-</div></div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Files</h2>
+        <div class="toolbar">
+          <input id="search" placeholder="Filter by path, module, or profiler entry">
+          <select id="sortBy">
+            <option value="normal">Sort by normal time</option>
+            <option value="profile">Sort by profiled time</option>
+            <option value="normalTrend">Sort by normal trend</option>
+            <option value="profileTrend">Sort by profile trend</option>
+            <option value="maxEntry">Sort by worst entry</option>
+            <option value="path">Sort by path</option>
+          </select>
+          <select id="onlyProblems">
+            <option value="all">All files</option>
+            <option value="problems">Failures/timeouts only</option>
+          </select>
+        </div>
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>File</th>
+                <th class="num">Normal</th>
+                <th class="num">Δ Normal</th>
+                <th class="num">Profile</th>
+                <th class="num">Δ Profile</th>
+                <th>Worst Profile Entry</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="fileRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <h2>Details</h2>
+        <div id="details" class="muted">Select a file to inspect profiler entries.</div>
+      </aside>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Aggregate Profile Categories</h2>
+        <div id="categoryBars"></div>
+      </div>
+      <div class="panel">
+        <h2>Cumulative Lean Profile</h2>
+        <div id="cumulativeBars"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="logModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div id="logTitle" class="modal-title path">Log</div>
+        <button id="closeLog" type="button">Close</button>
+      </div>
+      <pre id="logText">Loading...</pre>
+    </div>
+  </div>
+
+  <script>
+    const state = { report: null, history: [], selectedPath: null, trend: new Map() };
+
+    const fmt = seconds => {
+      if (seconds == null || Number.isNaN(seconds)) return '-';
+      if (seconds >= 60) return `${(seconds / 60).toFixed(1)}m`;
+      if (seconds >= 1) return `${seconds.toFixed(2)}s`;
+      return `${(seconds * 1000).toFixed(1)}ms`;
+    };
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+    const fileOk = file => ['normal', 'profile', 'trace_profiler'].every(key => !file[key] || (file[key].exit_code === 0 && !file[key].timed_out));
+    const webPath = path => String(path || '').replace(/^perf\//, '');
+    const logButton = (label, path) => path ? `<button class="link-button" type="button" data-log-path="${escapeHtml(webPath(path))}">${escapeHtml(label)}</button>` : '';
+    const entryTotal = entry => entry?.total_seconds ?? entry?.seconds ?? 0;
+    const problemText = file => ['normal', 'profile', 'trace_profiler']
+      .filter(key => file[key] && (file[key].timed_out || file[key].exit_code !== 0))
+      .map(key => `${key}${file[key].timed_out ? ' timed out' : ` exit ${file[key].exit_code}`}`)
+      .join(', ');
+    const worstEntry = file => file.profile_data?.entries?.[0] ?? null;
+    const sum = (items, fn) => items.reduce((acc, item) => acc + (fn(item) || 0), 0);
+    const threshold = () => state.history.at(-1)?.threshold || { relative: 0.05, absolute_s: 0.1 };
+
+    function trendClass(delta) {
+      if (!delta || delta.kind === 'stable') return 'trend-flat';
+      return delta.kind === 'regression' ? 'trend-up' : 'trend-down';
+    }
+
+    function trendHtml(delta) {
+      if (!delta) return '<span class="trend-flat">-</span>';
+      if (delta.kind === 'stable') return '<span class="trend-flat">stable</span>';
+      const arrow = delta.kind === 'regression' ? '↑' : '↓';
+      const pct = Math.abs(delta.percent * 100).toFixed(1);
+      const abs = fmt(Math.abs(delta.delta));
+      const driver = delta.driver ? `<div class="muted small">mostly ${escapeHtml(delta.driver)}</div>` : '';
+      return `<span class="${trendClass(delta)}">${arrow} ${pct}% ${abs}</span>${driver}`;
+    }
+
+    function classifyDelta(current, previous, t) {
+      if (previous == null || current == null || previous <= 0) return null;
+      const delta = current - previous;
+      const percent = delta / previous;
+      if (delta >= t.absolute_s && percent >= t.relative) return { kind: 'regression', delta, percent };
+      if (-delta >= t.absolute_s && -percent >= t.relative) return { kind: 'improvement', delta, percent };
+      return { kind: 'stable', delta, percent };
+    }
+
+    function parseHistory(text) {
+      return text.split(/\n+/).map(line => line.trim()).filter(Boolean).map(line => JSON.parse(line));
+    }
+
+    function historyFileMap(run) {
+      const metrics = run?.metrics || [];
+      const index = Object.fromEntries(metrics.map((name, i) => [name, i + 1]));
+      const cumulativeNames = metrics.slice(3);
+      const map = new Map();
+      for (const row of run?.files || []) {
+        const cumulative = {};
+        for (const name of cumulativeNames) cumulative[name] = row[index[name]] || 0;
+        map.set(row[0], {
+          path: row[0],
+          module: row[0].replace(/\.lean$/, '').replaceAll('/', '.'),
+          normal: { duration_s: row[index.normal] || 0, exit_code: row[index.status] ? 1 : 0, timed_out: false },
+          profile: { duration_s: row[index.profile] || 0, exit_code: row[index.status] ? 1 : 0, timed_out: false },
+          profile_data: { entries: [], entry_count: 0, grouped_entry_count: 0, cumulative },
+          historyOnly: true,
+        });
+      }
+      return map;
+    }
+
+    function computeTrend(files) {
+      state.trend = new Map();
+      if (!state.history.length) return;
+      const t = threshold();
+      const latestHistory = state.history.at(-1);
+      let currentMap = new Map(files.map(file => [file.path, file]));
+      let previousRun = latestHistory;
+      if (state.report && latestHistory?.timestamp === state.report.metadata?.finished_at && state.history.length >= 2) {
+        previousRun = state.history.at(-2);
+      }
+      const previousMap = historyFileMap(previousRun);
+      for (const file of files) {
+        const prev = previousMap.get(file.path);
+        if (!prev) continue;
+        const normal = classifyDelta(file.normal.duration_s, prev.normal.duration_s, t);
+        const profile = classifyDelta(file.profile.duration_s, prev.profile.duration_s, t);
+        const currentCum = file.profile_data?.cumulative || {};
+        const prevCum = prev.profile_data?.cumulative || {};
+        const driver = Object.keys(currentCum)
+          .map(name => [name, (currentCum[name] || 0) - (prevCum[name] || 0)])
+          .filter(([, delta]) => delta > 0)
+          .sort((a, b) => b[1] - a[1])[0]?.[0];
+        if (profile?.kind === 'regression') profile.driver = driver;
+        state.trend.set(file.path, { normal, profile });
+      }
+    }
+
+    function filesFromHistory() {
+      if (!state.history.length) return [];
+      return [...historyFileMap(state.history.at(-1)).values()];
+    }
+
+    function currentFiles() {
+      return state.report?.files || filesFromHistory();
+    }
+
+    function barRows(data, targetId) {
+      const target = document.getElementById(targetId);
+      const entries = Object.entries(data || {}).slice(0, 18);
+      const max = Math.max(...entries.map(([, value]) => value), 0);
+      target.innerHTML = entries.length ? entries.map(([name, value]) => `
+        <div class="entry">
+          <div class="entry-top"><span class="entry-name">${escapeHtml(name)}</span><span class="num">${fmt(value)}</span></div>
+          <div class="bar-bg" style="margin-top:8px"><div class="bar" style="width:${max ? (value / max * 100) : 0}%"></div></div>
+        </div>
+      `).join('') : '<div class="muted">No profiler data found.</div>';
+    }
+
+    function filteredFiles() {
+      const query = document.getElementById('search').value.trim().toLowerCase();
+      const onlyProblems = document.getElementById('onlyProblems').value === 'problems';
+      const sortBy = document.getElementById('sortBy').value;
+      let files = [...currentFiles()];
+      if (onlyProblems) files = files.filter(file => !fileOk(file));
+      if (query) {
+        files = files.filter(file => {
+          const profileText = (file.profile_data?.entries || []).slice(0, 50).map(entry => entry.name).join('\n');
+          return `${file.path}\n${file.module}\n${profileText}`.toLowerCase().includes(query);
+        });
+      }
+      files.sort((a, b) => {
+        if (sortBy === 'path') return a.path.localeCompare(b.path);
+        if (sortBy === 'profile') return b.profile.duration_s - a.profile.duration_s;
+        if (sortBy === 'normalTrend') return Math.abs(state.trend.get(b.path)?.normal?.delta || 0) - Math.abs(state.trend.get(a.path)?.normal?.delta || 0);
+        if (sortBy === 'profileTrend') return Math.abs(state.trend.get(b.path)?.profile?.delta || 0) - Math.abs(state.trend.get(a.path)?.profile?.delta || 0);
+        if (sortBy === 'maxEntry') return entryTotal(worstEntry(b)) - entryTotal(worstEntry(a));
+        return b.normal.duration_s - a.normal.duration_s;
+      });
+      return files;
+    }
+
+    function renderTable() {
+      const files = filteredFiles();
+      const max = Math.max(...files.map(file => file.normal.duration_s), 0);
+      document.getElementById('fileRows').innerHTML = files.map(file => {
+        const worst = worstEntry(file);
+        const ok = fileOk(file);
+        const trend = state.trend.get(file.path) || {};
+        return `
+          <tr data-path="${escapeHtml(file.path)}">
+            <td><div class="path">${escapeHtml(file.path)}</div><div class="bar-wrap"><div class="bar-bg"><div class="bar" style="width:${max ? (file.normal.duration_s / max * 100) : 0}%"></div></div></div></td>
+            <td class="num">${fmt(file.normal.duration_s)}</td>
+            <td class="num">${trendHtml(trend.normal)}</td>
+            <td class="num">${fmt(file.profile.duration_s)}</td>
+            <td class="num">${trendHtml(trend.profile)}</td>
+            <td>${worst ? `<div>${escapeHtml(worst.category)}${worst.count ? ` · ${worst.count}x` : ''}</div><div class="muted small">${escapeHtml(worst.name)} · total ${fmt(entryTotal(worst))}</div>` : '<span class="muted">none</span>'}</td>
+            <td class="${ok ? 'status-ok' : 'status-bad'}">${ok ? 'ok' : 'problem'}</td>
+          </tr>
+        `;
+      }).join('');
+      document.querySelectorAll('tr[data-path]').forEach(row => row.addEventListener('click', () => selectFile(row.dataset.path)));
+    }
+
+    function renderDetails(file) {
+      const entries = file.profile_data?.entries || [];
+      const cumulative = file.profile_data?.cumulative || {};
+      const topEntries = entries.slice(0, 40).map(entry => `
+        <div class="entry">
+          <div class="entry-top"><strong>${escapeHtml(entry.category)}</strong><span class="num">total ${fmt(entryTotal(entry))}</span></div>
+          <div class="entry-name muted small">${escapeHtml(entry.name)}</div>
+          ${entry.count ? `<div class="small" style="margin-top:6px">${entry.count}x · min ${fmt(entry.min_seconds)} · max ${fmt(entry.max_seconds)} · mean ${fmt(entry.mean_seconds)} ± ${fmt(entry.stddev_seconds)}</div>` : ''}
+        </div>
+      `).join('');
+      const cumulativeRows = Object.entries(cumulative).slice(0, 20).map(([name, seconds]) => `
+        <div class="entry"><div class="entry-top"><span>${escapeHtml(name)}</span><span class="num">${fmt(seconds)}</span></div></div>
+      `).join('');
+      const logs = file.historyOnly ? '<div class="muted small">Detailed logs are only available when profile-data/latest.json is present.</div>' : `<div class="small muted">Logs: ${logButton('normal stderr', file.normal.stderr_path)} · ${logButton('profile stderr', file.profile.stderr_path)}${file.trace_profiler?.stderr_path ? ` · ${logButton('trace stderr', file.trace_profiler.stderr_path)}` : ''}${file.trace_profiler?.trace_output_path ? ` · ${logButton('trace output', file.trace_profiler.trace_output_path)}` : ''}</div>`;
+      document.getElementById('details').innerHTML = `
+        <div class="detail-title path">${escapeHtml(file.path)}</div>
+        <div class="pills">
+          <span class="pill">normal ${fmt(file.normal.duration_s)}</span>
+          <span class="pill">profile ${fmt(file.profile.duration_s)}</span>
+          <span class="pill">entries ${file.profile_data?.entry_count ?? 0}</span>
+          <span class="pill">groups ${file.profile_data?.grouped_entry_count ?? entries.length}</span>
+          <span class="pill ${fileOk(file) ? 'status-ok' : 'status-bad'}">${fileOk(file) ? 'ok' : 'problem'}</span>
+        </div>
+        ${logs}
+        ${fileOk(file) ? '' : `<div class="status-bad small" style="margin-top:8px">Problem: ${escapeHtml(problemText(file))}</div>`}
+        <h2 style="margin-top:18px">Worst Entries</h2>
+        <div class="entry-list">${topEntries || '<div class="muted">No entries parsed.</div>'}</div>
+        <h2 style="margin-top:18px">Cumulative</h2>
+        <div class="entry-list">${cumulativeRows || '<div class="muted">No cumulative profiler section parsed.</div>'}</div>
+      `;
+      document.querySelectorAll('[data-log-path]').forEach(button => button.addEventListener('click', () => openLog(button.dataset.logPath)));
+    }
+
+    async function openLog(path) {
+      const modal = document.getElementById('logModal');
+      const title = document.getElementById('logTitle');
+      const text = document.getElementById('logText');
+      title.textContent = path;
+      text.textContent = 'Loading...';
+      modal.classList.remove('hidden');
+      try {
+        const response = await fetch(path);
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        text.textContent = await response.text();
+      } catch (error) {
+        text.textContent = `Could not load ${path}: ${error.message}`;
+      }
+    }
+
+    function closeLog() {
+      document.getElementById('logModal').classList.add('hidden');
+    }
+
+    function selectFile(path) {
+      state.selectedPath = path;
+      if (!state.report) {
+        const historical = filesFromHistory().find(item => item.path === path);
+        if (historical) renderDetails(historical);
+        return;
+      }
+      const file = state.report.files.find(item => item.path === path);
+      if (file) renderDetails(file);
+    }
+
+    function render() {
+      const files = currentFiles();
+      computeTrend(files);
+      const source = state.report ? `Detailed run ${state.report.metadata?.finished_at || 'unknown'}` : `Historical run ${state.history.at(-1)?.timestamp || 'unknown'}`;
+      document.getElementById('subtitle').textContent = `${source}${state.history.length ? ` · ${state.history.length} history entr${state.history.length === 1 ? 'y' : 'ies'}` : ''}`;
+      document.getElementById('fileCount').textContent = files.length;
+      document.getElementById('failureCount').textContent = state.report?.summary?.failure_count ?? files.filter(file => !fileOk(file)).length;
+      document.getElementById('normalTotal').textContent = fmt(sum(files, file => file.normal.duration_s));
+      document.getElementById('profileTotal').textContent = fmt(sum(files, file => file.profile.duration_s));
+      const cumulative = {};
+      for (const file of files) for (const [name, value] of Object.entries(file.profile_data?.cumulative || {})) cumulative[name] = (cumulative[name] || 0) + value;
+      barRows(state.report?.summary?.profile_categories, 'categoryBars');
+      barRows(state.report?.summary?.profile_cumulative || cumulative, 'cumulativeBars');
+      renderTable();
+      if (files.length) selectFile(files.slice().sort((a, b) => b.normal.duration_s - a.normal.duration_s)[0].path);
+    }
+
+    document.getElementById('search').addEventListener('input', renderTable);
+    document.getElementById('sortBy').addEventListener('change', renderTable);
+    document.getElementById('onlyProblems').addEventListener('change', renderTable);
+    document.getElementById('closeLog').addEventListener('click', closeLog);
+    document.getElementById('logModal').addEventListener('click', event => {
+      if (event.target.id === 'logModal') closeLog();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeLog();
+    });
+
+    Promise.all([
+      fetch('profile-data/latest.json').then(response => response.ok ? response.json() : null).catch(() => null),
+      fetch('history.jsonl').then(response => response.ok ? response.text() : '').then(parseHistory).catch(() => []),
+    ]).then(([report, history]) => {
+      state.report = report;
+      state.history = history;
+      if (!state.report && !state.history.length) {
+        document.getElementById('subtitle').textContent = 'No profile-data/latest.json or history.jsonl found.';
+        document.getElementById('details').innerHTML = 'Run <code>scripts/profile_lean_project.py</code>, then serve this directory with <code>python3 -m http.server -d perf 8000</code>.';
+        return;
+      }
+      render();
+    });
+  </script>
+</body>
+</html>

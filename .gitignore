@@ -6,3 +6,5 @@
 *.pdf
 /Doodle.lean
 .opencode
+__pycache__/
+/perf/profile-data/

@@ -1,6 +1,6 @@
 module
 
-public import NumLean.Data.FlatVector.Algebra.Group.Ops
+public import NumLean.Data.Tensor.Algebra.Group.Ops
 public import NumLean.Interfaces.TensorAlgebra
 public import NumLean.Interfaces.Module.Lawful
 public import NumLean.Interfaces.HasFlatRepr.Lawful
@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Lp.PiLp
 
 @[expose] public section
 
-namespace NumLean.FlatVector
+namespace NumLean.Tensor
 
 open Tensor
 
@@ -21,7 +21,7 @@ variable {X : Type u} {I : Type v}
 
 @[simp]
 theorem getElem_zero [Zero K] [Zero X] [HasFlatRepr.LawfulZero X Ks] (i : I) :
-    (0 : FlatVector X I)[i] = 0 := by
+    (0 : Tensor X I)[i] = 0 := by
   apply HasFlatRepr.ext (Ks := Ks)
   intro j h
   conv_lhs => simp only [getComp_getElem_eq_get]; simp [Zero.zero, OfNat.ofNat]
@@ -31,7 +31,7 @@ theorem getElem_zero [Zero K] [Zero X] [HasFlatRepr.LawfulZero X Ks] (i : I) :
 
 @[simp]
 theorem getElem_one [One K] [One X] [HasFlatRepr.LawfulOne X Ks] (i : I) :
-    (1 : FlatVector X I)[i] = 1 := by
+    (1 : Tensor X I)[i] = 1 := by
   apply HasFlatRepr.ext (Ks := Ks)
   intro j h
   conv_lhs => simp only [getComp_getElem_eq_get]; simp [One.one, OfNat.ofNat]
@@ -42,8 +42,8 @@ theorem getElem_one [One K] [One X] [HasFlatRepr.LawfulOne X Ks] (i : I) :
 open TensorRingOps
 @[simp]
 theorem getElem_add [CommRing K] [AddMonoid X] [SMul K X] [HasFlatRepr.LawfulAdd X Ks]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
-    (xs ys : FlatVector X I) (i : I) :
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
+    (xs ys : Tensor X I) (i : I) :
     (xs + ys)[i] = xs[i] + ys[i] := by
   apply HasFlatRepr.ext (Ks := Ks)
   intro j h
@@ -52,8 +52,8 @@ theorem getElem_add [CommRing K] [AddMonoid X] [SMul K X] [HasFlatRepr.LawfulAdd
 
 @[simp]
 theorem getElem_sub [CommRing K] [AddCommGroup X] [SMul K X] [HasFlatRepr.LawfulSub X Ks]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
-    (xs ys : FlatVector X I) (i : I) :
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
+    (xs ys : Tensor X I) (i : I) :
     (xs - ys)[i] = xs[i] - ys[i] := by
   apply HasFlatRepr.ext (Ks := Ks)
   intro j h
@@ -62,8 +62,8 @@ theorem getElem_sub [CommRing K] [AddCommGroup X] [SMul K X] [HasFlatRepr.Lawful
 
 @[simp]
 theorem getElem_smul [CommRing K] [SMul K X] [HasFlatRepr.LawfulSMul K X Ks]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
-    (k : K) (xs : FlatVector X I) (i : I) :
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
+    (k : K) (xs : Tensor X I) (i : I) :
     (k • xs)[i] = k • xs[i] := by
   apply HasFlatRepr.ext (Ks := Ks)
   intro j h
@@ -73,8 +73,8 @@ theorem getElem_smul [CommRing K] [SMul K X] [HasFlatRepr.LawfulSMul K X Ks]
 @[simp]
 theorem getElem_neg [CommRing K] [Neg X] [SMul K X]
     [HasFlatRepr.LawfulSMul K X Ks] [HasFlatRepr.LawfulNeg X Ks]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
-    (xs : FlatVector X I) (i : I) :
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
+    (xs : Tensor X I) (i : I) :
     (- xs)[i] = - xs[i] := by
   apply HasFlatRepr.ext (Ks := Ks)
   intro j h
@@ -83,8 +83,8 @@ theorem getElem_neg [CommRing K] [Neg X] [SMul K X]
 
 instance instAddMonoid
     [CommRing K] [AddCommMonoid X] [Module K X] [HasFlatRepr.LawfulAddMonoidOps X Ks]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf] :
-    AddCommMonoid (FlatVector X I) where
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K] :
+    AddCommMonoid (Tensor X I) where
   add_assoc := by intros; ext; simp [add_assoc]
   zero_add := by intros; ext; simp
   add_zero := by intros; ext; simp
@@ -104,8 +104,8 @@ instance instAddMonoid
 
 instance instAddCommGroup
     [CommRing K] [AddCommGroup X] [Module K X] [HasFlatRepr.LawfulAddGroupOps X Ks]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf] :
-    AddCommGroup (FlatVector X I) where
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K] :
+    AddCommGroup (Tensor X I) where
   neg_add_cancel := by intros; ext; simp
   sub_eq_add_neg :=  by intros; ext; simp [sub_eq_add_neg]
   zsmul :=  Interfaces.Algebra.AddGroupOps.zsmul
@@ -118,8 +118,8 @@ instance instAddCommGroup
 
 instance instModule
     [CommRing K] [AddCommMonoid X] [Module K X] [HasFlatRepr.LawfulAddMonoidOps X Ks]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf] :
-    Module K (FlatVector X I) where
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K] :
+    Module K (Tensor X I) where
   mul_smul := by intros; ext; simp [mul_smul]
   one_smul := by intros; ext; simp
   smul_zero := by intros; ext; simp
@@ -130,9 +130,9 @@ instance instModule
 
 noncomputable
 instance [CommRing K] [NormedAddCommGroup X] [Module K X]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
     [HasFlatRepr.LawfulAddGroupOps (nX := nX) X Ks] :
-    NormedAddCommGroup (FlatVector X I) where
+    NormedAddCommGroup (Tensor X I) where
   norm xs := Real.sqrt (∑ i : I, ‖xs[i]‖^2)
   dist_self := by intros; simp
   dist_comm := by
@@ -142,7 +142,7 @@ instance [CommRing K] [NormedAddCommGroup X] [Module K X]
   dist_triangle := by
     intro x y z
     simp only [← sub_eq_neg_add, getElem_sub]
-    let toLp : FlatVector X I → PiLp 2 (fun _ : I ↦ X) :=
+    let toLp : Tensor X I → PiLp 2 (fun _ : I ↦ X) :=
       fun xs ↦ WithLp.toLp 2 fun i ↦ xs[i]
     simpa [toLp, PiLp.dist_eq_sum, PiLp.norm_eq_sum, Real.sqrt_eq_rpow, dist_eq_norm', one_div] using
       dist_triangle (toLp x) (toLp y) (toLp z)
@@ -161,10 +161,10 @@ instance [CommRing K] [NormedAddCommGroup X] [Module K X]
 section Normed
 
 variable [CommRing K] [NormedAddCommGroup X] [Module K X]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
     [HasFlatRepr.LawfulAddGroupOps X Ks]
 
-theorem norm_eq_sqrt_sum (xs : FlatVector X I) : ‖xs‖ = Real.sqrt (∑ i : I, ‖xs[i]‖^2) := by
+theorem norm_eq_sqrt_sum (xs : Tensor X I) : ‖xs‖ = Real.sqrt (∑ i : I, ‖xs[i]‖^2) := by
   rfl
 
 end Normed
@@ -172,9 +172,9 @@ end Normed
 
 noncomputable
 instance [NormedField K] [NormedAddCommGroup X] [NormedSpace K X]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
     [HasFlatRepr.LawfulAddGroupOps (nX := nX) X Ks] :
-    NormedSpace K (FlatVector X I) where
+    NormedSpace K (Tensor X I) where
   norm_smul_le := by
     intros
     rw [norm_eq_sqrt_sum]
@@ -183,9 +183,9 @@ instance [NormedField K] [NormedAddCommGroup X] [NormedSpace K X]
 
 
 theorem dist_getElem_le_dist [CommRing K] [NormedAddCommGroup X] [Module K X]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
     [HasFlatRepr.LawfulAddGroupOps X Ks]
-    (i : I) (xs ys : FlatVector X I) : dist xs[i] ys[i] ≤ dist xs ys := by
+    (i : I) (xs ys : Tensor X I) : dist xs[i] ys[i] ≤ dist xs ys := by
   classical
   rw [dist_eq_norm', dist_eq_norm', norm_eq_sqrt_sum]
   simp only [getElem_sub]
@@ -194,9 +194,9 @@ theorem dist_getElem_le_dist [CommRing K] [NormedAddCommGroup X] [Module K X]
 
 
 theorem continuous_getElem [CommRing K] [NormedAddCommGroup X] [Module K X]
-    [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
     [HasFlatRepr.LawfulAddGroupOps X Ks]
-    (i : I) : Continuous fun xs : FlatVector X I ↦ xs[i] := by
+    (i : I) : Continuous fun xs : Tensor X I ↦ xs[i] := by
   rw [Metric.continuous_iff]
   intro xs ε hε
   refine ⟨ε, hε, ?_⟩
@@ -204,4 +204,4 @@ theorem continuous_getElem [CommRing K] [NormedAddCommGroup X] [Module K X]
   exact lt_of_le_of_lt (dist_getElem_le_dist (i := i) ys xs) hys
 
 
-end NumLean.FlatVector
+end NumLean.Tensor

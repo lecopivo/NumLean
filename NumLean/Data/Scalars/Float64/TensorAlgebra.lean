@@ -13,14 +13,14 @@ set_option backward.do.legacy false
 
 open Tensor VectorType
 
-def tensorSum {n : Nat} {shape : Shape .leaf}
+def tensorSum {r} {n : Nat} {shape : Shape r}
     (xs : Float64Vector n) (xmap : Layout shape h(n)) : Float := Id.run do
   let mut acc := 0
   for_all i in 0...shape do
     acc := acc + xs[xmap i]
   return acc
 
-def tensorAxpy {m n : Nat} {shape : Shape .leaf} (a : Float)
+def tensorAxpy {r} {m n : Nat} {shape : Shape r} (a : Float)
     (xs : Float64Vector n) (xmap : Layout shape h(n))
     (ys : Float64Vector m) (ymap : Layout shape h(m))
     (_hymap : ymap.Injective) : Float64Vector m := Id.run do
@@ -29,7 +29,7 @@ def tensorAxpy {m n : Nat} {shape : Shape .leaf} (a : Float)
     ys[ymap i] := ys[ymap i] + a * xs[xmap i]
   return ys
 
-def tensorAxpySelf {n : Nat} {shape : Shape .leaf} (a : Float)
+def tensorAxpySelf {r} {n : Nat} {shape : Shape r} (a : Float)
     (data : Float64Vector n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
     (_hdst : dstMap.Injective) (_h : Disjoint srcMap.range dstMap.range) : Float64Vector n := Id.run do
   let mut data := data
@@ -37,7 +37,7 @@ def tensorAxpySelf {n : Nat} {shape : Shape .leaf} (a : Float)
     data[dstMap i] := data[dstMap i] + a * data[srcMap i]
   return data
 
-def tensorScal {n : Nat} {shape : Shape .leaf} (a : Float)
+def tensorScal {r} {n : Nat} {shape : Shape r} (a : Float)
     (xs : Float64Vector n) (xmap : Layout shape h(n))
     (_hxmap : xmap.Injective) : Float64Vector n := Id.run do
   let mut xs := xs
@@ -45,7 +45,7 @@ def tensorScal {n : Nat} {shape : Shape .leaf} (a : Float)
     xs[xmap i] := a * xs[xmap i]
   return xs
 
-def tensorDot {m n : Nat} {shape : Shape .leaf}
+def tensorDot {r} {m n : Nat} {shape : Shape r}
     (xs : Float64Vector n) (xmap : Layout shape h(n))
     (ys : Float64Vector m) (ymap : Layout shape h(m)) : Float := Id.run do
   let mut acc := 0
@@ -53,7 +53,7 @@ def tensorDot {m n : Nat} {shape : Shape .leaf}
     acc := acc + xs[xmap i] * ys[ymap i]
   return acc
 
-def tensorMul {m n : Nat} {shape : Shape .leaf}
+def tensorMul {r} {m n : Nat} {shape : Shape r}
     (xs : Float64Vector n) (xmap : Layout shape h(n))
     (ys : Float64Vector m) (ymap : Layout shape h(m))
     (_hymap : ymap.Injective) : Float64Vector m := Id.run do
@@ -104,7 +104,7 @@ def tensorGemm {an bn cn : Nat} {ri rj rk : Rank}
       C[cmap (i.prod j)] := alpha * acc + beta * C[cmap (i.prod j)]
   return C
 
-instance : TensorRingOps Float64Vector Float .leaf where
+instance : TensorRingOps Float64Vector Float where
   tensorSum := tensorSum
   tensorAxpy := tensorAxpy
   tensorAxpySelf := tensorAxpySelf

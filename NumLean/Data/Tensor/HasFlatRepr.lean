@@ -1,19 +1,19 @@
 module
 
-public import NumLean.Data.FlatVector.Basic
+public import NumLean.Data.Tensor.Basic
 public import NumLean.Interfaces.TensorType
 
 @[expose] public section
 
 namespace NumLean
 
-namespace FlatVector
+namespace Tensor
 
 variable {X : Type u} {I : Type v}
     {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI] [TensorType Ks]
 
 open TensorType Tensor in
-instance [Inhabited K] : HasDefaultFlatRepr (FlatVector X I) Ks (nI * nX) where
+instance [Inhabited K] : HasDefaultFlatRepr (Tensor X I) Ks (nI * nX) where
   toVector x := VectorType.toVector x.data
   fromVector x := { data := VectorType.fromVector (As := Ks) x }
   left_inv := by intros _; simp
@@ -49,8 +49,8 @@ instance [Inhabited K] : HasDefaultFlatRepr (FlatVector X I) Ks (nI * nX) where
   push xs x := VectorType.append xs x.data
   vector_get_push_lt := sorry
   vector_get_push_eq := sorry
-  toFlatVector xs := xs.data
-  get_toFlatVector_eq_getComp := sorry
+  toTensor xs := xs.data
+  get_toTensor_eq_getComp := sorry
   replicate n x :=
     let src : Ks (nI * nX) := x.data
     let srcMap := Layout.id h(n, (nI * nX)) |>.snd
@@ -61,6 +61,6 @@ instance [Inhabited K] : HasDefaultFlatRepr (FlatVector X I) Ks (nI * nX) where
   get_replicate := sorry
 
 
-end FlatVector
+end Tensor
 
 end NumLean

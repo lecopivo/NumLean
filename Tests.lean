@@ -6,8 +6,8 @@ public import Tests.CCompiler
 public import Tests.CCompilerIRSemantics
 public import Tests.DyadicInterval
 public import Tests.ExternIn
-public import Tests.FlatVectorNotation
 public import Tests.Float32ArrayEval
+public import Tests.Float64TensorAlgebraFailures
 public import Tests.FloatTensor
 public import Tests.FoldEmbedding
 public import Tests.ForAllNotation
@@ -22,6 +22,7 @@ public import Tests.HierarchyGraph
 public import Tests.OrderInstances
 public import Tests.ScalarArrays
 public import Tests.TBounds
+public import Tests.TensorNotation
 public import Tests.TupleOrderNotation
 public import Tests.TypeclassPerformance
 public import Tests.VectorRangeIterators

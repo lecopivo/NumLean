@@ -1,21 +1,22 @@
 module
 
-public import NumLean.Data.FlatVector.HasFlatRepr
+public import NumLean.Data.Tensor.HasFlatRepr
 public import Lean.Elab.Term
 public import Lean.PrettyPrinter.Delaborator
 
 @[expose] public section
 
-namespace NumLean.FlatVector
+namespace NumLean.Tensor
 
 open Lean Lean.Elab Lean.Elab.Term Lean.Meta
+open Lean.Parser Lean.Parser.Term
 
 declare_syntax_cat tensor_type_stx (behavior := both)
 syntax term : tensor_type_stx
 syntax (priority := high) tensor_type_stx ", " tensor_type_stx,* : tensor_type_stx
 syntax (priority := high) "[" tensor_type_stx "]" : tensor_type_stx
 
-/-- Elaborates a `FlatVector` index type expression.
+/-- Elaborates a `Tensor` index type expression.
 
 Type leaves are used directly, while `Nat` leaves become `Fin n`. Commas build right-associated
 products, and bracketed subexpressions preserve grouping. -/
@@ -50,17 +51,20 @@ meta def elabTensorIndex : TermElab := fun stx expectedType? => do
   | some expectedType => Term.ensureHasType (some expectedType) e
   | none => pure e
 
-macro X:term "^[" Is:tensor_type_stx "]" : term => `(FlatVector $X tensor_index%[$Is])
+macro X:term "^[" Is:tensor_type_stx "]" : term => `(Tensor $X tensor_index%[$Is])
 
-declare_syntax_cat flat_vector_lit_stx (behavior := both)
-syntax term : flat_vector_lit_stx
-syntax "[" flat_vector_lit_stx,* "]" : flat_vector_lit_stx
-syntax (name := flatVectorLit) "⊞[" flat_vector_lit_stx,* "]" : term
+declare_syntax_cat flat_tensor_lit_stx (behavior := both)
+syntax term : flat_tensor_lit_stx
+syntax "[" flat_tensor_lit_stx,* "]" : flat_tensor_lit_stx
+syntax (name := flatTensorLit) "⊞[" flat_tensor_lit_stx,* "]" : term
+
+@[term_parser]
+meta def tensorOfFnNotationParser := leading_parser:maxPrec "⊞" >> basicFun
 
 private meta def formatShape (shape : List Nat) : MessageData :=
   m!"[{MessageData.joinSep (shape.map fun n => m!"{n}") ", "}]"
 
-private meta structure FlatVectorLit where
+private meta structure TensorLit where
   stx : Syntax
   shape : List Nat
   leaves : Array Term
@@ -76,43 +80,43 @@ private meta def isAtom (value : String) : Syntax → Bool
   | .atom _ value' => value == value'
   | _ => false
 
-private meta partial def parseFlatVectorLitSyntax (stx : Syntax) : TermElabM FlatVectorLit := do
+private meta partial def parseTensorLitSyntax (stx : Syntax) : TermElabM TensorLit := do
   let stx := normalizeLitSyntax stx
   let args := stx.getArgs
-  if stx.getKind == `NumLean.FlatVector.flat_vector_lit_stx_ then
+  if stx.getKind == `NumLean.Tensor.flat_tensor_lit_stx_ then
     if h : 0 < args.size then
       pure { stx := stx, shape := [], leaves := #[⟨args[0]⟩] }
     else
-      throwErrorAt stx "ill-formed FlatVector literal"
+      throwErrorAt stx "ill-formed Tensor literal"
   else if 2 < args.size && (isAtom "[" args[0]! || isAtom "⊞[" args[0]!) && isAtom "]" args.back! then
     let itemStxs := args[1]!.getArgs.filter fun stx => !(isAtom "," stx)
     if itemStxs.isEmpty then
-      throwErrorAt stx "empty FlatVector literals are not supported"
-    let children ← itemStxs.mapM parseFlatVectorLitSyntax
+      throwErrorAt stx "empty Tensor literals are not supported"
+    let children ← itemStxs.mapM parseTensorLitSyntax
     let expected := children[0]!.shape
     let mut leaves := #[]
     for child in children do
       unless child.shape == expected do
         throwErrorAt child.stx
-          "ill-shaped FlatVector literal: expected sub-shape {formatShape expected}, got {formatShape child.shape}"
+          "ill-shaped Tensor literal: expected sub-shape {formatShape expected}, got {formatShape child.shape}"
       leaves := leaves ++ child.leaves
     pure { stx := stx, shape := children.size :: expected, leaves := leaves }
   else
-    throwErrorAt stx "ill-formed FlatVector literal"
+    throwErrorAt stx "ill-formed Tensor literal"
 
-private meta def parseFlatVectorLit (stx : TSyntax `flat_vector_lit_stx) : TermElabM FlatVectorLit :=
-  parseFlatVectorLitSyntax stx.raw
+private meta def parseTensorLit (stx : TSyntax `flat_tensor_lit_stx) : TermElabM TensorLit :=
+  parseTensorLitSyntax stx.raw
 
 private meta partial def mkFinProdType : List Nat → MetaM Expr
-  | [] => throwError "FlatVector literal must have positive rank"
+  | [] => throwError "Tensor literal must have positive rank"
   | [n] => mkAppM ``Fin #[mkNatLit n]
   | n :: ns => do
       mkAppM ``Prod #[← mkAppM ``Fin #[mkNatLit n], ← mkFinProdType ns]
 
-private meta def flatVectorType? (type : Expr) : MetaM (Option (Expr × Expr)) := do
+private meta def flatTensorType? (type : Expr) : MetaM (Option (Expr × Expr)) := do
   let type ← whnf type
   let fn := type.getAppFn
-  unless fn.isConstOf ``FlatVector do
+  unless fn.isConstOf ``Tensor do
     return none
   let args := type.getAppArgs
   if h : 2 ≤ args.size then
@@ -149,14 +153,77 @@ private meta partial def shapeOfIndexType? (I : Expr) : MetaM (Option (List Nat)
   else
     return none
 
-private meta def getExpectedFlatVectorType (expectedType? : Option Expr) : TermElabM (Option (Expr × Expr)) := do
+private meta def getExpectedTensorType (expectedType? : Option Expr) : TermElabM (Option (Expr × Expr)) := do
   match expectedType? with
   | none => pure none
-  | some expectedType => flatVectorType? expectedType
+  | some expectedType => flatTensorType? expectedType
+
+private meta partial def curriedFunctionTypeOfIndex (I X : Expr) : MetaM Expr := do
+  let I ← whnf I
+  let fn := I.getAppFn
+  let args := I.getAppArgs
+  if fn.isConstOf ``Prod then
+    if h : 2 ≤ args.size then
+      mkArrow args[0] (← curriedFunctionTypeOfIndex args[1] X)
+    else
+      mkArrow I X
+  else
+    mkArrow I X
+
+private meta def mkTensorOfFnStx (fn : Expr) : TermElabM Term := do
+  let fn ← instantiateMVars fn
+  let type ← whnf (← inferType fn)
+  let some (I, X) := type.arrow?
+    | throwError "⊞ _ => _: expected function type, got{indentExpr type}"
+  let XStx ← Term.exprToSyntax X
+  let IStx ← Term.exprToSyntax I
+  let fnStx ← Term.exprToSyntax fn
+  `(term| Tensor.ofFn (X := $XStx:term) (I := $IStx:term) $fnStx)
+
+@[term_elab tensorOfFnNotationParser]
+meta def elabTensorOfFnNotation : TermElab := fun stx expectedType? => do
+  let `(term| ⊞ $bs:funBinder* => $body:term) := stx
+    | throwUnsupportedSyntax
+  match expectedType? with
+  | some expectedType =>
+      match ← getExpectedTensorType (some expectedType) with
+      | some (X, I) => do
+          let fStx ← `(term| fun $bs* => $body)
+          let curriedF ← curriedFunctionTypeOfIndex I X
+          let directF ← mkArrow I X
+          let fn ←
+            if bs.size = 1 then
+              elabTermAndSynthesize fStx (some directF)
+            else
+              try
+                elabTermAndSynthesize fStx (some curriedF)
+              catch _ =>
+                elabTermAndSynthesize fStx (some directF)
+          let arity := (← inferType fn).getNumHeadForalls
+          let fn ←
+            if arity = 1 then
+              pure fn
+            else
+              mkAppM ``Function.HasUncurry.uncurry #[fn]
+          let XStx ← Term.exprToSyntax X
+          let IStx ← Term.exprToSyntax I
+          let fnStx ← Term.exprToSyntax fn
+          elabTermEnsuringType
+            (← `(term| Tensor.ofFn (X := $XStx:term) (I := $IStx:term) $fnStx)) expectedType
+      | none => do
+          let fn ← elabTermAndSynthesize (← `(term| fun $bs* => $body)) none
+          let arity := (← inferType fn).getNumHeadForalls
+          let fn ← if arity = 1 then pure fn else mkAppM ``Function.HasUncurry.uncurry #[fn]
+          elabTermEnsuringType (← mkTensorOfFnStx fn) expectedType
+  | none => do
+      let fn ← elabTermAndSynthesize (← `(term| fun $bs* => $body)) none
+      let arity := (← inferType fn).getNumHeadForalls
+      let fn ← if arity = 1 then pure fn else mkAppM ``Function.HasUncurry.uncurry #[fn]
+      elabTerm (← mkTensorOfFnStx fn) none
 
 private meta def elabLeaves (leaves : Array Term) (expectedElemType? : Option Expr) : TermElabM (Array Expr × Expr) := do
   if h : leaves.size = 0 then
-    throwError "empty FlatVector literals are not supported"
+    throwError "empty Tensor literals are not supported"
   else
     match expectedElemType? with
     | some X => do
@@ -180,24 +247,24 @@ private meta partial def mkVectorLitSyntax : Array Term → TermElabM Term
       | `(term| #v[$ys,*]) => `(#v[$x, $ys,*])
       | _ => throwUnsupportedSyntax
 
-private meta def mkFlatVectorOfVectorTerm (X I : Expr) (leaves : Array Term) : TermElabM Term := do
+private meta def mkTensorOfVectorTerm (X I : Expr) (leaves : Array Term) : TermElabM Term := do
   let X ← Term.exprToSyntax X
   let I ← Term.exprToSyntax I
   let n : Term := ⟨Syntax.mkNumLit (toString leaves.size)⟩
   let vector ← mkVectorLitSyntax leaves
-  `(FlatVector.ofVector (I := $I:term) (($vector:term) : Vector $X:term $n:term))
+  `(Tensor.ofVector (I := $I:term) (($vector:term) : Vector $X:term $n:term))
 
-@[term_elab flatVectorLit]
-meta def elabFlatVectorLit : TermElab := fun stx expectedType? => do
-  let parsed ← parseFlatVectorLitSyntax stx
-  let expected ← getExpectedFlatVectorType expectedType?
+@[term_elab flatTensorLit]
+meta def elabTensorLit : TermElab := fun stx expectedType? => do
+  let parsed ← parseTensorLitSyntax stx
+  let expected ← getExpectedTensorType expectedType?
   match expected with
   | some (_, I) =>
       match ← shapeOfIndexType? I with
       | some expectedShape =>
           unless parsed.shape == expectedShape do
             throwErrorAt stx
-              "FlatVector literal shape mismatch: expected {formatShape expectedShape}, got {formatShape parsed.shape}"
+              "Tensor literal shape mismatch: expected {formatShape expectedShape}, got {formatShape parsed.shape}"
       | none => pure ()
   | none => pure ()
   let (_leafExprs, X) ← elabLeaves parsed.leaves (expected.map Prod.fst)
@@ -205,7 +272,7 @@ meta def elabFlatVectorLit : TermElab := fun stx expectedType? => do
     match expected with
     | some (_, I) => pure I
     | none => mkFinProdType parsed.shape
-  let outStx ← mkFlatVectorOfVectorTerm X I parsed.leaves
+  let outStx ← mkTensorOfVectorTerm X I parsed.leaves
   match expectedType? with
   | some expectedType => elabTermEnsuringType outStx expectedType
   | none => elabTerm outStx none
@@ -250,11 +317,26 @@ where
           commaStx I' (← tensorSeqStxOfProd J₁ J₂)
     | _ => commaStx I' (← itemStxOfTerm J)
 
-@[app_unexpander NumLean.FlatVector]
-meta def unexpandFlatVector : Unexpander
+@[app_unexpander NumLean.Tensor]
+meta def unexpandTensor : Unexpander
   | `($(_) $X:term $I:term) => do
       let I ← tensorStxOfTerm I
       `(term| $X:term^[$I:tensor_type_stx])
+  | _ => throw ()
+
+@[app_unexpander Tensor.ofFn]
+meta def unexpandTensorOfFn : Unexpander
+  | `($(_) $f) => do
+      match f with
+      | `(term| ↿fun $bs:funBinder* => $body:term) =>
+          `(term| ⊞ $bs* => $body)
+      | `(term| ↿(fun $bs:funBinder* => $body:term)) =>
+          `(term| ⊞ $bs* => $body)
+      | `(term| fun $bs:funBinder* => $body:term) =>
+          `(term| ⊞ $bs* => $body)
+      | `(term| Function.HasUncurry.uncurry (fun $bs:funBinder* => $body:term)) =>
+          `(term| ⊞ $bs* => $body)
+      | _ => throw ()
   | _ => throw ()
 
 private meta def vectorLitItems? (stx : Term) : Option (Array Term) := do
@@ -264,7 +346,7 @@ private meta def vectorLitItems? (stx : Term) : Option (Array Term) := do
   pure <| items.map fun stx => (⟨stx⟩ : Term)
 
 private meta partial def flatLitItemsOfShape (shape : List Nat) (leaves : Array Term) (offset : Nat) :
-    DelabM (Array (TSyntax `flat_vector_lit_stx) × Nat) := do
+    DelabM (Array (TSyntax `flat_tensor_lit_stx) × Nat) := do
   match shape with
   | [] => failure
   | n :: rest =>
@@ -277,19 +359,19 @@ private meta partial def flatLitItemsOfShape (shape : List Nat) (leaves : Array 
       pure (items, offset)
 where
   flatLitItemOfShape (shape : List Nat) (leaves : Array Term) (offset : Nat) :
-      DelabM (TSyntax `flat_vector_lit_stx × Nat) := do
+      DelabM (TSyntax `flat_tensor_lit_stx × Nat) := do
     match shape with
     | [] =>
         if h : offset < leaves.size then
-          pure (← `(flat_vector_lit_stx| $(leaves[offset]):term), offset + 1)
+          pure (← `(flat_tensor_lit_stx| $(leaves[offset]):term), offset + 1)
         else
           failure
     | _ =>
         let (items, offset) ← flatLitItemsOfShape shape leaves offset
-        pure (← `(flat_vector_lit_stx| [$items:flat_vector_lit_stx,*]), offset)
+        pure (← `(flat_tensor_lit_stx| [$items:flat_tensor_lit_stx,*]), offset)
 
-@[app_delab FlatVector.ofVector]
-meta def delabFlatVectorOfVector : Delab := whenPPOption Lean.getPPNotation do
+@[app_delab Tensor.ofVector]
+meta def delabTensorOfVector : Delab := whenPPOption Lean.getPPNotation do
   let args := (← SubExpr.getExpr).getAppArgs
   guard <| 1 < args.size
   let I := args[1]!
@@ -298,4 +380,4 @@ meta def delabFlatVectorOfVector : Delab := whenPPOption Lean.getPPNotation do
   let some leaves := vectorLitItems? vectorStx | failure
   let (items, offset) ← flatLitItemsOfShape shape leaves 0
   guard <| offset == leaves.size
-  `(⊞[$items:flat_vector_lit_stx,*])
+  `(⊞[$items:flat_tensor_lit_stx,*])

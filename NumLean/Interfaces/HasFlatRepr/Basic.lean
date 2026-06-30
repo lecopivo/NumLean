@@ -54,9 +54,9 @@ class HasFlatRepr (X : Type u) (Ks : Nat → Type v) (nX : outParam Nat)
     VectorType.get (push ks x) (n + i) (by grind) = getComp x i hi
 
   /-- Convert one `X` value to its flat scalar storage. -/
-  toFlatVector : X → Ks nX
-  get_toFlatVector_eq_getComp (x : X) (i : Nat) (h : i < nX) :
-    VectorType.get (toFlatVector x) i h = getComp x i h
+  toTensor : X → Ks nX
+  get_toTensor_eq_getComp (x : X) (i : Nat) (h : i < nX) :
+    VectorType.get (toTensor x) i h = getComp x i h
 
   replicate (n : Nat) (x : X) : Ks (n * nX)
   get_replicate (n : Nat) (x : X) (i j : Nat) (hi : i < n) (hj : j < nX) :
@@ -78,7 +78,7 @@ attribute [simp]
   vector_get_set_ne
   vector_get_push_lt
   vector_get_push_eq
-  get_toFlatVector_eq_getComp
+  get_toTensor_eq_getComp
   get_replicate
 
 @[simp]
@@ -171,8 +171,8 @@ instance {R : Type u} {Rs : Nat → Type v} [VectorType Rs R] : HasFlatRepr R Rs
     have hi0 : i = 0 := by grind
     subst hi0
     simp only [Nat.add_zero, VectorType.get_push_eq]
-  toFlatVector x := VectorType.fromVector #v[x]
-  get_toFlatVector_eq_getComp := by
+  toTensor x := VectorType.fromVector #v[x]
+  get_toTensor_eq_getComp := by
     intro x i h
     have hi0 : i = 0 := by grind
     subst hi0
@@ -219,8 +219,8 @@ theorem get_push_lt {n : Nat} (ks : Ks n) (off : Nat) (x : X) (hoff : off + nX �
   rw [vector_get_push_lt (ks := ks) (x := x) (i := off + i) hlt]
 
 @[simp]
-theorem get_toFlatVector (x : X) :
-    get (toFlatVector (Ks := Ks) x) 0 (by simp) = x := by
+theorem get_toTensor (x : X) :
+    get (toTensor (Ks := Ks) x) 0 (by simp) = x := by
   apply HasFlatRepr.ext (Ks := Ks)
   intro i hi
   rw [getComp_get_eq_vector_get]

@@ -19,36 +19,36 @@ open VectorType in
 Tensor algebra operations for a family of vector-like storage types `Ks` over scalars `K`.
 -/
 @[hierarchy_graph algebra_ops]
-class TensorRingOps (Ks : Nat → Type) (K : Type) (r : Rank)
+class TensorRingOps (Ks : Nat → Type) (K : Type)
     [RingOps K] [VectorType Ks K] where
 
   /-- Sum the entries selected by a tensor layout. -/
-  tensorSum {n : Nat} {shape : Shape r}
+  tensorSum {r : Rank} {n : Nat} {shape : Shape r}
     (xs : Ks n) (xmap : Layout shape h(n)) : K
 
   /-- Add a scaled tensor into another tensor, writing through an injective destination layout. -/
-  tensorAxpy {m n : Nat} {shape : Shape r} (a : K)
+  tensorAxpy {r : Rank} {m n : Nat} {shape : Shape r} (a : K)
     (xs : Ks n) (xmap : Layout shape h(n))
     (ys : Ks m) (ymap : Layout shape h(m))
     (hymap : ymap.Injective) : Ks m
 
   /-- Add a scaled slice of a tensor into a disjoint slice of the same tensor. -/
-  tensorAxpySelf {n : Nat} {shape : Shape r} (a : K)
+  tensorAxpySelf {r : Rank} {n : Nat} {shape : Shape r} (a : K)
     (data : Ks n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
     (hdst : dstMap.Injective) (h : Disjoint srcMap.range dstMap.range) : Ks n
 
   /-- Scale the tensor entries selected by an injective layout in place. -/
-  tensorScal {n : Nat} {shape : Shape r} (a : K)
+  tensorScal {r : Rank} {n : Nat} {shape : Shape r} (a : K)
     (xs : Ks n) (xmap : Layout shape h(n))
     (hxmap : xmap.Injective) : Ks n
 
   /-- Dot product of two tensors sharing the same logical shape. -/
-  tensorDot {m n : Nat} {shape : Shape r}
+  tensorDot {r : Rank} {m n : Nat} {shape : Shape r}
     (xs : Ks n) (xmap : Layout shape h(n))
     (ys : Ks m) (ymap : Layout shape h(m)) : K
 
   /-- Multiply selected entries of the destination tensor by entries from another tensor. -/
-  tensorMul {m n : Nat} {shape : Shape r}
+  tensorMul {r : Rank} {m n : Nat} {shape : Shape r}
     (xs : Ks n) (xmap : Layout shape h(n))
     (ys : Ks m) (ymap : Layout shape h(m))
     (hymap : ymap.Injective) : Ks m
@@ -86,16 +86,16 @@ open VectorType in
 Laws relating `TensorRingOps` implementations to their `Vector` counterparts.
 -/
 @[hierarchy_graph algebra_lawful]
-class LawfulTensorRingOps (Ks : Nat → Type) (K : Type) (r : Rank)
-    [RingOps K] [Ring K] [VectorType Ks K] [TensorRingOps Ks K r] : Prop where
+class LawfulTensorRingOps (Ks : Nat → Type) (K : Type)
+    [RingOps K] [Ring K] [VectorType Ks K] [TensorRingOps Ks K] : Prop where
 
-  tensorSum_eq_vector_tensorSum {n : Nat} {shape : Shape r}
+  tensorSum_eq_vector_tensorSum {r : Rank} {n : Nat} {shape : Shape r}
     (xs : Ks n) (xmap : Layout shape h(n)) :
     TensorRingOps.tensorSum (Ks:=Ks) (K:=K) (r:=r) xs xmap
     =
     Vector.tensorSum (toVector xs) xmap
 
-  toVector_tensorAxpy {m n : Nat} {shape : Shape r} (a : K)
+  toVector_tensorAxpy {r : Rank} {m n : Nat} {shape : Shape r} (a : K)
     (xs : Ks n) (xmap : Layout shape h(n))
     (ys : Ks m) (ymap : Layout shape h(m))
     (hymap : ymap.Injective) :
@@ -103,7 +103,7 @@ class LawfulTensorRingOps (Ks : Nat → Type) (K : Type) (r : Rank)
     =
     Vector.tensorAxpy a (toVector xs) xmap (toVector ys) ymap hymap
 
-  toVector_tensorAxpySelf {n : Nat} {shape : Shape r} (a : K)
+  toVector_tensorAxpySelf {r : Rank} {n : Nat} {shape : Shape r} (a : K)
     (data : Ks n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
     (hdst : dstMap.Injective) (h : Disjoint srcMap.range dstMap.range) :
     toVector (TensorRingOps.tensorAxpySelf (Ks:=Ks) (K:=K) (r:=r)
@@ -111,21 +111,21 @@ class LawfulTensorRingOps (Ks : Nat → Type) (K : Type) (r : Rank)
     =
     Vector.tensorAxpySelf a (toVector data) srcMap dstMap hdst h
 
-  toVector_tensorScal {n : Nat} {shape : Shape r} (a : K)
+  toVector_tensorScal {r : Rank} {n : Nat} {shape : Shape r} (a : K)
     (xs : Ks n) (xmap : Layout shape h(n))
     (hxmap : xmap.Injective) :
     toVector (TensorRingOps.tensorScal (Ks:=Ks) (K:=K) (r:=r) a xs xmap hxmap)
     =
     Vector.tensorScal a (toVector xs) xmap hxmap
 
-  tensorDot_eq_vector_tensorDot {m n : Nat} {shape : Shape r}
+  tensorDot_eq_vector_tensorDot {r : Rank} {m n : Nat} {shape : Shape r}
     (xs : Ks n) (xmap : Layout shape h(n))
     (ys : Ks m) (ymap : Layout shape h(m)) :
     TensorRingOps.tensorDot (Ks:=Ks) (K:=K) (r:=r) xs xmap ys ymap
     =
     Vector.tensorDot (toVector xs) xmap (toVector ys) ymap
 
-  toVector_tensorMul {m n : Nat} {shape : Shape r}
+  toVector_tensorMul {r : Rank} {m n : Nat} {shape : Shape r}
     (xs : Ks n) (xmap : Layout shape h(n))
     (ys : Ks m) (ymap : Layout shape h(m))
     (hymap : ymap.Injective) :
@@ -140,7 +140,7 @@ class LawfulTensorRingOps (Ks : Nat → Type) (K : Type) (r : Rank)
     (x : Ks xn) (xmap : Layout cols h(xn))
     (y : Ks yn) (ymap : Layout rows h(yn))
     (hymap : ymap.Injective) :
-    toVector (TensorRingOps.tensorGemv (Ks:=Ks) (K:=K) (r:=r)
+    toVector (TensorRingOps.tensorGemv (Ks:=Ks) (K:=K)
       alpha beta A amap x xmap y ymap hymap)
     =
     Vector.tensorGemv alpha beta (toVector A) amap (toVector x) xmap (toVector y) ymap hymap
@@ -152,7 +152,7 @@ class LawfulTensorRingOps (Ks : Nat → Type) (K : Type) (r : Rank)
     (y : Ks yn) (ymap : Layout cols h(yn))
     (A : Ks an) (amap : Layout (.prod rows cols) h(an))
     (hamap : amap.Injective) :
-    toVector (TensorRingOps.tensorGer (Ks:=Ks) (K:=K) (r:=r)
+    toVector (TensorRingOps.tensorGer (Ks:=Ks) (K:=K)
       alpha x xmap y ymap A amap hamap)
     =
     Vector.tensorGer alpha (toVector x) xmap (toVector y) ymap (toVector A) amap hamap
@@ -165,7 +165,7 @@ class LawfulTensorRingOps (Ks : Nat → Type) (K : Type) (r : Rank)
     (B : Ks bn) (bmap : Layout (.prod ks js) h(bn))
     (C : Ks cn) (cmap : Layout (.prod is js) h(cn))
     (hcmap : cmap.Injective) :
-  toVector (TensorRingOps.tensorGemm (Ks:=Ks) (K:=K) (r:=r)
+  toVector (TensorRingOps.tensorGemm (Ks:=Ks) (K:=K)
       alpha beta A amap B bmap C cmap hcmap)
     =
     Vector.tensorGemm alpha beta (toVector A) amap (toVector B) bmap (toVector C) cmap hcmap
@@ -175,8 +175,8 @@ namespace TensorRingOps
 open Classical VectorType
 
 variable {Ks : Nat → Type} {K : Type} {r : Rank}
-variable [CommRing K] [VectorType Ks K] [TensorRingOps Ks K r]
-variable [LawfulTensorRingOps Ks K r]
+variable [CommRing K] [VectorType Ks K] [TensorRingOps Ks K]
+variable [LawfulTensorRingOps Ks K]
 
 theorem tensorSum_eq_sum [LawfulRingOps K] {n : Nat} {shape : Shape r}
     (xs : Ks n) (xmap : Layout shape h(n)) :
@@ -278,7 +278,7 @@ theorem get_tensorGemv [LawfulRingOps K] {an xn yn : Nat}
     (x : Ks xn) (xmap : Layout cols h(xn))
     (y : Ks yn) (ymap : Layout rows h(yn))
     (hymap : ymap.Injective) (idx : Nat) (hidx : idx < yn) :
-    VectorType.get (TensorRingOps.tensorGemv (Ks:=Ks) (K:=K) (r:=r)
+    VectorType.get (TensorRingOps.tensorGemv (Ks:=Ks) (K:=K)
       alpha beta A amap x xmap y ymap hymap) idx hidx
     =
     if h : idx ∈ ymap.rangeNat then
@@ -305,7 +305,7 @@ proof_wanted get_tensorGer {an xn yn : Nat}
     (y : Ks yn) (ymap : Layout cols h(yn))
     (A : Ks an) (amap : Layout (.prod rows cols) h(an))
     (hamap : amap.Injective) (idx : Nat) (hidx : idx < an) :
-    VectorType.get (TensorRingOps.tensorGer (Ks:=Ks) (K:=K) (r:=r)
+    VectorType.get (TensorRingOps.tensorGer (Ks:=Ks) (K:=K)
       alpha x xmap y ymap A amap hamap) idx hidx
     =
     if h : idx ∈ amap.rangeNat then
@@ -325,7 +325,7 @@ proof_wanted get_tensorGemm [LawfulRingOps K] {an bn cn : Nat}
     (B : Ks bn) (bmap : Layout (.prod ks js) h(bn))
     (C : Ks cn) (cmap : Layout (.prod is js) h(cn))
     (hcmap : cmap.Injective) (idx : Nat) (hidx : idx < cn) :
-    VectorType.get (TensorRingOps.tensorGemm (Ks:=Ks) (K:=K) (r:=r)
+    VectorType.get (TensorRingOps.tensorGemm (Ks:=Ks) (K:=K)
       alpha beta A amap B bmap C cmap hcmap) idx hidx
     =
     if h : idx ∈ cmap.rangeNat then
@@ -338,8 +338,7 @@ proof_wanted get_tensorGemm [LawfulRingOps K] {an bn cn : Nat}
     else
       VectorType.get C idx hidx
 
-theorem tensorSum_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
-    [LawfulRingOps K] {n : Nat}
+theorem tensorSum_id [LawfulRingOps K] {n : Nat}
     (xs : Ks n) :
     TensorRingOps.tensorSum (Ks:=Ks) (K:=K) (r:=.leaf) xs (Layout.id h(n))
     =
@@ -349,7 +348,7 @@ theorem tensorSum_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
     (tensorSum_eq_sum (Ks:=Ks) (K:=K) (r:=.leaf) (xs := xs) (xmap := Layout.id h(n)))
 
 @[simp mid+1]
-theorem get_tensorAxpy_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
+theorem get_tensorAxpy_id
     {n : Nat} (a : K)
     (xs ys : Ks n) (idx : Nat) (hidx : idx < n) :
     VectorType.get (TensorRingOps.tensorAxpy (Ks:=Ks) (K:=K) (r:=.leaf)
@@ -370,7 +369,7 @@ theorem get_tensorAxpy_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .
     exact False.elim (hi hmem)
 
 @[simp mid+1]
-theorem get_tensorScal_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
+theorem get_tensorScal_id
     {n : Nat} (a : K)
     (xs : Ks n) (idx : Nat) (hidx : idx < n) :
     VectorType.get (TensorRingOps.tensorScal (Ks:=Ks) (K:=K) (r:=.leaf)
@@ -386,8 +385,7 @@ theorem get_tensorScal_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .
       · simp
     exact False.elim (hi hmem)
 
-theorem tensorDot_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
-    [LawfulRingOps K] {n : Nat}
+theorem tensorDot_id [LawfulRingOps K] {n : Nat}
     (xs ys : Ks n) :
     TensorRingOps.tensorDot (Ks:=Ks) (K:=K) (r:=.leaf) xs (Layout.id h(n)) ys (Layout.id h(n))
     =
@@ -399,7 +397,7 @@ theorem tensorDot_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
 
 
 @[simp mid+1]
-theorem get_tensorMul_id [TensorRingOps Ks K .leaf] [LawfulTensorRingOps Ks K .leaf]
+theorem get_tensorMul_id
     {n : Nat}
     (xs ys : Ks n) (idx : Nat) (hidx : idx < n) :
     VectorType.get (TensorRingOps.tensorMul (Ks:=Ks) (K:=K) (r:=.leaf)
@@ -427,7 +425,7 @@ proof_wanted get_tensorGemv_rowMajor [LawfulRingOps K]
     (A : Ks (rows.prod cols).numel)
     (x : Ks cols.numel) (y : Ks rows.numel)
     (i : HTuple Nat ra) (hi : i <ₑ rows) :
-    VectorType.get (TensorRingOps.tensorGemv (Ks:=Ks) (K:=K) (r:=r)
+    VectorType.get (TensorRingOps.tensorGemv (Ks:=Ks) (K:=K)
       alpha beta
       A (FinHTupleMap.rowMajorMap (rows.prod cols))
       x (FinHTupleMap.rowMajorMap cols)
@@ -451,7 +449,7 @@ proof_wanted get_tensorGer_rowMajor
     (A : Ks (rows.prod cols).numel)
     (i : HTuple Nat rr) (hi : i <ₑ rows)
     (j : HTuple Nat rc) (hj : j <ₑ cols) :
-    VectorType.get (TensorRingOps.tensorGer (Ks:=Ks) (K:=K) (r:=r)
+    VectorType.get (TensorRingOps.tensorGer (Ks:=Ks) (K:=K)
       alpha
       x (FinHTupleMap.rowMajorMap rows)
       y (FinHTupleMap.rowMajorMap cols)
@@ -476,7 +474,7 @@ proof_wanted get_tensorGemm_rowMajor [LawfulRingOps K]
     (C : Ks (is.prod js).numel)
     (i : HTuple Nat ri) (hi : i <ₑ is)
     (j : HTuple Nat rj) (hj : j <ₑ js) :
-    VectorType.get (TensorRingOps.tensorGemm (Ks:=Ks) (K:=K) (r:=r)
+    VectorType.get (TensorRingOps.tensorGemm (Ks:=Ks) (K:=K)
       alpha beta
       A (FinHTupleMap.rowMajorMap (is.prod ks))
       B (FinHTupleMap.rowMajorMap (ks.prod js))

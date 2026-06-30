@@ -47,26 +47,26 @@ def prodSet {n : Nat} (ks : Ks n) (off : Nat) (xy : X × Y) (h : off + (nX + nY)
   let ks := HasFlatRepr.set (X := X) ks off xy.1 (by omega)
   HasFlatRepr.set (X := Y) ks (off + nX) xy.2 (by omega)
 
-def prodToFlatVector (xy : X × Y) : Ks (nX + nY) :=
-  VectorType.append (HasFlatRepr.toFlatVector (Ks := Ks) xy.1) (HasFlatRepr.toFlatVector (Ks := Ks) xy.2)
+def prodToTensor (xy : X × Y) : Ks (nX + nY) :=
+  VectorType.append (HasFlatRepr.toTensor (Ks := Ks) xy.1) (HasFlatRepr.toTensor (Ks := Ks) xy.2)
 
-theorem prod_get_toFlatVector_eq_getComp (xy : X × Y) (i : Nat) (hi : i < nX + nY) :
-    VectorType.get (prodToFlatVector (Ks := Ks) xy) i hi = prodGetComp (Ks := Ks) xy i hi := by
+theorem prod_get_toTensor_eq_getComp (xy : X × Y) (i : Nat) (hi : i < nX + nY) :
+    VectorType.get (prodToTensor (Ks := Ks) xy) i hi = prodGetComp (Ks := Ks) xy i hi := by
   rcases xy with ⟨x, y⟩
   by_cases hleft : i < nX
   · rw [prod_getComp_left (Ks := Ks) (x, y) i hi hleft]
-    dsimp [prodToFlatVector]
+    dsimp [prodToTensor]
     rw [VectorType.get_append_left]
-    rw [HasFlatRepr.get_toFlatVector_eq_getComp]
+    rw [HasFlatRepr.get_toTensor_eq_getComp]
   · rw [prod_getComp_right (Ks := Ks) (x, y) i hi hleft]
-    dsimp [prodToFlatVector]
+    dsimp [prodToTensor]
     rw [VectorType.get_append_right]
-    · rw [HasFlatRepr.get_toFlatVector_eq_getComp]
+    · rw [HasFlatRepr.get_toTensor_eq_getComp]
     · omega
 
 -- todo: this could be improved, I think   `(kx ++ x) ++ y` is better than `ks ++ (x ++ y)`
 def prodPush {n : Nat} (ks : Ks n) (xy : X × Y) : Ks (n + (nX + nY)) :=
-  VectorType.append ks (prodToFlatVector (Ks := Ks) xy)
+  VectorType.append ks (prodToTensor (Ks := Ks) xy)
 
 -- todo: this is bad, don't use fromVector/Vector.ofFn etc
 -- do we need TensorType to do this efficiently? we can just convert `x` and `y` to `Ks` and
@@ -175,12 +175,12 @@ instance : HasFlatRepr (X × Y) Ks (nX + nY) where
     intro n ks xy i hi
     dsimp [prodPush]
     rw [VectorType.get_append_right]
-    · simpa [Nat.add_sub_cancel_left] using prod_get_toFlatVector_eq_getComp (Ks := Ks) xy i hi
+    · simpa [Nat.add_sub_cancel_left] using prod_get_toTensor_eq_getComp (Ks := Ks) xy i hi
     · omega
-  toFlatVector := prodToFlatVector (Ks := Ks)
-  get_toFlatVector_eq_getComp := by
+  toTensor := prodToTensor (Ks := Ks)
+  get_toTensor_eq_getComp := by
     intro xy i hi
-    exact prod_get_toFlatVector_eq_getComp (Ks := Ks) xy i hi
+    exact prod_get_toTensor_eq_getComp (Ks := Ks) xy i hi
   replicate := prodReplicate (Ks := Ks)
   get_replicate := by
     intro n xy i j hi hj

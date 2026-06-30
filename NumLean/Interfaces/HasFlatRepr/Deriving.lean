@@ -40,8 +40,8 @@ instance instUnit {K : Type v} {Ks : Nat → Type w} [VectorType Ks K] : HasFlat
     intro n ks _ i hi
     rfl
   vector_get_push_eq := by intro _ _ _ i hi; omega
-  toFlatVector _ := VectorType.emptyWithCapacity (As := Ks) 0
-  get_toFlatVector_eq_getComp := by intro _ i hi; omega
+  toTensor _ := VectorType.emptyWithCapacity (As := Ks) 0
+  get_toTensor_eq_getComp := by intro _ i hi; omega
   replicate _ _ := VectorType.emptyWithCapacity (As := Ks) 0
   get_replicate := by intro _ _ _ j _ hj; omega
 

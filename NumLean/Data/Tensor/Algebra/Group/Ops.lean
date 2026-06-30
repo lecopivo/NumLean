@@ -2,37 +2,37 @@ module
 
 public import NumLean.Interfaces.Algebra.RCLike
 public import NumLean.Interfaces.Module
-public import NumLean.Data.FlatVector.Basic
+public import NumLean.Data.Tensor.Basic
 public import NumLean.Interfaces.TensorAlgebra
 
 @[expose] public section
 
-namespace NumLean.FlatVector
+namespace NumLean.Tensor
 
 open Tensor TensorRingOps
 
 variable {X : Type u} {I : Type v}
   {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI]
 
-instance instZero [Zero K] : Zero (FlatVector X I) :=
+instance instZero [Zero K] : Zero (Tensor X I) :=
   ⟨{ data := VectorType.replicate (nI * nX) 0 }⟩
 
 theorem zero_def [Zero K] :
-    (0 : FlatVector X I) =
+    (0 : Tensor X I) =
       { data := VectorType.replicate (nI * nX) 0 } := rfl
 
-instance instOne [One K] : One (FlatVector X I) :=
+instance instOne [One K] : One (Tensor X I) :=
   ⟨{ data := VectorType.replicate (nI * nX) 1 }⟩
 
 theorem one_def [One K] :
-    (1 : FlatVector X I) =
+    (1 : Tensor X I) =
       { data := VectorType.replicate (nI * nX) 1 } := rfl
 
 section Ring
 
-variable [RingOps K] [TensorRingOps Ks K .leaf]
+variable [RingOps K] [TensorRingOps Ks K]
 
-instance instAdd : Add (FlatVector X I) := ⟨fun x y =>
+instance instAdd : Add (Tensor X I) := ⟨fun x y =>
   let map : Layout h(nI * nX) h(nI * nX) := Layout.id h(nI * nX)
   let hmap : map.Injective := by simpa [map] using FinHTupleMap.injective_id h(nI * nX)
   -- we on purpose reverse the order of `x` and `y`
@@ -41,44 +41,44 @@ instance instAdd : Add (FlatVector X I) := ⟨fun x y =>
   -- that expression is associated as `((x₁ + x₂) + x₃) + x₄` by default
   { data := tensorAxpy (1 : K) y.data map x.data map hmap }⟩
 
-theorem add_def (x y : FlatVector X I) :
+theorem add_def (x y : Tensor X I) :
     x + y =
       let map : Layout h(nI * nX) h(nI * nX) := Layout.id h(nI * nX)
       let hmap : map.Injective := by simpa [map] using FinHTupleMap.injective_id h(nI * nX)
       { data := tensorAxpy (1 : K) y.data map x.data map hmap } := rfl
 
-instance instSub [TensorRingOps Ks K .leaf] : Sub (FlatVector X I) := ⟨fun x y =>
+instance instSub : Sub (Tensor X I) := ⟨fun x y =>
   let map : Layout h(nI * nX) h(nI * nX) := Layout.id h(nI * nX)
   let hmap : map.Injective := by simpa [map] using FinHTupleMap.injective_id h(nI * nX)
   { data := tensorAxpy (-1 : K) y.data map x.data map hmap }⟩
 
-theorem sub_def (x y : FlatVector X I) :
+theorem sub_def (x y : Tensor X I) :
     x - y =
       let map : Layout h(nI * nX) h(nI * nX) := Layout.id h(nI * nX)
       let hmap : map.Injective := by simpa [map] using FinHTupleMap.injective_id h(nI * nX)
       { data := tensorAxpy (-1 : K) y.data map x.data map hmap } := rfl
 
-instance instSMul : SMul K (FlatVector X I) := ⟨fun s x =>
+instance instSMul : SMul K (Tensor X I) := ⟨fun s x =>
   let map : Layout h(nI * nX) h(nI * nX) := Layout.id h(nI * nX)
   let hmap : map.Injective := by simpa [map] using FinHTupleMap.injective_id h(nI * nX)
   { data := tensorScal s x.data map hmap }⟩
 
-theorem smul_def (s : K) (x : FlatVector X I) :
+theorem smul_def (s : K) (x : Tensor X I) :
     s • x =
       let map : Layout h(nI * nX) h(nI * nX) := Layout.id h(nI * nX)
       let hmap : map.Injective := by simpa [map] using FinHTupleMap.injective_id h(nI * nX)
       { data := tensorScal s x.data map hmap } := rfl
 
-instance instNeg : Neg (FlatVector X I) :=
+instance instNeg : Neg (Tensor X I) :=
   ⟨fun x => (-1 : K) • x⟩
 
-theorem neg_def (x : FlatVector X I) :
+theorem neg_def (x : Tensor X I) :
     -x = (-1 : K) • x := rfl
 
-instance instAddMonoidOps : AddMonoidOps (FlatVector X I) where
+instance instAddMonoidOps : AddMonoidOps (Tensor X I) where
   nsmul n x := (n : K) • x
 
-instance instAddGroupOps : AddGroupOps (FlatVector X I) where
+instance instAddGroupOps : AddGroupOps (Tensor X I) where
   zsmul n x := (n : K) • x
 
 end Ring
@@ -86,17 +86,17 @@ end Ring
 
 section ROps
 
-variable [ROps K] [TensorRingOps Ks K .leaf]
+variable [ROps K] [TensorRingOps Ks K]
 
-instance : RNorm (FlatVector X I) K where
+instance : RNorm (Tensor X I) K where
   rnorm x :=
     let map := Layout.id h(nI * nX)
     ROps.sqrt (tensorDot x.data map x.data map)
 
-instance : NormedAddMonoidOps K (FlatVector X I) where
+instance : NormedAddMonoidOps K (Tensor X I) where
 
-instance : NormedAddGroupOps K (FlatVector X I) where
+instance : NormedAddGroupOps K (Tensor X I) where
 
 end ROps
 
-end NumLean.FlatVector
+end NumLean.Tensor
