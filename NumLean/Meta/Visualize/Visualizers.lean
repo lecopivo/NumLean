@@ -129,6 +129,74 @@ def animation (frames : Array α) (timeoutMillis : Nat := 500) : Animation α wh
   frames := frames
   timeoutMillis := timeoutMillis
 
+/-- A point in 3D Euclidean space. -/
+structure Point3D where
+  x : Float
+  y : Float
+  z : Float
+deriving Inhabited, Repr, ToJson, FromJson
+
+/-- The supported primitive kinds for `Scene3D`. -/
+inductive Primitive3DKind where
+  /-- A filled triangle, using exactly three point indices. -/
+  | triangle
+  /-- A filled quad, using exactly four point indices. -/
+  | quad
+  /-- A round tube/segment, using exactly two point indices. -/
+  | tube
+  /-- A ball/sphere, using exactly one point index. -/
+  | ball
+deriving Inhabited, Repr, ToJson, FromJson
+
+/-- A colored 3D primitive whose vertices reference entries in `Scene3D.points`.
+
+`radius` is used by `tube` and `ball`; it is ignored by triangles and quads.  `color` is passed
+to the browser as a CSS color string, for example `"#7cc7ff"` or `"rgb(255 120 80)"`.
+-/
+structure Primitive3D where
+  kind : Primitive3DKind
+  points : Array Nat
+  color : String := "#7cc7ff"
+  radius : Float := 0.05
+deriving Inhabited, Repr, ToJson, FromJson
+
+/-- A simple 3D scene rendered by the NumLean canvas viewer.
+
+The viewer supports filled triangles/quads, tubes, and balls.  Rotate with left mouse drag and zoom
+with right mouse drag.
+-/
+structure Scene3D where
+  points : Array Point3D
+  primitives : Array Primitive3D
+deriving Inhabited, Repr, ToJson, FromJson
+
+def point3D (x y z : Float) : Point3D where
+  x := x
+  y := y
+  z := z
+
+def triangle3D (a b c : Nat) (color : String := "#7cc7ff") : Primitive3D where
+  kind := .triangle
+  points := #[a, b, c]
+  color := color
+
+def quad3D (a b c d : Nat) (color : String := "#8ff0c7") : Primitive3D where
+  kind := .quad
+  points := #[a, b, c, d]
+  color := color
+
+def tube3D (a b : Nat) (color : String := "#ffd166") (radius : Float := 0.05) : Primitive3D where
+  kind := .tube
+  points := #[a, b]
+  color := color
+  radius := radius
+
+def ball3D (a : Nat) (color : String := "#ff8a80") (radius : Float := 0.08) : Primitive3D where
+  kind := .ball
+  points := #[a]
+  color := color
+  radius := radius
+
 /-- Orientation for product visualizations.
 
 `horizontal` places the left visual item beside the right visual item. `vertical` stacks the left
@@ -246,6 +314,14 @@ instance {α : Type u} [v : Visualizer α] : Visualizer (Visualize.Animation α)
   encodeProps animation := do
     let frames ← animation.frames.mapM v.encodeProps
     pure (toJson ({ frames := frames, timeoutMillis := animation.timeoutMillis } : Visualize.Animation Json))
+
+instance : Visualizer Visualize.Scene3D where
+  javascript := Visualize.javascript
+  encodeProps props :=
+    pure <| Json.mkObj [
+      ("kind", Json.str "scene3d"),
+      ("points", toJson props.points),
+      ("primitives", toJson props.primitives)]
 
 instance {α : Type u} {β : Type v} [va : Visualizer α] [vb : Visualizer β] :
     Visualizer (Visualize.Prod α β) where

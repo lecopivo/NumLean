@@ -8,17 +8,15 @@ public import NumLean.Interfaces.TensorAlgebra
 
 namespace NumLean.Tensor
 
-open Interfaces.Algebra
+open Interfaces.Algebra Tensor TensorRingOps
 
+section Dot
 variable {X : Type u} {I : Type v}
-    {Rs R nI} [VectorType Rs R] [HasDefaultFlatRepr X Rs 1] [IndexType I nI]
+    {Rs R nI} [VectorType Rs R] [HasDefaultFlatRepr X Rs nX] [IndexType I nI]
     [RingOps R] [TensorRingOps Rs R]
 
-
-open Tensor TensorRingOps
-
 def dot (x y : Tensor X I) : R :=
-  let map := Layout.id h(nI * 1)
+  let map := Layout.id h(nI * nX)
   tensorDot x.data map y.data map
 
 instance : Inner R (Tensor X I) where
@@ -27,9 +25,17 @@ instance : Inner R (Tensor X I) where
 theorem dot_def (x y : Tensor X I) :
     Inner.inner R x y
     =
-    let map := Layout.id h(nI * 1)
+    let map := Layout.id h(nI * nX)
     tensorDot x.data map y.data map := by rfl
 
+end Dot
+
+
+section VectorMatrixMul
+
+variable {X : Type u} {I : Type v}
+    {Rs R nI} [VectorType Rs R] [HasDefaultFlatRepr X Rs 1] [IndexType I nI]
+    [RingOps R] [TensorRingOps Rs R]
 
 variable
   {J nJ} [IndexType J nJ]

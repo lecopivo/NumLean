@@ -54,6 +54,10 @@ abbrev Layout.rowMajor {p : Rank} (shape : Shape p) : Layout shape h(shape.numel
 abbrev Layout.colMajor {p : Rank} (shape : Shape p) : Layout shape h(shape.numel) :=
   FinHTupleMap.colMajorMap shape
 
+abbrev Layout.contiguous1D {len n : Nat} (off : Nat) (h : off + len ≤ n) :
+    Layout h(len) h(n) :=
+  FinHTupleMap.contiguous1D off h
+
 @[simp]
 theorem Layout.rowMajor_leaf_eq_id (n : Nat) : Layout.rowMajor h(n) = Layout.id h(n) := rfl
 

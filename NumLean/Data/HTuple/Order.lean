@@ -144,7 +144,89 @@ theorem colMajorIndex_lt_numel {p : Profile} {shape i : HTuple Nat p}
         _ = shape₀.numel * (i₁.colMajorIndex shape₁ + 1) := by
               rw [Nat.mul_succ, Nat.add_comm]
         _ ≤ shape₀.numel * shape₁.numel := by
-              exact Nat.mul_le_mul_left _ (Nat.succ_le_of_lt hidx₁)
+               exact Nat.mul_le_mul_left _ (Nat.succ_le_of_lt hidx₁)
+
+theorem rowMajorUnflatten_lt {p : Profile} (shape : HTuple Nat p) {i : Nat}
+    (hi : i < shape.numel) : rowMajorUnflatten shape i <ₑ shape := by
+  induction shape generalizing i with
+  | leaf n => simpa [rowMajorUnflatten] using hi
+  | prod l r hl hr =>
+      have hprodpos : 0 < l.numel * r.numel := by
+        exact Nat.lt_of_le_of_lt (Nat.zero_le i) (by simpa [HTuple.numel] using hi)
+      have hrpos : 0 < r.numel := pos_of_mul_pos_right hprodpos (Nat.zero_le l.numel)
+      constructor
+      · apply hl
+        exact (Nat.div_lt_iff_lt_mul hrpos).2 (by simpa [HTuple.numel, Nat.mul_comm] using hi)
+      · apply hr
+        exact Nat.mod_lt i hrpos
+
+theorem colMajorUnflatten_lt {p : Profile} (shape : HTuple Nat p) {i : Nat}
+    (hi : i < shape.numel) : colMajorUnflatten shape i <ₑ shape := by
+  induction shape generalizing i with
+  | leaf n => simpa [colMajorUnflatten] using hi
+  | prod l r hl hr =>
+      have hprodpos : 0 < l.numel * r.numel := by
+        exact Nat.lt_of_le_of_lt (Nat.zero_le i) (by simpa [HTuple.numel] using hi)
+      have hlpos : 0 < l.numel := pos_of_mul_pos_left hprodpos (Nat.zero_le r.numel)
+      constructor
+      · apply hl
+        exact Nat.mod_lt i hlpos
+      · apply hr
+        exact (Nat.div_lt_iff_lt_mul hlpos).2 (by simpa [HTuple.numel, Nat.mul_comm] using hi)
+
+theorem rowMajorIndex_rowMajorUnflatten {p : Profile} (shape : HTuple Nat p) {i : Nat}
+    (hi : i < shape.numel) : (rowMajorUnflatten shape i).rowMajorIndex shape = i := by
+  induction shape generalizing i with
+  | leaf n => simp [rowMajorUnflatten, rowMajorIndex]
+  | prod l r hl hr =>
+      have hprodpos : 0 < l.numel * r.numel := by
+        exact Nat.lt_of_le_of_lt (Nat.zero_le i) (by simpa [HTuple.numel] using hi)
+      have hrpos : 0 < r.numel := pos_of_mul_pos_right hprodpos (Nat.zero_le l.numel)
+      have hdiv : i / r.numel < l.numel :=
+        (Nat.div_lt_iff_lt_mul hrpos).2 (by simpa [HTuple.numel, Nat.mul_comm] using hi)
+      have hmod : i % r.numel < r.numel := Nat.mod_lt i hrpos
+      simp [rowMajorUnflatten, rowMajorIndex, hl hdiv, hr hmod, Nat.mod_add_div]
+
+theorem colMajorIndex_colMajorUnflatten {p : Profile} (shape : HTuple Nat p) {i : Nat}
+    (hi : i < shape.numel) : (colMajorUnflatten shape i).colMajorIndex shape = i := by
+  induction shape generalizing i with
+  | leaf n => simp [colMajorUnflatten, colMajorIndex]
+  | prod l r hl hr =>
+      have hprodpos : 0 < l.numel * r.numel := by
+        exact Nat.lt_of_le_of_lt (Nat.zero_le i) (by simpa [HTuple.numel] using hi)
+      have hlpos : 0 < l.numel := pos_of_mul_pos_left hprodpos (Nat.zero_le r.numel)
+      have hmod : i % l.numel < l.numel := Nat.mod_lt i hlpos
+      have hdiv : i / l.numel < r.numel :=
+        (Nat.div_lt_iff_lt_mul hlpos).2 (by simpa [HTuple.numel, Nat.mul_comm] using hi)
+      simp [colMajorUnflatten, colMajorIndex, hl hmod, hr hdiv, Nat.mod_add_div]
+
+theorem rowMajorUnflatten_rowMajorIndex {p : Profile} (shape i : HTuple Nat p)
+    (hi : i <ₑ shape) : rowMajorUnflatten shape (i.rowMajorIndex shape) = i := by
+  induction shape with
+  | leaf n =>
+      cases i with | leaf i => simp [rowMajorUnflatten, rowMajorIndex]
+  | prod l r hl hr =>
+      cases i with | prod il ir =>
+      have hir : ir.rowMajorIndex r < r.numel := rowMajorIndex_lt_numel hi.2
+      have hdiv : (ir.rowMajorIndex r + r.numel * il.rowMajorIndex l) / r.numel =
+          il.rowMajorIndex l := by
+        rw [Nat.add_mul_div_left _ _ (by omega : 0 < r.numel), Nat.div_eq_of_lt hir]
+        simp
+      simp [rowMajorUnflatten, rowMajorIndex, hdiv, Nat.mod_eq_of_lt hir, hl il hi.1, hr ir hi.2]
+
+theorem colMajorUnflatten_colMajorIndex {p : Profile} (shape i : HTuple Nat p)
+    (hi : i <ₑ shape) : colMajorUnflatten shape (i.colMajorIndex shape) = i := by
+  induction shape with
+  | leaf n =>
+      cases i with | leaf i => simp [colMajorUnflatten, colMajorIndex]
+  | prod l r hl hr =>
+      cases i with | prod il ir =>
+      have hil : il.colMajorIndex l < l.numel := colMajorIndex_lt_numel hi.1
+      have hdiv : (il.colMajorIndex l + l.numel * ir.colMajorIndex r) / l.numel =
+          ir.colMajorIndex r := by
+        rw [Nat.add_mul_div_left _ _ (by omega : 0 < l.numel), Nat.div_eq_of_lt hil]
+        simp
+      simp [colMajorUnflatten, colMajorIndex, hdiv, Nat.mod_eq_of_lt hil, hl il hi.1, hr ir hi.2]
 
 @[grind ←, grind_htuple_order ←]
 theorem elementwise_lt_not_le {α} [LinearOrder α] {a b : HTuple α p} : (a <ₑ b) → ¬(b ≤ₑ a) := by

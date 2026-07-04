@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-const VERSION = 'numlean-visualize-v45'
+const VERSION = 'numlean-visualize-v50'
 const RANK_GAP = 3
 const RANK_BLOCK_GAP = 7
 const RANK_STAMP_BORDER = 2
@@ -11,9 +11,11 @@ const HIERARCHY_EDGE_MIN_DY = 30
 const HIERARCHY_EDGE_DIRECTION_STRENGTH = 0.22
 const MATHJAX_URL = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
 const D3_URL = 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js'
+const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js'
 
 let mathJaxPromise = null
 let d3Promise = null
+let threePromise = null
 
 function loadD3() {
   if (globalThis.d3 && typeof globalThis.d3.forceSimulation === 'function') {
@@ -32,6 +34,25 @@ function loadD3() {
     document.head.appendChild(script)
   })
   return d3Promise
+}
+
+function loadThree() {
+  if (globalThis.THREE && typeof globalThis.THREE.WebGLRenderer === 'function') {
+    return Promise.resolve(globalThis.THREE)
+  }
+  if (threePromise) return threePromise
+  threePromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = THREE_URL
+    script.async = true
+    script.onload = () => {
+      if (globalThis.THREE && typeof globalThis.THREE.WebGLRenderer === 'function') resolve(globalThis.THREE)
+      else reject(new Error(`loaded ${THREE_URL}, but THREE.WebGLRenderer is unavailable`))
+    }
+    script.onerror = () => reject(new Error(`failed to load ${THREE_URL}`))
+    document.head.appendChild(script)
+  })
+  return threePromise
 }
 
 function loadMathJax() {
@@ -96,6 +117,21 @@ function asNumber(x) {
 
 function asArray(xs) {
   return Array.isArray(xs) ? xs : []
+}
+
+function clamp(x, lo, hi) {
+  return Math.max(lo, Math.min(hi, x))
+}
+
+function primitiveKind(kind) {
+  if (typeof kind === 'string') return kind
+  if (kind && typeof kind === 'object') {
+    if (typeof kind.name === 'string') return kind.name
+    if (typeof kind.kind === 'string') return kind.kind
+    const keys = Object.keys(kind)
+    if (keys.length === 1) return keys[0]
+  }
+  return String(kind || '')
 }
 
 function displayText(text) {
@@ -336,6 +372,11 @@ function Style() {
     .numlean-vis .hierarchy-node.selected rect { fill: #ffd166; stroke: #fff1b8; stroke-width: 3; }
     .numlean-vis .hierarchy-node.input rect { fill: #8ff0c7; stroke: #d9ffef; stroke-width: 3; }
     .numlean-vis .hierarchy-node.output rect { fill: #ffd166; stroke: #fff1b8; stroke-width: 3; }
+    .numlean-vis .scene3d-card { background: rgba(7,11,19,.86); border: 1px solid rgba(255,255,255,.1); border-radius: 13px; padding: 10px; overflow: hidden; min-width: 0; user-select: none; }
+    .numlean-vis .scene3d-view { width: 100%; height: min(68vh, 620px); min-height: 360px; display: block; border-radius: 11px; background: radial-gradient(circle at 48% 42%, #1b2740 0%, #0b111d 54%, #05070c 100%); cursor: grab; overflow: hidden; }
+    .numlean-vis .scene3d-view.dragging { cursor: grabbing; }
+    .numlean-vis .scene3d-view canvas { display: block; width: 100%; height: 100%; }
+    .numlean-vis .scene3d-help { color: var(--muted); font-size: 12px; line-height: 1.35; padding: 8px 2px 0; }
     @media (max-width: 760px) { .numlean-vis .hierarchy { grid-template-columns: 1fr; } }
     @media (max-width: 760px) { .numlean-vis .pair, .numlean-vis .panels { grid-template-columns: 1fr; } }
   `)
@@ -1171,6 +1212,232 @@ function HierarchyGraphCard({ item }) {
   )
 }
 
+function normalizePoint3D(p) {
+  return { x: asNumber(p && p.x), y: asNumber(p && p.y), z: asNumber(p && p.z) }
+}
+
+function sceneBounds(points) {
+  if (!points.length) return { center: { x: 0, y: 0, z: 0 }, radius: 1 }
+  let minX = points[0].x, maxX = points[0].x
+  let minY = points[0].y, maxY = points[0].y
+  let minZ = points[0].z, maxZ = points[0].z
+  for (const p of points) {
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x)
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y)
+    minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z)
+  }
+  const center = { x: (minX + maxX) / 2, y: (minY + maxY) / 2, z: (minZ + maxZ) / 2 }
+  let radius = 1
+  for (const p of points) radius = Math.max(radius, Math.hypot(p.x - center.x, p.y - center.y, p.z - center.z))
+  return { center, radius }
+}
+
+function pointToVector3(THREE, p, center) {
+  return new THREE.Vector3(p.x - center.x, p.y - center.y, p.z - center.z)
+}
+
+function scene3DMaterial(THREE, color) {
+  return new THREE.MeshPhongMaterial({
+    color: color || '#7cc7ff',
+    shininess: 58,
+    specular: 0x34445c,
+    side: THREE.DoubleSide,
+    depthTest: true,
+    depthWrite: true
+  })
+}
+
+function scene3DPolyGeometry(THREE, vertices) {
+  const geometry = new THREE.BufferGeometry()
+  const positions = []
+  const faces = vertices.length === 4 ? [[0, 1, 2], [0, 2, 3]] : [[0, 1, 2]]
+  for (const face of faces) {
+    for (const i of face) positions.push(vertices[i].x, vertices[i].y, vertices[i].z)
+  }
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geometry.computeVertexNormals()
+  return geometry
+}
+
+function orientCylinder(THREE, mesh, a, b) {
+  const midpoint = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5)
+  const direction = new THREE.Vector3().subVectors(b, a)
+  mesh.position.copy(midpoint)
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize())
+}
+
+function buildScene3D(THREE, item) {
+  const points = asArray(item.points).map(normalizePoint3D)
+  const primitives = asArray(item.primitives)
+  const { center, radius } = sceneBounds(points)
+  const group = new THREE.Group()
+
+  for (const prim of primitives) {
+    const ids = asArray(prim && prim.points).map(asNumber)
+    const vertices = ids.map((id) => points[id]).filter(Boolean).map((p) => pointToVector3(THREE, p, center))
+    const kind = primitiveKind(prim && prim.kind)
+    const material = scene3DMaterial(THREE, prim && prim.color)
+    const radiusWorld = Math.max(radius * 0.008, asNumber((prim && prim.radius) || 0.05))
+    let mesh = null
+
+    if ((kind === 'triangle' || kind === 'quad') && vertices.length >= (kind === 'triangle' ? 3 : 4)) {
+      mesh = new THREE.Mesh(scene3DPolyGeometry(THREE, vertices.slice(0, kind === 'triangle' ? 3 : 4)), material)
+    } else if (kind === 'tube' && vertices.length >= 2) {
+      const length = vertices[0].distanceTo(vertices[1])
+      const geometry = new THREE.CylinderGeometry(radiusWorld, radiusWorld, length, 24, 1, false)
+      mesh = new THREE.Mesh(geometry, material)
+      orientCylinder(THREE, mesh, vertices[0], vertices[1])
+    } else if (kind === 'ball' && vertices.length >= 1) {
+      const geometry = new THREE.SphereGeometry(radiusWorld, 32, 16)
+      mesh = new THREE.Mesh(geometry, material)
+      mesh.position.copy(vertices[0])
+    }
+
+    if (mesh) group.add(mesh)
+  }
+
+  return { group, radius }
+}
+
+function disposeScene3DObject(object) {
+  object.traverse((child) => {
+    if (child.geometry) child.geometry.dispose()
+    if (child.material) {
+      if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose())
+      else child.material.dispose()
+    }
+  })
+}
+
+function Scene3DCard({ item }) {
+  const viewRef = React.useRef(null)
+  const threeRef = React.useRef(null)
+  const stateRef = React.useRef({ yaw: -0.75, pitch: 0.45, zoom: 1, dragging: false, button: 0, x: 0, y: 0 })
+  const [dragging, setDragging] = React.useState(false)
+
+  function render() {
+    const ctx = threeRef.current
+    if (!ctx) return
+    const rect = ctx.view.getBoundingClientRect()
+    const width = Math.max(1, Math.floor(rect.width))
+    const height = Math.max(1, Math.floor(rect.height))
+    ctx.renderer.setSize(width, height, false)
+    ctx.camera.aspect = width / height
+    ctx.camera.updateProjectionMatrix()
+
+    const state = stateRef.current
+    const distance = Math.max(0.05, ctx.radius * 3.2 / state.zoom)
+    const cp = Math.cos(state.pitch)
+    ctx.camera.position.set(
+      Math.sin(state.yaw) * cp * distance,
+      Math.sin(state.pitch) * distance,
+      Math.cos(state.yaw) * cp * distance
+    )
+    ctx.camera.lookAt(0, 0, 0)
+    ctx.keyLight.position.copy(ctx.camera.position).normalize().multiplyScalar(ctx.radius * 4)
+    ctx.renderer.render(ctx.scene, ctx.camera)
+  }
+
+  React.useEffect(() => {
+    let cancelled = false
+    const view = viewRef.current
+    if (!view) return
+
+    loadThree().then((THREE) => {
+      if (cancelled || !viewRef.current) return
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+      renderer.setPixelRatio(window.devicePixelRatio || 1)
+      renderer.setClearColor(0x000000, 0)
+      renderer.outputColorSpace = THREE.SRGBColorSpace
+      view.appendChild(renderer.domElement)
+
+      const scene = new THREE.Scene()
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 10000)
+      const built = buildScene3D(THREE, item)
+      scene.add(built.group)
+      scene.add(new THREE.HemisphereLight(0xdbeafe, 0x151b26, 1.8))
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.3)
+      scene.add(keyLight)
+      const fillLight = new THREE.DirectionalLight(0x8fb8ff, 0.72)
+      fillLight.position.set(-1, 1.5, -2).normalize().multiplyScalar(built.radius * 3)
+      scene.add(fillLight)
+
+      threeRef.current = { THREE, renderer, scene, camera, group: built.group, keyLight, view, radius: built.radius }
+      render()
+    }).catch((err) => {
+      if (!cancelled && viewRef.current) viewRef.current.textContent = err && err.message ? err.message : 'failed to load Three.js'
+    })
+
+    function resize() { render() }
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(resize)
+    if (observer && view) observer.observe(view)
+    window.addEventListener('resize', resize)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('resize', resize)
+      if (observer) observer.disconnect()
+      const ctx = threeRef.current
+      threeRef.current = null
+      if (ctx) {
+        disposeScene3DObject(ctx.scene)
+        ctx.renderer.dispose()
+        if (ctx.renderer.domElement && ctx.renderer.domElement.parentNode) {
+          ctx.renderer.domElement.parentNode.removeChild(ctx.renderer.domElement)
+        }
+      }
+    }
+  }, [item])
+
+  function pointerDown(e) {
+    if (e.button !== 0 && e.button !== 2) return
+    e.preventDefault()
+    stateRef.current.dragging = true
+    stateRef.current.button = e.button
+    stateRef.current.x = e.clientX
+    stateRef.current.y = e.clientY
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setDragging(true)
+  }
+
+  function pointerMove(e) {
+    const state = stateRef.current
+    if (!state.dragging) return
+    e.preventDefault()
+    const dx = e.clientX - state.x
+    const dy = e.clientY - state.y
+    state.x = e.clientX
+    state.y = e.clientY
+    if (state.button === 0) {
+      state.yaw -= dx * 0.01
+      state.pitch = clamp(state.pitch + dy * 0.01, -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05)
+    } else if (state.button === 2) {
+      state.zoom = clamp(state.zoom * Math.exp(-dy * 0.01), 0.08, 50)
+    }
+    render()
+  }
+
+  function pointerUp(e) {
+    if (!stateRef.current.dragging) return
+    stateRef.current.dragging = false
+    try { e.currentTarget.releasePointerCapture(e.pointerId) } catch (_e) {}
+    setDragging(false)
+  }
+
+  return React.createElement('div', { className: 'scene3d-card' },
+    React.createElement('div', {
+      ref: viewRef,
+      className: `scene3d-view${dragging ? ' dragging' : ''}`,
+      onPointerDown: pointerDown,
+      onPointerMove: pointerMove,
+      onPointerUp: pointerUp,
+      onPointerCancel: pointerUp,
+      onContextMenu: (e) => e.preventDefault()
+    }),
+    React.createElement('div', { className: 'scene3d-help' }, 'Left-drag rotates. Right-drag zooms.')
+  )
+}
+
 function ratioPair(value, fallbackA = 1, fallbackB = 1) {
   const xs = asArray(value)
   const a = Math.max(1, asNumber(xs[0] == null ? fallbackA : xs[0]))
@@ -1186,6 +1453,7 @@ function itemKind(item) {
   if (item.sourceRows != null || item.sourceValues != null || item.selected != null) return 'slice'
   if (item.frames != null) return 'animation'
   if (item.items != null) return 'flow'
+  if (item.points != null && item.primitives != null) return 'scene3d'
   if (item.left != null && item.right != null) return 'prod'
   if (item.classes != null && item.classEdges != null && item.instances != null) return 'hierarchyGraph'
   if (item.rows != null && item.cols == null) return 'grid'
@@ -1206,6 +1474,7 @@ function Item({ item }) {
   if (kind === 'highRankLayout') return React.createElement(HighRankLayoutCard, { item })
   if (kind === 'slice') return React.createElement(SliceCard, { item })
   if (kind === 'hierarchyGraph') return React.createElement(HierarchyGraphCard, { item })
+  if (kind === 'scene3d') return React.createElement(Scene3DCard, { item })
   if (kind === 'animation') return React.createElement(Animation, { item })
   if (kind === 'prod') {
     const options = item.options || {}
@@ -1244,9 +1513,32 @@ function visualPayload(props) {
   return props
 }
 
+function visualRoot(props) {
+  const payload = visualPayload(props)
+  if (payload && typeof payload === 'object' && payload.numleanVisualizeOptions && payload.item != null) {
+    return { item: payload.item, options: payload.numleanVisualizeOptions }
+  }
+  return { item: payload, options: {} }
+}
+
+function rootStyle(options, width) {
+  const style = {}
+  const aspectRatio = options && options.aspectRatio
+  if (aspectRatio) {
+    const aspect = ratioPair(aspectRatio, 1, 1)
+    style.aspectRatio = `${aspect[0]} / ${aspect[1]}`
+    if (width > 0) style.height = Math.max(120, width * aspect[1] / aspect[0])
+  }
+  const maxHeightRatio = asNumber(options && options.maxHeightRatio)
+  if (maxHeightRatio > 0 && width > 0) style.maxHeight = Math.max(120, width * maxHeightRatio)
+  return style
+}
+
 export default function Visualize(props) {
-  return React.createElement('div', { className: 'numlean-vis', 'data-version': VERSION },
+  const [ref, width] = useElementWidth()
+  const { item, options } = visualRoot(props)
+  return React.createElement('div', { ref, className: 'numlean-vis', 'data-version': VERSION, style: rootStyle(options, width) },
     React.createElement(Style),
-    React.createElement(Item, { item: visualPayload(props) })
+    React.createElement(Item, { item })
   )
 }

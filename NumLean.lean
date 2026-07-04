@@ -57,6 +57,8 @@ public import NumLean.Data.Scalars.Float64.Basic
 public import NumLean.Data.Scalars.Float64.Float64Array
 public import NumLean.Data.Scalars.Float64.Float64Vector
 public import NumLean.Data.Scalars.Float64.HasFlatRepr
+public import NumLean.Data.Scalars.Float64.Impl.TensorType
+public import NumLean.Data.Scalars.Float64.Impl.TensorAlgebra
 public import NumLean.Data.Scalars.Float64.RealModel
 public import NumLean.Data.Scalars.Float64.TensorAlgebra
 public import NumLean.Data.Scalars.Float64.TensorType
@@ -72,9 +74,6 @@ public import NumLean.Data.Scalars.UInt8.VectorType
 public import NumLean.Data.Sigma
 public import NumLean.Data.Tensor
 public import NumLean.Data.Tensor.Algebra
-public import NumLean.Data.Tensor.Algebra.Group
-public import NumLean.Data.Tensor.Algebra.Group.Lawful
-public import NumLean.Data.Tensor.Algebra.Group.Ops
 public import NumLean.Data.Tensor.Algebra.Lawful
 public import NumLean.Data.Tensor.Algebra.Ops
 public import NumLean.Data.Tensor.Algebra.VMul
@@ -191,4 +190,3 @@ public import NumLean.Tactic.ApplyRuleSets.RuleProc
 public import NumLean.Tactic.ApplyRuleSets.Types
 public import NumLean.Tactic.TBounds
 @[expose] public section
-

@@ -98,26 +98,26 @@ def append {m n : Nat} (xs : Complex32Vector m) (ys : Complex32Vector n) :
   { data := xs.data.append ys.data
     size_eq := by simp [xs.size_eq, ys.size_eq]; omega }
 
-@[ext]
-theorem ext {n : Nat} {xs ys : Complex32Vector n} (h : ∀ i : Nat, (h : i < n) → xs[i] = ys[i]) :
-    xs = ys := sorry
+-- @[ext]
+-- theorem ext {n : Nat} {xs ys : Complex32Vector n} (h : ∀ i : Nat, (h : i < n) → xs[i] = ys[i]) :
+--     xs = ys := sorry
 
--- use extensionality
-@[simp]
-theorem toVector_ofVector {n : Nat} (xs : Vector Complex32 n) :
-    toVector (ofVector xs) = xs := by
-  ext i
-  · simp only [toVector, Vector.getElem_ofFn]
-    change (ofVector xs).data[2 * i]'_ = (xs[i]).re
-    exact ofVector_get_re xs i _
-  · simp only [toVector, Vector.getElem_ofFn]
-    change (ofVector xs).data[2 * i + 1]'_ = (xs[i]).im
-    exact ofVector_get_im xs i _
+-- -- use extensionality
+-- @[simp]
+-- theorem toVector_ofVector {n : Nat} (xs : Vector Complex32 n) :
+--     toVector (ofVector xs) = xs := by
+--   ext i
+--   · simp only [toVector, Vector.getElem_ofFn]
+--     change (ofVector xs).data[2 * i]'_ = (xs[i]).re
+--     exact ofVector_get_re xs i _
+--   · simp only [toVector, Vector.getElem_ofFn]
+--     change (ofVector xs).data[2 * i + 1]'_ = (xs[i]).im
+--     exact ofVector_get_im xs i _
 
 
-theorem uget_spec {n : Nat} (xs : Complex32Vector n) (i : USize) (h : i.toNat < n) :
-    uget xs i h = (toVector xs)[i.toNat]'h := by
-  ext <;> simp [uget, toVector] <;> rfl
+-- theorem uget_spec {n : Nat} (xs : Complex32Vector n) (i : USize) (h : i.toNat < n) :
+--     uget xs i h = (toVector xs)[i.toNat]'h := by
+--   ext <;> simp [uget, toVector] <;> rfl
 
 end Complex32Vector
 

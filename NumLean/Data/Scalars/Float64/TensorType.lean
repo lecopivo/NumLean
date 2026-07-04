@@ -2,6 +2,7 @@ module
 
 public import NumLean.Interfaces.TensorType
 public import NumLean.Data.Scalars.Float64.VectorType
+public import NumLean.Data.Scalars.Float64.Impl.TensorType
 import all NumLean.Data.Scalars.Float64.VectorType
 
 @[expose] public section
@@ -28,6 +29,7 @@ theorem fold_equiv {ρ : Type u} {α : outParam (Type v)}
       simp only [List.foldl_cons]
       simpa using ih (init := f a.1 a.2 init)
 
+@[implemented_by copySliceImpl]
 def copySlice {n m} {r : Rank} {shape : Shape r}
     (src : Float64Vector n) (srcMap : Layout shape h(n))
     (dst : Float64Vector m) (dstMap : Layout shape h(m)) :
@@ -37,6 +39,7 @@ def copySlice {n m} {r : Rank} {shape : Shape r}
     dst[dstMap i] := src[srcMap i]
   return dst
 
+@[implemented_by copySliceSelfImpl]
 def copySliceSelf {n} {r : Rank} {shape : Shape r}
     (data : Float64Vector n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n)) :
     Float64Vector n := Id.run do
@@ -46,6 +49,7 @@ def copySliceSelf {n} {r : Rank} {shape : Shape r}
   return data
 
 /-- Swap data within one vector through two corresponding disjoint slices. -/
+@[implemented_by swapSliceSelfImpl]
 def swapSliceSelf {n} {r : Rank} {shape : Shape r}
     (data : Float64Vector n) (map : Layout shape h(n)) (map' : Layout shape h(n)) :
     Float64Vector n := Id.run do

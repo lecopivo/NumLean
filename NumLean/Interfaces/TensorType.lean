@@ -73,3 +73,54 @@ instance : TensorType (Vector α) where
   toVector_copySliceSelf := by intros; rfl
   swapSliceSelf := Vector.swapSliceSelf
   toVector_swapSliceSelf := by intros; rfl
+
+namespace TensorType
+
+open Classical Tensor VectorType
+
+variable {Ks : Nat → Type} {K : Type} [VectorType Ks K] [TensorType Ks (K:=K)]
+variable {r : Rank}
+
+@[simp]
+theorem get_copySlice {m n : Nat} {shape : Shape r}
+    (src : Ks n) (srcMap : Layout shape h(n))
+    (dst : Ks m) (dstMap : Layout shape h(m))
+    (hdst : dstMap.Injective) (idx : Nat) (hidx : idx < m) :
+    VectorType.get (TensorType.copySlice (Ks:=Ks) (K:=K) src srcMap dst dstMap hdst) idx hidx
+    =
+    if hi : idx ∈ dstMap.rangeNat then
+      VectorType.get src (srcMap (dstMap.rangeNatInv idx hi)) (by get_elem_tactic)
+    else
+      VectorType.get dst idx hidx := by
+  rw [VectorType.get_spec, TensorType.toVector_copySlice]
+  simpa only [VectorType.get_spec] using
+    (Vector.getElem_copySlice (src := toVector src) (srcMap := srcMap)
+      (dst := toVector dst) (dstMap := dstMap) (h := hdst) idx hidx)
+
+set_option linter.unusedSectionVars false in
+proof_wanted get_copySliceSelf {n : Nat} {shape : Shape r}
+    (data : Ks n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
+    (hdst : dstMap.Injective) (h : Disjoint srcMap.range dstMap.range)
+    (idx : Nat) (hidx : idx < n) :
+    VectorType.get (TensorType.copySliceSelf (Ks:=Ks) (K:=K) data srcMap dstMap hdst h) idx hidx
+    =
+    if hi : idx ∈ dstMap.rangeNat then
+      VectorType.get data (srcMap (dstMap.rangeNatInv idx hi)) (by get_elem_tactic)
+    else
+      VectorType.get data idx hidx
+
+set_option linter.unusedSectionVars false in
+proof_wanted get_swapSliceSelf {n : Nat} {shape : Shape r}
+    (data : Ks n) (map : Layout shape h(n)) (map' : Layout shape h(n))
+    (hmap : map.Injective) (hmap' : map'.Injective) (h : Disjoint map.range map'.range)
+    (idx : Nat) (hidx : idx < n) :
+    VectorType.get (TensorType.swapSliceSelf (Ks:=Ks) (K:=K) data map map' hmap hmap' h) idx hidx
+    =
+    if hk : idx ∈ map.rangeNat then
+      VectorType.get data (map' (map.rangeNatInv idx hk)) (by get_elem_tactic)
+    else if hk : idx ∈ map'.rangeNat then
+      VectorType.get data (map (map'.rangeNatInv idx hk)) (by get_elem_tactic)
+    else
+      VectorType.get data idx hidx
+
+end TensorType

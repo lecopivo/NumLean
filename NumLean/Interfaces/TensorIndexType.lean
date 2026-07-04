@@ -64,28 +64,27 @@ end API
 instance {I nI} [IndexType I nI] : TensorIndexTypeOfRank I nI .leaf (.leaf nI) where
   size_eq_shape_size := by rfl
   layout := .id nI
-  compact_layout := sorry
+  compact_layout := FinHTupleMap.bijective_id h(nI)
   tensorEquiv := (IndexType.equivFin (I := I)).trans (FinHTuple.equivFin h(nI)).symm
   layout_eval_tensorEquiv_eq_toFin := by
     intro i; simp [FinHTuple.equivFin, IndexType.equivFin]
 
 instance {r} {shape : HTuple Nat r} : TensorIndexTypeOfRank (FinHTuple shape) shape.numel r shape where
-  toIdx i := ((FinHTuple.equivFin shape) i).toIdx
-  fromIdx i := (FinHTuple.equivFin shape).symm i.toFin
-  left_inv := by intro h; sorry
-  right_inv := by intro h; sorry
   toFin i := (FinHTuple.equivFin shape) i
   fromFin i := (FinHTuple.equivFin shape).symm i
-  left_inv' := by exact Equiv.leftInverse_symm (FinHTuple.equivFin shape)
-  right_inv' := by exact Equiv.rightInverse_symm (FinHTuple.equivFin shape)
+  left_inv := by exact Equiv.leftInverse_symm (FinHTuple.equivFin shape)
+  right_inv := by exact Equiv.rightInverse_symm (FinHTuple.equivFin shape)
   size_eq_shape_size := by simp
   layout := (FinHTupleMap.id shape).linearize
-  compact_layout := sorry
+  compact_layout := by
+    exact FinHTupleMap.bijective_comp (FinHTupleMap.rowMajorMap shape)
+      (FinHTupleMap.id shape) (FinHTupleMap.bijective_rowMajorMap shape)
+      (FinHTupleMap.bijective_id shape)
   tensorEquiv := Equiv.refl _
   layout_eval_tensorEquiv_eq_toFin := by
     intros; simp
     simp [FinHTuple.equivFin_val_eq_linearIndex_zero]
-    sorry
+    exact (HTuple.Range.linearIndex_zero shape _).symm
 
 /-- Default h-rank of `Fin n` is `.leaf` -/
 instance : TensorIndexType (Fin n) n .leaf (.leaf n) where
@@ -98,12 +97,29 @@ instance {I : Type u} {J : Type v} {nI nJ : Nat}
     TensorIndexTypeOfRank (I × J) (nI * nJ) (.prod p q) (HTuple.prod shapeI shapeJ) where
   size_eq_shape_size := by
     simp [HTuple.numel, size_eq_shape_size (I:=I) (rank := p), size_eq_shape_size (I:=J) (rank := q)]
-  layout := by
-    rw [size_eq_shape_size (I := I) (rank := p), size_eq_shape_size (I := J) (rank := q)]
-    exact Layout.rowMajor (HTuple.prod shapeI shapeJ)
-  compact_layout := by sorry
+  layout :=
+    (Layout.rowMajor (h(nI).prod h(nJ))).comp
+      ((layout I).pair (layout J))
+  compact_layout := by
+    exact FinHTupleMap.bijective_comp (Layout.rowMajor (HTuple.prod h(nI) h(nJ)))
+      ((layout I).pair (layout J))
+      (FinHTupleMap.bijective_rowMajorMap (HTuple.prod h(nI) h(nJ)))
+      (FinHTupleMap.bijective_pair (compact_layout (I := I) (rank := p))
+        (compact_layout (I := J) (rank := q)))
   tensorEquiv := (Equiv.prodCongr tensorEquiv tensorEquiv).trans (FinHTuple.prodEquiv _ _).symm
-  layout_eval_tensorEquiv_eq_toFin := by sorry
+  layout_eval_tensorEquiv_eq_toFin := by
+    intro ij
+    cases ij with | mk i j =>
+    have hi := layout_eval_tensorEquiv_eq_toFin (I := I) (rank := p) i
+    have hj := layout_eval_tensorEquiv_eq_toFin (I := J) (rank := q) j
+    have hprod : (toFin (i, j) : Fin (nI * nJ)) = finProdFinEquiv (toFin i, toFin j) := rfl
+    rw [hprod]
+    simp [FinHTuple.prodEquiv, hi, hj]
+    change (FinHTupleMap.rowMajorMap (HTuple.prod h(nI) h(nJ)))
+        (HTuple.prod h((toFin i).val) h((toFin j).val)) =
+      h((toFin j).val + nJ * (toFin i).val)
+    rw [FinHTupleMap.eval_rowMajorMap]
+    rfl
 
 instance {I : Type u} {J : Type v} {nI nJ : Nat}
     {p q : HTuple.Profile} {shapeI : HTuple Nat p} {shapeJ : HTuple Nat q}

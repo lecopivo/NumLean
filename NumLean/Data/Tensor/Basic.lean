@@ -2,6 +2,7 @@ module
 
 public import NumLean.Data.FinHTuple
 public import NumLean.Interfaces.HasFlatRepr.Basic
+public import NumLean.Interfaces.Fold.Lemmas
 public import NumLean.Interfaces.IndexType
 public import NumLean.Interfaces.SetElem
 public import NumLean.Interfaces.TensorIndexType
@@ -94,6 +95,10 @@ instance : SetElem (Tensor X I) I X (fun _ _ => True) where
   setElem xs i x _ := set xs i x
   setElem_valid := by intros; simp
 
+instance {I' dom} [ui : UntypedIndex I I' dom] : SetElem (Tensor X I) I' X (fun _ i' => dom i') where
+  setElem xs i x h := setElem xs (ui.equiv.symm ⟨i,h⟩) x
+  setElem_valid := by intros; simp
+
 theorem setElem_eq_set (xs : Tensor X I) (i : I) (x : X) (h : True) :
     setElem xs i x h = set xs i x := by
   rfl
@@ -164,6 +169,15 @@ theorem ext {xs ys : Tensor X I} (h : (i : I) → xs[i] = ys[i]) : xs = ys := by
     simpa [i, getElem_eq_get, get, offset, HasFlatRepr.getComp_get_eq_vector_get,
       Nat.div_add_mod, Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc] using hcomp
 
+theorem extComp {xs ys : Tensor X I}
+    (h : (i : I) → (j : Nat) → (hj : j < nX) →
+      xs.getComp i j hj = ys.getComp i j hj) : xs = ys := by
+  apply ext
+  intro i
+  apply HasFlatRepr.ext (Ks := Ks)
+  intro j hj
+  simpa [Tensor.getComp] using h i j hj
+
 
 /-! ### Construction -/
 
@@ -187,9 +201,37 @@ def ofFn [Inhabited X] (f : I → X) : Tensor X I := Id.run do
 
 @[simp]
 theorem getElem_ofFn [Inhabited X] (f : I → X) (i : I) : (ofFn f)[i] = f i := by
+  classical
   unfold ofFn
-  simp [Id.run, pure, bind]
-  sorry
+  simp [Id.run]
+  change (Fold.fold (0...nI) (replicate (I:=I) default) (fun idx h xs =>
+    setElem xs (fromFin ⟨idx, by simpa [Std.Rco.mem_iff] using h⟩)
+      (f (fromFin ⟨idx, by simpa [Std.Rco.mem_iff] using h⟩)) True.intro))[i] = f i
+  let imap : (idx : Nat) → idx ∈ (0...nI : Std.Rco Nat) → I := fun idx h =>
+    fromFin ⟨idx, by simpa [Std.Rco.mem_iff] using h⟩
+  let update : (idx : Nat) → idx ∈ (0...nI : Std.Rco Nat) → X → X := fun idx h _ =>
+    f (imap idx h)
+  have hinj : Function.Injective (fun idx : {idx // idx ∈ (0...nI : Std.Rco Nat)} =>
+      imap idx.1 idx.2) := by
+    intro a b h
+    apply Subtype.ext
+    have hfin := congrArg (fun j : I => (toFin j).1) h
+    simpa [imap, IndexType.toFin_fromFin] using hfin
+  have hfold := Fold.fold_getElem_setElem_ext
+      (range := (0...nI : Std.Rco Nat))
+      (init := replicate (I:=I) default)
+      (imap := imap)
+      (f := update)
+      (j := i)
+      (hvalid := fun _ _ => True.intro)
+      (himap' := hinj)
+  have hi : i ∈ Set.range (fun idx : {idx // idx ∈ (0...nI : Std.Rco Nat)} => imap idx.1 idx.2) := by
+    exact ⟨⟨(toFin i).1, by simp [Std.Rco.mem_iff, (toFin i).2]⟩, by
+      simp [imap, IndexType.fromFin_toFin]⟩
+  rw [hfold]
+  simp only [hi, ↓reduceDIte]
+  have hchoose := Classical.choose_spec hi
+  simpa [imap] using congrArg f hchoose
 
 def ofVector [Inhabited X] (xs : Vector X nI) : Tensor X I :=
   ofFn fun i => xs[IndexType.toFin i]

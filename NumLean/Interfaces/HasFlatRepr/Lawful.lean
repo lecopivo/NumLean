@@ -89,6 +89,15 @@ class LawfulStar (X : Type u) (Ks : Nat → Type v) {K : Type w} {nX : Nat}
   getComp_star (x : X) (i : Nat) (h : i < nX) :
     getComp (Ks := Ks) (K := K) (star x) i h = star (getComp (Ks := Ks) (K := K) x i h)
 
+open ComplexConjugate in
+class LawfulInner (X : Type v) (Ks : Nat → Type w) {K : Type z} {nX : Nat}
+    [VectorType Ks K] [HasFlatRepr X Ks nX] [RCLike K] [Inner K X] : Prop where
+  inner_eq_sum (x y : X) :
+    Inner.inner K x y
+    =
+    ∑ i : Fin nX, conj (getComp (Ks := Ks) (K := K) x i.1 i.2) *
+                  getComp (Ks := Ks) (K := K) y i.1 i.2
+
 section ScalarInstances
 
 variable {R : Type u} {Rs : Nat → Type v} [VectorType Rs R]

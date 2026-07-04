@@ -7,6 +7,7 @@ public import Tests.CCompilerIRSemantics
 public import Tests.DyadicInterval
 public import Tests.ExternIn
 public import Tests.Float32ArrayEval
+public import Tests.Float64TensorAlgebraEval
 public import Tests.Float64TensorAlgebraFailures
 public import Tests.FloatTensor
 public import Tests.FoldEmbedding
@@ -31,4 +32,5 @@ public import Tests.Visualize
 @[expose] public section
 
 def main : IO Unit := do
+  NumLean.Tests.Float64TensorAlgebraEval.run
   IO.println "tests done!"

@@ -60,7 +60,6 @@ structure InjectiveView (X : Type u) (J : Type v) (I : Type w)
   extends View X J I where
   injective : layout.Injective
 
-
 structure BijectiveView (X : Type u) (J : Type v) (I : Type w)
     {Ks K nX} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX]
     {nJ jrank jshape} [TensorIndexType J nJ jrank jshape]
@@ -70,6 +69,7 @@ structure BijectiveView (X : Type u) (J : Type v) (I : Type w)
 
 
 attribute [coe] InjectiveView.toView BijectiveView.toInjectiveView
+attribute [grind ←] InjectiveView.injective BijectiveView.bijective
 
 open Interfaces.Algebra
 
@@ -132,7 +132,7 @@ def set (dst : InjectiveView X J I) (src : View X J K) : InjectiveView X J I :=
   have hi := TensorIndexTypeOfRank.size_eq_shape_size (I := I) (rank:= irank)
   let data := copySlice R
     src.data.data (srcMap.cast _ _ rfl (by simp [← hk]))
-    dst.data.data (dstMap.cast _ _ rfl (by simp [← hi])) sorry
+    dst.data.data (dstMap.cast _ _ rfl (by simp [← hi])) (by grind)
   { data := {data}, layout := dst.layout, injective := dst.injective }
 
 open TensorType in
@@ -144,7 +144,7 @@ def fill (dst : InjectiveView X J I) (x : X) : InjectiveView X J I :=
   let dstMap := (dst.layout.pair (.id h(nX))).linearize
   let data := copySlice R
     srcData (srcMap.cast _ _ rfl (by simp [← hj]))
-    dst.data.data (dstMap.cast _ _ rfl (by simp [← hi])) sorry
+    dst.data.data (dstMap.cast _ _ rfl (by simp [← hi])) (by grind)
   { data := {data}, layout := dst.layout, injective := dst.injective }
 
 def toBijective (x : InjectiveView X J I) (h : x.layout.Bijective) : BijectiveView X J I where
@@ -174,7 +174,7 @@ def _root_.NumLean.Tensor.toView (x : Tensor X I) : BijectiveView X I I where
   data := x
   layout := .id ishape
   injective := by grind
-  bijective := by sorry
+  bijective := by grind
 
 def _root_.NumLean.Tensor.mkView (x : Tensor X I)
     {r} {shape : Shape r} (layout : Layout shape ishape)
@@ -195,7 +195,7 @@ instance : HAdd (InjectiveView X J I) (View X J K) (InjectiveView X J I) where
     have hi := TensorIndexTypeOfRank.size_eq_shape_size (I := I) (rank:= irank)
     let data := tensorAxpy (1 : R)
       y.data.data (ymap.cast _ _ rfl (by simp [← hk]))
-      x.data.data (xmap.cast _ _ rfl (by simp [← hi])) sorry
+      x.data.data (xmap.cast _ _ rfl (by simp [← hi])) (by grind)
     { data := {data}, layout := x.layout, injective := x.injective }
 
 instance : HAdd (InjectiveView X J I) (InjectiveView X J K) (InjectiveView X J I) where
@@ -221,7 +221,7 @@ instance : HSub (InjectiveView X J I) (View X J K) (InjectiveView X J I) where
     have hi := TensorIndexTypeOfRank.size_eq_shape_size (I := I) (rank:= irank)
     let data := tensorAxpy (- 1 : R) (shape := jshape.prod h(nX))
       y.data.data (ymap.cast _ _ rfl (by simp [← hk]))
-      x.data.data (xmap.cast _ _ rfl (by simp [← hi])) sorry
+      x.data.data (xmap.cast _ _ rfl (by simp [← hi])) (by grind)
     { data := {data}, layout := x.layout, injective := x.injective }
 
 instance : HSub (InjectiveView X J I) (InjectiveView X J K) (InjectiveView X J I) where
@@ -244,7 +244,7 @@ instance : Neg (InjectiveView X J I) where
     let xmap := (x.layout.pair (.id h(nX))).linearize
     have hi := TensorIndexTypeOfRank.size_eq_shape_size (I := I) (rank:= irank)
     let data := tensorScal (-1 : R)
-      x.data.data (xmap.cast _ _ rfl (by simp [← hi])) sorry
+      x.data.data (xmap.cast _ _ rfl (by simp [← hi])) (by grind)
     { data := {data}, layout := x.layout, injective := x.injective }
 
 
@@ -253,7 +253,7 @@ instance : SMul R (InjectiveView X J I) where
     let xmap := (x.layout.pair (.id h(nX))).linearize
     have hi := TensorIndexTypeOfRank.size_eq_shape_size (I := I) (rank:= irank)
     let data := tensorScal a
-      x.data.data (xmap.cast _ _ rfl (by simp [← hi])) sorry
+      x.data.data (xmap.cast _ _ rfl (by simp [← hi])) (by grind)
     { data := {data}, layout := x.layout, injective := x.injective }
 
 
@@ -314,7 +314,7 @@ def vecMatMulAdd (x : View X I IX) (A : View X (I × J) IA) (y : InjectiveView X
   let data := TensorRingOps.tensorGemv (1 : R) 1
     A.data.data (amap.cast _ _ rfl (by simp [← hia]))
     x.data.data (xmap.cast _ _ rfl (by simp [← hix]))
-    y.data.data (ymap.cast _ _ rfl (by simp [← hiy])) sorry
+    y.data.data (ymap.cast _ _ rfl (by simp [← hiy])) (by grind)
   { data := {data}, layout := y.layout, injective := y.injective }
 
 
@@ -330,7 +330,7 @@ def matVecMulAdd (A : View X (I × J) IA) (y : View X J IY) (x : InjectiveView X
   let data := TensorRingOps.tensorGemv (1 : R) 1
     A.data.data (amap.cast _ _ rfl (by simp [← hia]))
     y.data.data (ymap.cast _ _ rfl (by simp [← hiy]))
-    x.data.data (xmap.cast _ _ rfl (by simp [← hix])) sorry
+    x.data.data (xmap.cast _ _ rfl (by simp [← hix])) (by grind)
   { data := {data}, layout := x.layout, injective := x.injective }
 
 
@@ -346,7 +346,7 @@ def matMulAdd (A : View X (I × J) IA) (B : View X (J × K) IB) (C : InjectiveVi
   let data := TensorRingOps.tensorGemm (1 : R) 1
     A.data.data (amap.cast _ _ rfl (by simp [← hia]))
     B.data.data (bmap.cast _ _ rfl (by simp [← hib]))
-    C.data.data (cmap.cast _ _ rfl (by simp [← hic])) sorry
+    C.data.data (cmap.cast _ _ rfl (by simp [← hic])) (by grind)
   { data := {data}, layout := C.layout, injective := C.injective }
 
 

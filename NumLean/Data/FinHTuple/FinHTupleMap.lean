@@ -481,6 +481,97 @@ theorem injective_of_cast {src' : HTuple Nat p} {dst' : HTuple Nat q}
 def Bijective (f : FinHTupleMap src dst) : Prop :=
   Function.Bijective f.evalFin
 
+@[grind ←]
+theorem bijective_id (src : HTuple Nat p) : (id src).Bijective := by
+  constructor
+  · exact injective_id src
+  · intro i
+    exact ⟨i, by ext; simp [evalFin]⟩
+
+@[grind ←]
+theorem bijective_comp {mid : HTuple Nat q} {r : HTuple.Profile} {dst : HTuple Nat r}
+    (g : FinHTupleMap mid dst) (f : FinHTupleMap src mid)
+    (hg : g.Bijective) (hf : f.Bijective) : (g.comp f).Bijective := by
+  constructor
+  · exact injective_comp g f hg.1 hf.1
+  · intro k
+    rcases hg.2 k with ⟨j, rfl⟩
+    rcases hf.2 j with ⟨i, rfl⟩
+    exact ⟨i, by ext; simp [evalFin]⟩
+
+@[grind ←]
+theorem bijective_pair {p' q' : HTuple.Profile} {src' : HTuple Nat p'} {dst' : HTuple Nat q'}
+    {f : FinHTupleMap src dst} {g : FinHTupleMap src' dst'}
+    (hf : f.Bijective) (hg : g.Bijective) : (f.pair g).Bijective := by
+  constructor
+  · exact injective_of_pair hf.1 hg.1
+  · intro k
+    cases k with | mk kval hk =>
+    cases kval with | prod kl kr =>
+    rcases hf.2 (⟨kl, hk.1⟩ : FinHTuple dst) with ⟨il, hil⟩
+    rcases hg.2 (⟨kr, hk.2⟩ : FinHTuple dst') with ⟨ir, hir⟩
+    refine ⟨⟨HTuple.prod il.val ir.val, ⟨il.isLt, ir.isLt⟩⟩, ?_⟩
+    ext
+    simpa [evalFin] using congrArg₂ HTuple.prod (congrArg FinHTuple.val hil)
+      (congrArg FinHTuple.val hir)
+
+@[grind ←]
+theorem bijective_contiguous1D_self (n : Nat) :
+    (contiguous1D (len := n) (n := n) 0 (by omega)).Bijective := by
+  constructor
+  · exact injective_contiguous1D (len := n) (n := n) 0 (by omega)
+  · intro j
+    cases j with | mk jval hj =>
+    cases jval with | leaf j =>
+    refine ⟨⟨h(j), by simpa using hj⟩, ?_⟩
+    ext
+    simp [evalFin]
+
+@[grind ←]
+theorem bijective_rowMajorMap (shape : HTuple Nat p) : (rowMajorMap shape).Bijective := by
+  constructor
+  · exact injective_rowMajorMap shape
+  · intro j
+    cases j with | mk jval hj =>
+    cases jval with | leaf j =>
+    let i : FinHTuple shape := ⟨HTuple.rowMajorUnflatten shape j,
+      HTuple.rowMajorUnflatten_lt shape (by simpa using hj)⟩
+    refine ⟨i, ?_⟩
+    have hidx : (HTuple.rowMajorUnflatten shape j).rowMajorIndex shape = j :=
+      HTuple.rowMajorIndex_rowMajorUnflatten shape (by simpa using hj)
+    apply FinHTuple.ext
+    simp [i, evalFin, hidx]
+
+@[grind ←]
+theorem bijective_colMajorMap (shape : HTuple Nat p) : (colMajorMap shape).Bijective := by
+  constructor
+  · intro i j h
+    apply FinHTuple.ext
+    have hval := congrArg FinHTuple.val h
+    have hidx : i.val.colMajorIndex shape = j.val.colMajorIndex shape := by
+      simpa [evalFin, eval_colMajorMap] using congrArg HTuple.toScalar hval
+    have hunflatten := congrArg (HTuple.colMajorUnflatten shape) hidx
+    simpa [HTuple.colMajorUnflatten_colMajorIndex shape i.val i.isLt,
+      HTuple.colMajorUnflatten_colMajorIndex shape j.val j.isLt] using hunflatten
+  · intro j
+    cases j with | mk jval hj =>
+    cases jval with | leaf j =>
+    let i : FinHTuple shape := ⟨HTuple.colMajorUnflatten shape j,
+      HTuple.colMajorUnflatten_lt shape (by simpa using hj)⟩
+    refine ⟨i, ?_⟩
+    have hidx : (HTuple.colMajorUnflatten shape j).colMajorIndex shape = j :=
+      HTuple.colMajorIndex_colMajorUnflatten shape (by simpa using hj)
+    apply FinHTuple.ext
+    simp [i, evalFin, hidx]
+
+@[grind ←]
+theorem bijective_of_cast {src' : HTuple Nat p} {dst' : HTuple Nat q}
+    {f : FinHTupleMap src dst} (hsrc : src' = src) (hdst : dst' = dst)
+    (hf : f.Bijective) : (f.cast src' dst' hsrc hdst).Bijective := by
+  subst hsrc
+  subst hdst
+  simpa [cast] using hf
+
 /-- `f` maps `0...src` onto `f.range`
 
 For very `y ∈ f.range` there is `x ∈ 0...src` such that `f x = y`. -/
@@ -725,6 +816,36 @@ theorem rangeNatInv_eval (f : FinHTupleMap src h(m)) (i : FinHTuple src) (h : f.
   apply FinHTuple.ext
   apply HTuple.toScalar_injective
   simpa using f.eval_rangeNatInv (f i) (by simp)
+
+theorem mem_rangeNat_rowMajorIndex (shape : HTuple Nat p) (i : HTuple Nat p)
+    (hi : i <ₑ shape) :
+    i.rowMajorIndex shape ∈ (rowMajorMap shape).rangeNat := by
+  exact ⟨⟨i, hi⟩, by simp⟩
+
+@[simp]
+theorem rangeNatInv_rowMajorMap (shape : HTuple Nat p) (i : FinHTuple shape) :
+    (rowMajorMap shape).rangeNatInv (i.val.rowMajorIndex shape)
+      (mem_rangeNat_rowMajorIndex shape i.val i.isLt) = i := by
+  simpa using (rowMajorMap shape).rangeNatInv_eval i (injective_rowMajorMap shape)
+
+theorem rangeNatInv_rowMajorIndex (shape : HTuple Nat p) (i : HTuple Nat p)
+    (hi : i <ₑ shape) :
+    (rowMajorMap shape).rangeNatInv (i.rowMajorIndex shape)
+      (mem_rangeNat_rowMajorIndex shape i hi) = ⟨i, hi⟩ := by
+  simpa using (rangeNatInv_rowMajorMap shape (⟨i, hi⟩ : FinHTuple shape))
+
+theorem mem_rangeNat_rowMajorIndex_of_eq (shape : HTuple Nat p) (i : HTuple Nat p)
+    (hi : i <ₑ shape) {idx : Nat} (hidx : idx = i.rowMajorIndex shape) :
+    idx ∈ (rowMajorMap shape).rangeNat := by
+  subst idx
+  exact mem_rangeNat_rowMajorIndex shape i hi
+
+theorem rangeNatInv_rowMajorIndex_of_eq (shape : HTuple Nat p) (i : HTuple Nat p)
+    (hi : i <ₑ shape) {idx : Nat} (hidx : idx = i.rowMajorIndex shape)
+    (hmem : idx ∈ (rowMajorMap shape).rangeNat) :
+    (rowMajorMap shape).rangeNatInv idx hmem = ⟨i, hi⟩ := by
+  subst idx
+  simpa using rangeNatInv_rowMajorIndex shape i hi
 
 open Function in
 theorem indexFun_invFun_eq {m} {f : FinHTupleMap src h(m)} [Nonempty {i' // i' ∈ ((0 : HTuple Nat p)...src)}]

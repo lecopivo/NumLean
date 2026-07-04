@@ -351,6 +351,11 @@ abbrev zipWith := @map₂
   | .leaf, .leaf i, .leaf _ => i
   | .prod _ _, .prod il ir, .prod sl sr => rowMajorIndex ir sr + sr.numel * rowMajorIndex il sl
 
+@[simp]
+theorem rowMajorIndex_prod_leaf_leaf (i j n m : Nat) :
+    (HTuple.prod (HTuple.leaf i) (HTuple.leaf j)).rowMajorIndex
+      (HTuple.prod (HTuple.leaf n) (HTuple.leaf m)) = j + m * i := rfl
+
 /-- Column-major stride for `0...shape`, with the leftmost coordinate innermost. -/
 @[inline] def colMajorStride {p : Profile} (shape : HTuple Nat p) : HTuple Nat p :=
   match p, shape with
@@ -362,6 +367,20 @@ abbrev zipWith := @map₂
   match p, x, shape with
   | .leaf, .leaf i, .leaf _ => i
   | .prod _ _, .prod il ir, .prod sl sr => colMajorIndex il sl + sl.numel * colMajorIndex ir sr
+
+/-- Inverse of row-major indexing inside `0...shape`, with the rightmost coordinate innermost. -/
+@[inline] def rowMajorUnflatten {p : Profile} (shape : HTuple Nat p) (i : Nat) : HTuple Nat p :=
+  match p, shape with
+  | .leaf, .leaf _ => .leaf i
+  | .prod _ _, .prod l r =>
+      .prod (rowMajorUnflatten l (i / r.numel)) (rowMajorUnflatten r (i % r.numel))
+
+/-- Inverse of column-major indexing inside `0...shape`, with the leftmost coordinate innermost. -/
+@[inline] def colMajorUnflatten {p : Profile} (shape : HTuple Nat p) (i : Nat) : HTuple Nat p :=
+  match p, shape with
+  | .leaf, .leaf _ => .leaf i
+  | .prod _ _, .prod l r =>
+      .prod (colMajorUnflatten l (i % l.numel)) (colMajorUnflatten r (i / l.numel))
 
 theorem inner_map_mul_left (n : Nat) {p : Profile} (i stride : HTuple Nat p) :
     i.inner (stride.map (fun x => n * x)) = n * i.inner stride := by
@@ -413,6 +432,12 @@ theorem colMajorIndex_eq_inner_colMajorStride {p : Profile} (i shape : HTuple Na
 @[inline] def toList {α : Type u} : {p : Profile} → HTuple α p → List α
   | .leaf, .leaf value => [value]
   | .prod _ _, .prod fst snd => fst.toList ++ snd.toList
+
+/-- Convert `HTuple` to `Vector` -/
+def toVector {r} (x : HTuple α r) : Vector α r.size :=
+  match x with
+  | .leaf x => #v[x]
+  | .prod x y => x.toVector ++ y.toVector
 
 @[simp]
 theorem length_toList {α : Type u} : {p : Profile} → (x : HTuple α p) → x.toList.length = p.size

@@ -3,6 +3,7 @@ module
 public import NumLean.Data.Scalars.Float64.TensorType
 public import NumLean.Data.Scalars.Float64.Algebra
 public import NumLean.Interfaces.TensorAlgebra
+public import NumLean.Data.Scalars.Float64.Impl.TensorAlgebra
 
 @[expose] public section
 
@@ -13,6 +14,7 @@ set_option backward.do.legacy false
 
 open Tensor VectorType
 
+@[implemented_by tensorSumImpl]
 def tensorSum {r} {n : Nat} {shape : Shape r}
     (xs : Float64Vector n) (xmap : Layout shape h(n)) : Float := Id.run do
   let mut acc := 0
@@ -20,6 +22,7 @@ def tensorSum {r} {n : Nat} {shape : Shape r}
     acc := acc + xs[xmap i]
   return acc
 
+@[implemented_by tensorAxpyImpl]
 def tensorAxpy {r} {m n : Nat} {shape : Shape r} (a : Float)
     (xs : Float64Vector n) (xmap : Layout shape h(n))
     (ys : Float64Vector m) (ymap : Layout shape h(m))
@@ -29,6 +32,7 @@ def tensorAxpy {r} {m n : Nat} {shape : Shape r} (a : Float)
     ys[ymap i] := ys[ymap i] + a * xs[xmap i]
   return ys
 
+@[implemented_by tensorAxpySelfImpl]
 def tensorAxpySelf {r} {n : Nat} {shape : Shape r} (a : Float)
     (data : Float64Vector n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
     (_hdst : dstMap.Injective) (_h : Disjoint srcMap.range dstMap.range) : Float64Vector n := Id.run do
@@ -37,6 +41,7 @@ def tensorAxpySelf {r} {n : Nat} {shape : Shape r} (a : Float)
     data[dstMap i] := data[dstMap i] + a * data[srcMap i]
   return data
 
+@[implemented_by tensorScalImpl]
 def tensorScal {r} {n : Nat} {shape : Shape r} (a : Float)
     (xs : Float64Vector n) (xmap : Layout shape h(n))
     (_hxmap : xmap.Injective) : Float64Vector n := Id.run do
@@ -45,6 +50,7 @@ def tensorScal {r} {n : Nat} {shape : Shape r} (a : Float)
     xs[xmap i] := a * xs[xmap i]
   return xs
 
+@[implemented_by tensorDotImpl]
 def tensorDot {r} {m n : Nat} {shape : Shape r}
     (xs : Float64Vector n) (xmap : Layout shape h(n))
     (ys : Float64Vector m) (ymap : Layout shape h(m)) : Float := Id.run do
@@ -53,6 +59,7 @@ def tensorDot {r} {m n : Nat} {shape : Shape r}
     acc := acc + xs[xmap i] * ys[ymap i]
   return acc
 
+@[implemented_by tensorMulImpl]
 def tensorMul {r} {m n : Nat} {shape : Shape r}
     (xs : Float64Vector n) (xmap : Layout shape h(n))
     (ys : Float64Vector m) (ymap : Layout shape h(m))
@@ -62,6 +69,7 @@ def tensorMul {r} {m n : Nat} {shape : Shape r}
     ys[ymap i] := ys[ymap i] * xs[xmap i]
   return ys
 
+@[implemented_by tensorGemvImpl]
 def tensorGemv {an xn yn : Nat} {ra rc : Rank} {rows : Shape ra} {cols : Shape rc}
     (alpha beta : Float)
     (A : Float64Vector an) (amap : Layout (.prod rows cols) h(an))
@@ -76,6 +84,7 @@ def tensorGemv {an xn yn : Nat} {ra rc : Rank} {rows : Shape ra} {cols : Shape r
     y[ymap i] := alpha * acc + beta * y[ymap i]
   return y
 
+@[implemented_by tensorGerImpl]
 def tensorGer {an xn yn : Nat} {rr rc : Rank} {rows : Shape rr} {cols : Shape rc}
     (alpha : Float)
     (x : Float64Vector xn) (xmap : Layout rows h(xn))
@@ -88,6 +97,7 @@ def tensorGer {an xn yn : Nat} {rr rc : Rank} {rows : Shape rr} {cols : Shape rc
       A[amap (i.prod j)] := A[amap (i.prod j)] + alpha * x[xmap i] * y[ymap j]
   return A
 
+@[implemented_by tensorGemmImpl]
 def tensorGemm {an bn cn : Nat} {ri rj rk : Rank}
     {is : Shape ri} {js : Shape rj} {ks : Shape rk}
     (alpha beta : Float)

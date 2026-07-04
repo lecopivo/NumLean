@@ -2,6 +2,7 @@ module
 
 public import NumLean.Interfaces.Fold.Basic
 public import NumLean.Interfaces.Fold.Filter
+public import NumLean.Interfaces.SetElem
 public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
@@ -10,6 +11,8 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 namespace NumLean
 
 namespace Fold
+
+universe u v w x y
 
 private theorem List.foldl_add_eq_add_sum [AddCommMonoid A] (xs : List α) (f : α → A) (init : A) :
     xs.foldl (fun acc x => acc + f x) init = init + (xs.map f).sum := by
@@ -32,6 +35,134 @@ private theorem List.eq_singleton_of_mem_nodup_unique {α : Type u} {xs : List �
         subst c
         exact hnd.1 hc
       simp [hbs]
+
+open Classical in
+theorem fold_getElem_setElem_ext {α : Type v} {ρ : Type u} {ι : Type w} {σ : Type x}
+    {β : Type y}
+    [m : Membership ι ρ] [FoldEntries ρ ι m] [Fold ρ] [LawfulFold ρ ι m]
+    {valid : σ → α → Prop} [GetElem σ α β valid] [SetElem σ α β valid]
+    [LawfulSetElem σ α] (range : ρ) (init : σ)
+    (imap : (i : ι) → i ∈ range → α)
+    (f : (i : ι) → (hi : i ∈ range) → β → β)
+    (j : α) (hvalid : ∀ xs : σ, ∀ i : α, valid xs i)
+    (himap' : Function.Injective (fun i : {i' // i' ∈ range} => imap i.1 i.2)) :
+    getElem (Fold.fold range (init := init) (fun i hi xs =>
+      setElem xs (imap i hi) (f i hi (getElem xs (imap i hi) (hvalid xs (imap i hi))))
+        (hvalid xs (imap i hi)))) j (hvalid _ j)
+    =
+    if h : j ∈ Set.range (fun i : {i' // i' ∈ range} => imap i.1 i.2) then
+      let idx := Classical.choose h
+      f idx.1 idx.2 (getElem init j (hvalid init j))
+    else
+      getElem init j (hvalid init j) := by
+  let step : σ → {i' // i' ∈ range} → σ := fun xs i =>
+    setElem xs (imap i.1 i.2) (f i.1 i.2 (getElem xs (imap i.1 i.2) (hvalid xs (imap i.1 i.2))))
+      (hvalid xs (imap i.1 i.2))
+  rw [LawfulFold.fold_eq_foldl]
+  change getElem ((NumLean.entries range).foldl step init) j (hvalid _ j) = _
+  have hfold := FoldMap.foldl_get_eq_foldl_filter_affectors
+      (entries := NumLean.entries range)
+      (init := init)
+      (step := step)
+      (read := fun xs j => getElem xs j (hvalid xs j))
+      (deps := fun j : α => {j})
+      (affectors := fun j : α => ({i : {i' // i' ∈ range} | imap i.1 i.2 = j} : Set {i' // i' ∈ range}))
+      (i := j)
+      (by simp)
+      (by
+        intro k hk i hi xs
+        have hk' : k = j := by simpa only [Set.mem_singleton_iff] using hk
+        dsimp [step] at hi ⊢
+        have hne : imap i.1 i.2 ≠ k := by
+          intro hik
+          exact hi (hik.trans hk')
+        simpa using
+          (LawfulSetElem.getElem_setElem_neq xs (imap i.1 i.2) k _
+            (hvalid xs (imap i.1 i.2)) (hvalid _ k) hne))
+      (by
+        intro i xs ys hagree k hk
+        have hk' : k = j := by simpa only [Set.mem_singleton_iff] using hk
+        dsimp [step]
+        by_cases hi : imap i.1 i.2 = k
+        · have hx := LawfulSetElem.getElem_setElem_eq xs (imap i.1 i.2)
+            (f i.1 i.2 (getElem xs (imap i.1 i.2) (hvalid xs (imap i.1 i.2))))
+            (hvalid xs (imap i.1 i.2))
+          have hy := LawfulSetElem.getElem_setElem_eq ys (imap i.1 i.2)
+            (f i.1 i.2 (getElem ys (imap i.1 i.2) (hvalid ys (imap i.1 i.2))))
+            (hvalid ys (imap i.1 i.2))
+          have hread : getElem xs (imap i.1 i.2) (hvalid xs (imap i.1 i.2)) =
+              getElem ys (imap i.1 i.2) (hvalid ys (imap i.1 i.2)) := by
+            simpa [hi] using hagree k hk
+          calc
+            getElem (step xs i) k (hvalid (step xs i) k)
+                = f i.1 i.2 (getElem xs (imap i.1 i.2) (hvalid xs (imap i.1 i.2))) := by
+                  simpa [step, hi] using hx
+            _ = f i.1 i.2 (getElem ys (imap i.1 i.2) (hvalid ys (imap i.1 i.2))) := by
+                  rw [hread]
+            _ = getElem (step ys i) k (hvalid (step ys i) k) := by
+                  simpa [step, hi] using hy.symm
+        · have hx := LawfulSetElem.getElem_setElem_neq xs (imap i.1 i.2) k
+            (f i.1 i.2 (getElem xs (imap i.1 i.2) (hvalid xs (imap i.1 i.2))))
+            (hvalid xs (imap i.1 i.2)) (hvalid _ k) hi
+          have hy := LawfulSetElem.getElem_setElem_neq ys (imap i.1 i.2) k
+            (f i.1 i.2 (getElem ys (imap i.1 i.2) (hvalid ys (imap i.1 i.2))))
+            (hvalid ys (imap i.1 i.2)) (hvalid _ k) hi
+          have hx' : getElem (step xs i) k (hvalid (step xs i) k) = getElem xs k (hvalid xs k) := by
+            simpa [step] using hx
+          have hy' : getElem (step ys i) k (hvalid (step ys i) k) = getElem ys k (hvalid ys k) := by
+            simpa [step] using hy
+          exact hx'.trans ((hagree k hk).trans hy'.symm))
+  change (fun xs j => getElem xs j (hvalid xs j)) ((NumLean.entries range).foldl step init) j = _
+  rw [hfold]
+  by_cases h : j ∈ Set.range (fun i : {i' // i' ∈ range} => imap i.1 i.2)
+  · let idx := Classical.choose h
+    have hidx : imap idx.1 idx.2 = j := Classical.choose_spec h
+    have hfilter :
+        ((NumLean.entries range).filter fun i =>
+          decide ((fun i : {i' // i' ∈ range} => imap i.1 i.2 = j) i)) =
+          [idx] := by
+      apply List.eq_singleton_of_mem_nodup_unique
+      · exact List.mem_filter.mpr ⟨LawfulFold.mem_entries (xs := range) idx.2, by simp [hidx]⟩
+      · exact (LawfulFold.entries_nodup range).filter _
+      · intro i hi
+        simp only [List.mem_filter] at hi
+        have hi_eq : imap i.1 i.2 = j := of_decide_eq_true hi.2
+        apply himap'
+        simp [hi_eq, hidx]
+    have hfilter' :
+        ((NumLean.entries range).filter fun a =>
+          decide (a ∈ (fun j => {i : {i' // i' ∈ range} | imap i.1 i.2 = j}) j)) =
+          [idx] := by
+      simpa using hfilter
+    have hfolded := congrArg
+      (fun xs => (fun ys j => getElem ys j (hvalid ys j)) (List.foldl step init xs) j) hfilter'
+    change (fun xs => (fun ys j => getElem ys j (hvalid ys j)) (List.foldl step init xs) j)
+      ((NumLean.entries range).filter fun a =>
+        decide (a ∈ (fun j => {i : {i' // i' ∈ range} | imap i.1 i.2 = j}) j)) = _
+    rw [hfolded]
+    have hset := LawfulSetElem.getElem_setElem_eq init j
+      (f idx.1 idx.2 (getElem init j (hvalid init j))) (hvalid init j)
+    simpa [step, h, hidx, idx] using hset
+  · have hfilter :
+        ((NumLean.entries range).filter fun i =>
+          decide ((fun i : {i' // i' ∈ range} => imap i.1 i.2 = j) i)) =
+          [] := by
+      apply List.eq_nil_iff_forall_not_mem.2
+      intro i hi
+      simp only [List.mem_filter] at hi
+      exact h ⟨i, of_decide_eq_true hi.2⟩
+    have hfilter' :
+        ((NumLean.entries range).filter fun a =>
+          decide (a ∈ (fun j => {i : {i' // i' ∈ range} | imap i.1 i.2 = j}) j)) =
+          [] := by
+      simpa using hfilter
+    have hfolded := congrArg
+      (fun xs => (fun ys j => getElem ys j (hvalid ys j)) (List.foldl step init xs) j) hfilter'
+    change (fun xs => (fun ys j => getElem ys j (hvalid ys j)) (List.foldl step init xs) j)
+      ((NumLean.entries range).filter fun a =>
+        decide (a ∈ (fun j => {i : {i' // i' ∈ range} | imap i.1 i.2 = j}) j)) = _
+    rw [hfolded]
+    simp [h]
 
 theorem foldl_guarded_eq_filterMap {α β : Type u} (xs : List α) (init : β)
     (p : α → Prop) [DecidablePred p] (f : (a : α) → p a → β → β) :

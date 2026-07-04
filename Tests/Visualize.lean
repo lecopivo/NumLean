@@ -88,6 +88,9 @@ def shape_4_by_2x2 : Layout h((4 : Nat), ((2 : Nat), (2 : Nat))) Int where
 #visualize shapeB
 #visualize colMajor
 
+#visualize with aspect := 1 / 1 profileB
+#visualize with maxHeightRatio := 2 shapeB
+
 /-! A 4×4 layout whose row and column axes are both shaped `(2,2)`. -/
 
 #visualize Layout.rowMajor h((2,2),(2,2))
@@ -121,6 +124,26 @@ def shape_4_by_2x2 : Layout h((4 : Nat), ((2 : Nat), (2 : Nat))) Int where
 #visualize #[colMajor, rowMajor, padded]
 
 #visualize Visualize.animation #[colMajor, rowMajor, padded] 700
+
+def scene3D : Visualize.Scene3D where
+  points := #[
+    Visualize.point3D (-1) (-1) 0,
+    Visualize.point3D 1 (-1) 0,
+    Visualize.point3D 1 1 0,
+    Visualize.point3D (-1) 1 0,
+    Visualize.point3D 0 0 1.35,
+    Visualize.point3D 0 0 (-1)]
+  primitives := #[
+    Visualize.quad3D 0 1 2 3 "#4ea1ff",
+    Visualize.triangle3D 0 1 4 "#ff8a80",
+    Visualize.triangle3D 1 2 4 "#ffd166",
+    Visualize.triangle3D 2 3 4 "#8ff0c7",
+    Visualize.triangle3D 3 0 4 "#c792ea",
+    Visualize.tube3D 4 5 "#f8fbff" 0.045,
+    Visualize.ball3D 4 "#ffffff" 0.12,
+    Visualize.ball3D 5 "#ff8a80" 0.1]
+
+#visualize scene3D
 
 #visualize (Layout.rowMajor h(2,(2,2),(2,10)))
 
