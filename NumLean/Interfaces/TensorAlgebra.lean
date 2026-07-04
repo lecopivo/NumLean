@@ -81,13 +81,14 @@ class TensorRingOps (Ks : Nat → Type) (K : Type)
     (C : Ks cn) (cmap : Layout (.prod is js) h(cn))
     (hcmap : cmap.Injective) : Ks cn
 
+
 open VectorType in
 /--
 Laws relating `TensorRingOps` implementations to their `Vector` counterparts.
 -/
 @[hierarchy_graph algebra_lawful]
 class LawfulTensorRingOps (Ks : Nat → Type) (K : Type)
-    [RingOps K] [Ring K] [VectorType Ks K] [TensorRingOps Ks K] : Prop where
+    [CommRing K] [VectorType Ks K] [TensorRingOps Ks K] : Prop where
 
   tensorSum_eq_vector_tensorSum {r : Rank} {n : Nat} {shape : Shape r}
     (xs : Ks n) (xmap : Layout shape h(n)) :
@@ -171,6 +172,32 @@ class LawfulTensorRingOps (Ks : Nat → Type) (K : Type)
     Vector.tensorGemm alpha beta (toVector A) amap (toVector B) bmap (toVector C) cmap hcmap
 
 namespace TensorRingOps
+
+section VectorInstances
+
+instance {K} [RingOps K] : TensorRingOps (Vector K) K where
+  tensorSum := Vector.tensorSum
+  tensorAxpy := Vector.tensorAxpy
+  tensorAxpySelf := Vector.tensorAxpySelf
+  tensorScal := Vector.tensorScal
+  tensorDot := Vector.tensorDot
+  tensorMul := Vector.tensorMul
+  tensorGemv := Vector.tensorGemv
+  tensorGer := Vector.tensorGer
+  tensorGemm := Vector.tensorGemm
+
+instance {K} [CommRing K] : LawfulTensorRingOps (Vector K) K where
+  tensorSum_eq_vector_tensorSum := by intros; rfl
+  toVector_tensorAxpy := by intros; rfl
+  toVector_tensorAxpySelf := by intros; rfl
+  toVector_tensorScal := by intros; rfl
+  tensorDot_eq_vector_tensorDot := by intros; rfl
+  toVector_tensorMul := by intros; rfl
+  toVector_tensorGemv := by intros; rfl
+  toVector_tensorGer := by intros; rfl
+  toVector_tensorGemm := by intros; rfl
+
+end VectorInstances
 
 open Classical VectorType
 

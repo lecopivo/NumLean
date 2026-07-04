@@ -2,6 +2,7 @@ module
 
 public import NumLean.Data.Prod
 public import NumLean.Interfaces.HasFlatRepr.Basic
+public import NumLean.Interfaces.TensorType
 
 @[expose] public section
 
@@ -9,8 +10,8 @@ namespace NumLean
 
 namespace HasFlatRepr
 
-variable {X : Type u} {Y : Type v} {Ks : Nat → Type w} {K : Type z} {nX nY : Nat}
-  [VectorType Ks K] [HasFlatRepr X Ks nX] [HasFlatRepr Y Ks nY]
+variable {X : Type u} {Y : Type v} {Ks : Nat → Type} {K : Type} {nX nY : Nat}
+  [VectorType Ks K] [TensorType Ks (K := K)] [HasFlatRepr X Ks nX] [HasFlatRepr Y Ks nY]
 
 def prodToVector (xy : X × Y) : Vector K (nX + nY) :=
   HasFlatRepr.toVector (Ks := Ks) xy.1 ++ HasFlatRepr.toVector (Ks := Ks) xy.2
@@ -25,19 +26,21 @@ def prodGetComp (xy : X × Y) (i : Nat) (h : i < nX + nY) : K :=
   else
     HasFlatRepr.getComp (Ks := Ks) xy.2 (i - nX) (by omega)
 
+omit [TensorType Ks] in
 theorem prod_getComp_left (xy : X × Y) (i : Nat) (h : i < nX + nY) (hi : i < nX) :
     prodGetComp (Ks := Ks) xy i h = HasFlatRepr.getComp (Ks := Ks) xy.1 i hi := by
   simp [prodGetComp, hi]
 
+omit [TensorType Ks] in
 theorem prod_getComp_right (xy : X × Y) (i : Nat) (h : i < nX + nY) (hi : ¬ i < nX) :
     prodGetComp (Ks := Ks) xy i h = HasFlatRepr.getComp (Ks := Ks) xy.2 (i - nX) (by omega) := by
   simp [prodGetComp, hi]
 
--- todo: this is not a good implementation
 def prodSetComp (xy : X × Y) (i : Nat) (k : K) (h : i < nX + nY) : X × Y :=
-  let xy' := (prodToVector (Ks := Ks) xy).set i k h
-  (HasFlatRepr.fromVector (Ks := Ks) (X := X) (Vector.ofFn fun j : Fin nX => xy'[j.1]'(by omega)),
-   HasFlatRepr.fromVector (Ks := Ks) (X := Y) (Vector.ofFn fun j : Fin nY => xy'[nX + j.1]'(by omega)))
+  if hi : i < nX then
+    (HasFlatRepr.setComp (Ks := Ks) xy.1 i k hi, xy.2)
+  else
+    (xy.1, HasFlatRepr.setComp (Ks := Ks) xy.2 (i - nX) k (by omega))
 
 def prodGet {n : Nat} (ks : Ks n) (off : Nat) (h : off + (nX + nY) ≤ n) : X × Y :=
   (HasFlatRepr.get (X := X) ks off (by omega),
@@ -50,6 +53,7 @@ def prodSet {n : Nat} (ks : Ks n) (off : Nat) (xy : X × Y) (h : off + (nX + nY)
 def prodToTensor (xy : X × Y) : Ks (nX + nY) :=
   VectorType.append (HasFlatRepr.toTensor (Ks := Ks) xy.1) (HasFlatRepr.toTensor (Ks := Ks) xy.2)
 
+omit [TensorType Ks] in
 theorem prod_get_toTensor_eq_getComp (xy : X × Y) (i : Nat) (hi : i < nX + nY) :
     VectorType.get (prodToTensor (Ks := Ks) xy) i hi = prodGetComp (Ks := Ks) xy i hi := by
   rcases xy with ⟨x, y⟩
@@ -68,16 +72,20 @@ theorem prod_get_toTensor_eq_getComp (xy : X × Y) (i : Nat) (hi : i < nX + nY) 
 def prodPush {n : Nat} (ks : Ks n) (xy : X × Y) : Ks (n + (nX + nY)) :=
   VectorType.append ks (prodToTensor (Ks := Ks) xy)
 
--- todo: this is bad, don't use fromVector/Vector.ofFn etc
--- do we need TensorType to do this efficiently? we can just convert `x` and `y` to `Ks` and
--- blast it with broadcasting copySlice
 def prodReplicate (n : Nat) (xy : X × Y) : Ks (n * (nX + nY)) :=
-  VectorType.fromVector (As := Ks) <| Vector.ofFn fun ij : Fin (n * (nX + nY)) =>
-    prodGetComp (Ks := Ks) xy (ij.1 % (nX + nY)) (by
-      by_cases h : nX + nY = 0
-      · have := ij.2
-        simp [h] at this
-      · exact Nat.mod_lt _ (Nat.pos_of_ne_zero h))
+  let src : Ks (nX + nY) := prodToTensor (Ks := Ks) xy
+  let srcMap : Tensor.Layout h(n, nX + nY) h(nX + nY) :=
+    FinHTupleMap.sndMap h(n) h(nX + nY)
+  let dst : Ks (n * (nX + nY)) :=
+    if hzero : nX + nY = 0 then
+      cast (by simp [hzero]) (VectorType.emptyWithCapacity (As := Ks) 0)
+    else
+      VectorType.replicate (As := Ks) (n * (nX + nY))
+        (prodGetComp (Ks := Ks) xy 0 (Nat.pos_of_ne_zero hzero))
+  let dstMap : Tensor.Layout h(n, nX + nY) h(n * (nX + nY)) :=
+    Tensor.Layout.rowMajor h(n, nX + nY)
+  TensorType.copySlice (Ks := Ks) (K := K) src srcMap dst dstMap
+    (FinHTupleMap.injective_rowMajorMap h(n, nX + nY))
 
 instance : HasFlatRepr (X × Y) Ks (nX + nY) where
   toVector := prodToVector (Ks := Ks)
@@ -123,7 +131,64 @@ instance : HasFlatRepr (X × Y) Ks (nX + nY) where
   setComp_spec := by
     intro xy i k h
     rcases xy with ⟨x, y⟩
-    rfl
+    apply Prod.ext
+    · by_cases hi : i < nX
+      · dsimp [prodSetComp, prodFromVector]
+        simp [hi]
+        let v : Vector K nX := Vector.ofFn fun j : Fin nX => ((prodToVector (Ks := Ks) (x, y)).set i k h)[j.1]
+        change HasFlatRepr.setComp (Ks := Ks) x i k hi = HasFlatRepr.fromVector (Ks := Ks) v
+        apply HasFlatRepr.ext (Ks := Ks)
+        intro j hj
+        rw [HasFlatRepr.getComp_spec, HasFlatRepr.getComp_spec,
+          HasFlatRepr.setComp_spec, HasFlatRepr.toVector_fromVector]
+        rw [HasFlatRepr.toVector_fromVector]
+        by_cases hji : j = i
+        · subst hji
+          simp [v]
+        · rw [Vector.getElem_set]
+          simp [show i ≠ j by omega, v, prodToVector,
+            Vector.getElem_append_left hj]
+      · dsimp [prodSetComp, prodFromVector]
+        simp [hi]
+        rw [← HasFlatRepr.fromVector_toVector (Ks := Ks) x]
+        congr 1
+        apply Vector.ext
+        intro j hj
+        rw [Vector.getElem_ofFn]
+        rw [Vector.getElem_set]
+        simp [show i ≠ j by omega]
+        simp [prodToVector, Vector.getElem_append_left hj]
+    · by_cases hi : i < nX
+      · dsimp [prodSetComp, prodFromVector]
+        simp [hi]
+        rw [← HasFlatRepr.fromVector_toVector (Ks := Ks) y]
+        congr 1
+        apply Vector.ext
+        intro j hj
+        rw [Vector.getElem_ofFn]
+        rw [Vector.getElem_set]
+        simp [show i ≠ nX + j by omega]
+        simp [prodToVector]
+      · dsimp [prodSetComp, prodFromVector]
+        simp [hi]
+        let v : Vector K nY :=
+          Vector.ofFn fun j : Fin nY => ((prodToVector (Ks := Ks) (x, y)).set i k h)[nX + j.1]
+        change HasFlatRepr.setComp (Ks := Ks) y (i - nX) k (by omega) =
+          HasFlatRepr.fromVector (Ks := Ks) v
+        apply HasFlatRepr.ext (Ks := Ks)
+        intro j hj
+        rw [HasFlatRepr.getComp_spec, HasFlatRepr.getComp_spec,
+          HasFlatRepr.setComp_spec, HasFlatRepr.toVector_fromVector]
+        rw [HasFlatRepr.toVector_fromVector]
+        change ((HasFlatRepr.toVector (Ks := Ks) y).set (i - nX) k (by omega))[j] = v[j]
+        by_cases hji : j = i - nX
+        · subst hji
+          rw [Vector.getElem_set_self]
+          simp [v, prodToVector, show nX + (i - nX) = i by omega]
+        · rw [Vector.getElem_set]
+          simp [show i - nX ≠ j by omega, v, prodToVector]
+          rw [Vector.getElem_set]
+          simp [show i ≠ nX + j by omega]
   get := prodGet (Ks := Ks)
   getComp_get_eq_vector_get := by
     intro n ks off i hoff hi
@@ -185,12 +250,29 @@ instance : HasFlatRepr (X × Y) Ks (nX + nY) where
   get_replicate := by
     intro n xy i j hi hj
     rw [prodReplicate]
-    rw [VectorType.get_spec, VectorType.toVector_fromVector]
-    rw [Vector.getElem_ofFn]
-    have hmod : (i * (nX + nY) + j) % (nX + nY) = j := by
-      rw [Nat.mul_add_mod_self_right]
-      exact Nat.mod_eq_of_lt hj
-    simp [hmod]
+    rw [TensorType.get_copySlice]
+    split
+    · rename_i hmem
+      have hidx : (h(i, j) : HTuple Nat (.prod .leaf .leaf)).rowMajorIndex h(n, nX + nY) =
+          i * (nX + nY) + j := by
+        simp
+        rw [Nat.mul_comm (nX + nY) i, Nat.add_comm]
+      have hinv : (Tensor.Layout.rowMajor h(n, nX + nY)).rangeNatInv
+            (i * (nX + nY) + j) hmem =
+          (⟨h(i, j), by get_elem_tactic⟩ : FinHTuple h(n, nX + nY)) := by
+        exact FinHTupleMap.rangeNatInv_rowMajorIndex_of_eq h(n, nX + nY) h(i, j)
+          (by get_elem_tactic) hidx.symm hmem
+      have hval := congrArg FinHTuple.val hinv
+      simp at hval
+      simp [hval, prod_get_toTensor_eq_getComp]
+    · rename_i hmem
+      exfalso
+      have hidx : (h(i, j) : HTuple Nat (.prod .leaf .leaf)).rowMajorIndex h(n, nX + nY) =
+          i * (nX + nY) + j := by
+        simp
+        rw [Nat.mul_comm (nX + nY) i, Nat.add_comm]
+      exact hmem (hidx ▸
+        FinHTupleMap.mem_rangeNat_rowMajorIndex h(n, nX + nY) h(i, j) (by get_elem_tactic))
 
 end HasFlatRepr
 

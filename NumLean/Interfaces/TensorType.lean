@@ -66,7 +66,7 @@ class TensorType (Ks : Nat → Type) {K : Type} [VectorType Ks K] where
     Vector.swapSliceSelf (toVector data) map map' hmap hmap' h
 
 
-instance : TensorType (Vector α) where
+instance {α} : TensorType (Vector α) where
   copySlice := Vector.copySlice
   toVector_copySlice := by intros; rfl
   copySliceSelf := Vector.copySliceSelf

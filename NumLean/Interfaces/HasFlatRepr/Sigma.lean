@@ -21,8 +21,8 @@ def sigmaEquivProd (X : Type u) (Y : Type v) : ((_ : X) × Y) ≃ X × Y where
     intro xy
     rfl
 
-instance {X : Type u} {Y : Type v} {Ks : Nat → Type w} {K : Type z} {nX nY : Nat}
-    [VectorType Ks K] [HasFlatRepr X Ks nX] [HasFlatRepr Y Ks nY] :
+instance {X : Type u} {Y : Type v} {Ks : Nat → Type} {K : Type} {nX nY : Nat}
+    [VectorType Ks K] [TensorType Ks (K := K)] [HasFlatRepr X Ks nX] [HasFlatRepr Y Ks nY] :
     HasFlatRepr ((_ : X) × Y) Ks (nX + nY) :=
   HasFlatRepr.ofEquiv Ks (sigmaEquivProd X Y).symm
 
