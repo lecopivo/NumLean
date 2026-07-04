@@ -28,16 +28,19 @@ structure Vec3 (X : Type u) where
   z : X
 #derive_has_flat_repr Vec3
 
-structure Mat3 (X : Type u) where
-  r0 : Vec3 X
-  r1 : Vec3 X
-  r2 : Vec3 X
-#derive_has_flat_repr Mat3
+example : HasFlatRepr (Vec3 A) (Vector A) 3 := inferInstance
+example : HasFlatRepr (Vec3 (Vec3 A)) (Vector A) 9 := inferInstance
 
-variable (A : Type)
+-- structure Mat3 (X : Type u) where
+--   r0 : Vec3 X
+--   r1 : Vec3 X
+--   r2 : Vec3 X
+-- #derive_has_flat_repr Mat3
 
-example : HasFlatRepr (Mat3 A) (Vector A) 9 := inferInstance
-example : HasFlatRepr (Mat3 (Vec3 A)) (Vector A) 27 := inferInstance
+-- variable (A : Type)
+
+-- example : HasFlatRepr (Mat3 A) (Vector A) 9 := inferInstance
+-- example : HasFlatRepr (Mat3 (Vec3 A)) (Vector A) 27 := inferInstance
 
 structure SizedVec3 (m : Nat) (X : Type) where
   x : X

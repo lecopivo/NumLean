@@ -240,6 +240,7 @@ meta def mkHasFlatReprInstanceOneTypeParam
         {$(mkIdent ksName):ident : Nat → Type} {$(mkIdent kName):ident : Type} {$(mkIdent nName):ident : Nat}
         [$(mkCIdent ``VectorType) $(mkIdent ksName) $(mkIdent kName)]
         [$(mkCIdent ``HasFlatRepr) $(mkIdent xName) $(mkIdent ksName) $(mkIdent nName) (K := $(mkIdent kName))]
+        [$(mkCIdent ``TensorType) $(mkIdent ksName)]
         : $(mkCIdent ``HasFlatRepr) $indType $(mkIdent ksName) $n (K := $(mkIdent kName)) :=
       $(mkCIdent ``HasFlatRepr.ofEquiv) $(mkIdent ksName) (proxy_equiv% $indType))
 
