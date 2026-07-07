@@ -11,6 +11,7 @@ public import Tests.Float64TensorAlgebraEval
 public import Tests.Float64TensorAlgebraFailures
 public import Tests.FloatTensor
 public import Tests.FoldEmbedding
+public import Tests.FoldFin
 public import Tests.ForAllNotation
 public import Tests.GaussianPivotEval
 public import Tests.HTupleCoercions

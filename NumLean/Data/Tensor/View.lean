@@ -1,6 +1,6 @@
 module
 
-public import NumLean.Data.Tensor.Basic
+public import NumLean.Data.Tensor.Reshape
 public import NumLean.Interfaces.Algebra.MatrixOps
 public import NumLean.Interfaces.TensorAlgebra
 public import NumLean.Interfaces.TensorType
@@ -37,7 +37,7 @@ An inline vertions of the above would be:
 ```
 -/
 structure View (X : Type u) (J : Type v) (I : Type w)
-    {Ks K nX} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX]
+    {Ks K nX} [HasDefaultFlatRepr X Ks] [VectorType Ks K] [HasFlatRepr X Ks nX]
     {nJ jrank jshape} [TensorIndexType J nJ jrank jshape]
     {nI irank ishape} [TensorIndexType I nI irank ishape] where
   data : Tensor X I
@@ -54,14 +54,14 @@ InjectiveView is required when we want to mutate the underlining data. Injectivi
 of the view map `J → I` guarantees us that the every `j : J` corresponds to only a single `data[i]`
 thus avoiding any ambiguity if that wans't the case. -/
 structure InjectiveView (X : Type u) (J : Type v) (I : Type w)
-    {Ks K nX} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX]
+    {Ks K nX} [HasDefaultFlatRepr X Ks] [VectorType Ks K] [HasFlatRepr X Ks nX]
     {nJ jrank jshape} [TensorIndexType J nJ jrank jshape]
     {nI irank ishape} [TensorIndexType I nI irank ishape]
   extends View X J I where
   injective : layout.Injective
 
 structure BijectiveView (X : Type u) (J : Type v) (I : Type w)
-    {Ks K nX} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX]
+    {Ks K nX} [HasDefaultFlatRepr X Ks] [VectorType Ks K] [HasFlatRepr X Ks nX]
     {nJ jrank jshape} [TensorIndexType J nJ jrank jshape]
     {nI irank ishape} [TensorIndexType I nI irank ishape]
   extends InjectiveView X J I where
@@ -92,7 +92,7 @@ section BasicOperations
 
 variable
     {R : Type} {Rs} [VectorType Rs R] [RingOps R] [TensorRingOps Rs R]
-    {X : Type*} {nX} [HasDefaultFlatRepr X Rs nX]
+    {X : Type*} {nX} [HasDefaultFlatRepr X Rs] [HasFlatRepr X Rs nX]
     {I : Type*} {nI irank ishape} [TensorIndexType I nI irank ishape]
     {J : Type*} {nJ jrank jshape} [TensorIndexType J nJ jrank jshape]
     {K : Type*} {nK krank kshape} [TensorIndexType K nK krank kshape]
@@ -281,7 +281,7 @@ end BasicOperations
 
 variable
     {R : Type} {Rs} [VectorType Rs R] [RingOps R] [TensorRingOps Rs R] [TensorType Rs]
-    {X : Type*} [HasDefaultFlatRepr X Rs 1]
+    {X : Type*} [HasDefaultFlatRepr X Rs] [HasFlatRepr X Rs 1]
     {I : Type*} {nI irank ishape} [TensorIndexType I nI irank ishape]
     {J : Type*} {nJ jrank jshape} [TensorIndexType J nJ jrank jshape]
     {K : Type*} {nK krank kshape} [TensorIndexType K nK krank kshape]

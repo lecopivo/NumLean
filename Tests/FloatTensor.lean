@@ -10,12 +10,16 @@ open NumLean
 
 namespace FloatTensor
 
-instance : HasDefaultFlatRepr Nat (Vector Nat) 1 where
-instance : HasDefaultFlatRepr Int (Vector Int) 1 where
+instance : HasDefaultFlatRepr Nat (Vector Nat) where
+instance : HasDefaultFlatRepr Int (Vector Int) where
 
--- #check Nat^[10]
+/-- info: ⊞[1, 2, 3] : ℕ^[3] -/
+#guard_msgs in
+#check ⊞[1,2,3]
 
--- #check ⊞[1,2,3]
+/-- info: ⊞[-1, 2, 3] : ℤ^[3] -/
+#guard_msgs in
+#check ⊞[-1,2,3]
 
 -- #check (Float^[2])^[2]
 

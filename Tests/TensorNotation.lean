@@ -11,7 +11,7 @@ open NumLean
 
 namespace Tests.TensorNotation
 
-variable (X : Type u)  {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX]
+variable (X : Type u)  {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks] [HasFlatRepr X Ks nX]
   (I : Type v) [IndexType I nI]
   (J : Type v) [IndexType J nJ]
   (K : Type v) [IndexType K nK]
@@ -164,8 +164,8 @@ example (i j : Fin 5) :
       = if i = j then 1.0 else 0.0 := by
   simp [Function.HasUncurry.uncurry]
 
-local instance : HasDefaultFlatRepr ℕ (Vector ℕ) 1 where
-local instance : HasDefaultFlatRepr ℤ (Vector ℤ) 1 where
+local instance : HasDefaultFlatRepr ℕ (Vector ℕ) where
+local instance : HasDefaultFlatRepr ℤ (Vector ℤ) where
 
 /-- info: ⊞ i j => if i = j then 1 else 0 : ℕ^[5, 5] -/
 #guard_msgs in

@@ -1,7 +1,8 @@
 module
 
 public import NumLean.Data.Vector.Basic
-public import NumLean.Data.Tensor
+public import NumLean.Data.Vector.LayoutMap
+public import NumLean.Data.Tensor.Layout
 public import NumLean.Interfaces.Fold.Lemmas
 public import NumLean.Meta.ForAll
 public import NumLean.Meta.GetElemSetElemLinter
@@ -33,11 +34,8 @@ def copySlice {K n m} {r : Rank} {shape : Shape r}
 This is the reference implementation of `TensorType.copySlice`. -/
 def copySliceSelf {α} {n : Nat} {r : Rank} {shape : Shape r}
     (data : Vector α n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
-    (hdst : dstMap.Injective) (h : Disjoint srcMap.range dstMap.range) : Vector α n := Id.run do
-  let mut data := data
-  for_all i in 0...shape do
-    data[dstMap i] := data[srcMap i]
-  return data
+    (hdst : dstMap.Injective) (h : Disjoint srcMap.range dstMap.range) : Vector α n :=
+  Layout.map₂ dstMap srcMap data fun _ _ src => src
 
 
 /-- Copy a splice from `src` to `dst` i.e. dst[dstMap i] := src[srcMap i].
@@ -61,15 +59,15 @@ def swapSlice {α} {m n : Nat} {r : Rank} {shape : Shape r}
 
 /-- Copy a splice from `src` to `dst` i.e. dst[dstMap i] := src[srcMap i].
 
-This is the reference implementation of `TensorType.copySlice`. -/
+This is the reference implementation of `TensorType.copySlice`.
+
+todo: this is not a good implementation as it makes a copy of the data. -/
 def swapSliceSelf {α} {n : Nat} {r : Rank} {shape : Shape r}
     (data : Vector α n) (map : Layout shape h(n)) (map' : Layout shape h(n))
     (hmap : map.Injective) (hmap' : map'.Injective) (h : Disjoint map.range map'.range) :
-    Vector α n := Id.run do
-  let mut data := data
-  for_all i in 0...shape do
-    data := data.swap (map i) (map' i)
-  return data
+    Vector α n :=
+  let data' := Layout.map₂ map' map data fun _ _ y => y
+  Layout.map₂ map map' data' fun i _ _ => data[map' i]
 
 
 set_option pp.coercions false in
@@ -94,31 +92,46 @@ open Classical in
 /-- Copy a splice from `src` to `dst` i.e. dst[dstMap i] := src[srcMap i].
 
 This is the reference implementation of `TensorType.copySlice`. -/
-proof_wanted getElem_copySliceSelf {α} {m n : Nat} {r : Rank} {shape : Shape r}
+@[simp]
+theorem getElem_copySliceSelf {α} {m n : Nat} {r : Rank} {shape : Shape r}
     (data : Vector α n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
     (hdst : dstMap.Injective) (h : Disjoint srcMap.range dstMap.range)
     (j : Nat) (hj : j < n) :
     (copySliceSelf data srcMap dstMap hdst h)[j]
     =
-    if hi : i ∈ dstMap.rangeNat then
-      data[srcMap (dstMap.rangeNatInv i hi)]
+    if hi : j ∈ dstMap.rangeNat then
+      data[srcMap (dstMap.rangeNatInv j hi)]
     else
-      data[j]
+      data[j] := by
+  simpa [copySliceSelf] using
+    (Tensor.Layout.getElem_map₂ (layout := dstMap) (layout' := srcMap) (xs := data)
+      (f := fun _ _ src => src) hdst h.symm j hj)
 
 
 open Classical in
 /-- Copy a splice from `src` to `dst` i.e. dst[dstMap i] := src[srcMap i].
 
 This is the reference implementation of `TensorType.copySlice`. -/
-proof_wanted getElem_swapSliceSelf {α} {n : Nat} {r : Rank} {shape : Shape r}
+@[simp]
+theorem getElem_swapSliceSelf {α} {n : Nat} {r : Rank} {shape : Shape r}
     (data : Vector α n) (map : Layout shape h(n)) (map' : Layout shape h(n))
     (hmap : map.Injective) (hmap' : map'.Injective) (h : Disjoint map.range map'.range)
     (j : Nat) (hj : j < n) :
     (swapSliceSelf data map map' hmap hmap' h)[j]
     =
-    if hk : k ∈ map.rangeNat then
-      data[map' (map.rangeNatInv k hk)]
-    else if hk : k ∈ map'.rangeNat then
-      data[map (map'.rangeNatInv k hk)]
+    if hk : j ∈ map.rangeNat then
+      data[map' (map.rangeNatInv j hk)]
+    else if hk : j ∈ map'.rangeNat then
+      data[map (map'.rangeNatInv j hk)]
     else
-      data[j]
+      data[j] := by
+  rw [swapSliceSelf]
+  rw [Tensor.Layout.getElem_map₂ (layout := map) (layout' := map')
+    (xs := Layout.map₂ map' map data fun _ _ y => y)
+    (f := fun i _ _ => data[map' i]) hmap h j hj]
+  by_cases hjmap : j ∈ map.rangeNat
+  · simp [hjmap]
+  · simp [hjmap]
+    rw [Tensor.Layout.getElem_map₂ (layout := map') (layout' := map) (xs := data)
+      (f := fun _ _ y => y) hmap' h.symm j hj]
+    rfl

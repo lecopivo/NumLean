@@ -63,9 +63,7 @@ class HasFlatRepr (X : Type u) (Ks : Nat → Type v) (nX : outParam Nat)
     VectorType.get (replicate n x) (i * nX + j) (by tbounds) = getComp x j hj
 
 /-- The default flat vector representation for `X`. -/
-class HasDefaultFlatRepr (X : Type u) (Ks : outParam (Nat → Type v)) (nX : outParam Nat)
-    {K : outParam (Type w)} [VectorType Ks K]
-    extends HasFlatRepr X Ks nX
+class HasDefaultFlatRepr (X : Type u) (Ks : outParam (Nat → Type v))
 
 namespace HasFlatRepr
 

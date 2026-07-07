@@ -42,21 +42,16 @@ def copySlice {n m} {r : Rank} {shape : Shape r}
 @[implemented_by copySliceSelfImpl]
 def copySliceSelf {n} {r : Rank} {shape : Shape r}
     (data : Float64Vector n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n)) :
-    Float64Vector n := Id.run do
-  let mut data := data
-  for_all i in 0...shape do
-    data[dstMap i] := data[srcMap i]
-  return data
+    Float64Vector n :=
+  Layout.map₂ dstMap srcMap data fun _ _ src => src
 
 /-- Swap data within one vector through two corresponding disjoint slices. -/
 @[implemented_by swapSliceSelfImpl]
 def swapSliceSelf {n} {r : Rank} {shape : Shape r}
     (data : Float64Vector n) (map : Layout shape h(n)) (map' : Layout shape h(n)) :
-    Float64Vector n := Id.run do
-  let mut data := data
-  for_all i in 0...shape do
-    data := data.swap (map i) (map' i)
-  return data
+    Float64Vector n :=
+  let data' := Layout.map₂ map' map data fun _ _ y => y
+  Layout.map₂ map map' data' fun i _ _ => data[map' i]
 
 attribute [simp] VectorType.swap_spec
 
@@ -69,14 +64,16 @@ instance : TensorType Float64Vector where
     congr
   copySliceSelf xs srcMap dstMap _ _ := Float64Vector.copySliceSelf xs srcMap dstMap
   toVector_copySliceSelf := by
-    intros
-    simp [Float64Vector.copySliceSelf, Vector.copySliceSelf, Id.run, pure, bind]
+    intro m n r shape xs srcMap dstMap hdst h
+    simp [Float64Vector.copySliceSelf, Vector.copySliceSelf, Layout.map₂]
     rw [fold_equiv]
     congr
   swapSliceSelf xs map map' _ _ _ := Float64Vector.swapSliceSelf xs map map'
   toVector_swapSliceSelf := by
-    intros
-    simp [Float64Vector.swapSliceSelf, Vector.swapSliceSelf, Id.run, pure, bind]
+    intro m n r shape xs map map' hmap hmap' h
+    simp [Float64Vector.swapSliceSelf, Vector.swapSliceSelf, Layout.map₂]
+    rw [fold_equiv]
+    congr
     rw [fold_equiv]
     congr
 

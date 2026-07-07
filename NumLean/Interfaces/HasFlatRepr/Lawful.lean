@@ -145,6 +145,9 @@ instance [Pow R Int] : LawfulPowInt R Rs where
 instance [Star R] : LawfulStar R Rs where
   getComp_star := by intros; rfl
 
+instance [RCLike R] : LawfulInner R (Vector R) where
+  inner_eq_sum := by intros; simp[inner,getComp,mul_comm]
+
 end ScalarInstances
 
 end HasFlatRepr

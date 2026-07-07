@@ -2,6 +2,7 @@ module
 
 public import NumLean.Data.Prod.Order
 public import NumLean.Interfaces.Fold.RangeIso
+public import NumLean.Interfaces.Fold.Fin
 
 @[expose] public section
 
@@ -162,6 +163,36 @@ instance (priority := low) instLawfulFoldRcoProd {α : Type u} {β : Type v}
         (prodEntries (xs.lower.1...xs.upper.1 : Std.Rco α)
           (xs.lower.2...xs.upper.2 : Std.Rco β)).foldl (fun acc a => f a.1 a.2 acc) init
     simp [prodEntries, List.foldl_flatMap, List.foldl_map, prodEntry]
+
+/-- Entry-indexed finite view of a product range.
+
+This is order-correct for the row-major product fold.  A later refinement can expose a closed-form
+`fromFin` via `finProdFinEquiv` and finite views of both factors. -/
+noncomputable def finViewRcoProd {α : Type u} {β : Type v}
+    [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
+    [Fold (Std.Rco α)] [Fold (Std.Rco β)]
+    [LawfulFold (Std.Rco α) α inferInstance] [LawfulFold (Std.Rco β) β inferInstance]
+    (lo hi : α × β)
+    [DecidableEq {x : α × β // x ∈ (lo...hi : Std.Rco (α × β))}] :
+    Fold.FinRangeView (lo...hi : Std.Rco (α × β)) :=
+  Fold.FinRangeView.ofEntries
+
+theorem fold_rco_prod_eq_fin_foldl {α : Type u} {β : Type v} {γ : Type w}
+    [Membership α (Std.Rco α)] [Membership β (Std.Rco β)]
+    [FoldEntries (Std.Rco α) α inferInstance] [FoldEntries (Std.Rco β) β inferInstance]
+    [Fold (Std.Rco α)] [Fold (Std.Rco β)]
+    [LawfulFold (Std.Rco α) α inferInstance] [LawfulFold (Std.Rco β) β inferInstance]
+    (lo hi : α × β)
+    [DecidableEq {x : α × β // x ∈ (lo...hi : Std.Rco (α × β))}]
+    (init : γ)
+    (f : (x : α × β) → x ∈ (lo...hi : Std.Rco (α × β)) → γ → γ) :
+    Fold.fold (lo...hi : Std.Rco (α × β)) init f =
+      Fin.foldl (finViewRcoProd lo hi).size
+        (fun acc i => f ((finViewRcoProd lo hi).fromFin i)
+          ((finViewRcoProd lo hi).mem_fromFin i) acc)
+        init :=
+  (finViewRcoProd lo hi).fold_eq_fin_foldl init f
 
 end Fold
 

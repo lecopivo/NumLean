@@ -13,7 +13,7 @@ namespace NumLean.Tensor
 open Tensor TensorRingOps
 
 variable {X : Type u} {I : Type v}
-  {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI]
+  {Ks K nX nI} [HasDefaultFlatRepr X Ks] [VectorType Ks K] [HasFlatRepr X Ks nX] [IndexType I nI]
 
 instance instZero [Zero K] : Zero (Tensor X I) :=
   ⟨{ data := VectorType.replicate (nI * nX) 0 }⟩

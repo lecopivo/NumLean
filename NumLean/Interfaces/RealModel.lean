@@ -32,7 +32,7 @@ class LawfulRealModel (R : semiOutParam Type) {Rs : outParam (Nat → Type)} [Re
     LawfulDataRealModelOps R, LawfulRealModelOps R
 
 -- if you introduce RealModelOps, we attach Rs to R as the default vector type!
-instance [RealModelOps R Rs] : HasDefaultFlatRepr R Rs 1 where
+instance [RealModelOps R Rs] : HasDefaultFlatRepr R Rs where
 
 variable {R Rs} [RealModelOps R Rs] [LawfulRealModel R]
 

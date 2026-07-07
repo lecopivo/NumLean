@@ -3,35 +3,16 @@ module
 public import NumLean.Data.FinHTuple.Basic
 public import NumLean.Data.FinHTuple.FinHTupleMap
 public import NumLean.Interfaces.Fold
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.List.Intervals
 
 @[expose] public section
 
 namespace NumLean
 
+universe u
+
 namespace FinHTuple
-
-namespace List
-
-private theorem subtype_ext_of_map_val_eq {α : Type u} {p : α → Prop}
-    {xs ys : List {x : α // p x}}
-    (h : xs.map Subtype.val = ys.map Subtype.val) : xs = ys := by
-  induction xs generalizing ys with
-  | nil =>
-      cases ys with
-      | nil => rfl
-      | cons y ys => simp at h
-  | cons x xs ih =>
-      cases ys with
-      | nil => simp at h
-      | cons y ys =>
-          simp only [List.map_cons] at h
-          injection h with hxy htail
-          have hxy' : x = y := Subtype.ext hxy
-          subst hxy'
-          simp [ih htail]
-
-end List
 
 private theorem List.map_range_rowMajor_block (i m : Nat) :
     (List.range m).map (fun j => j + m * i) = List.Ico (m * i) (m * (i + 1)) := by
@@ -91,10 +72,68 @@ def zeroRangeRangeEquivFin {p : HTuple.Profile} (ns : HTuple Nat p) :
       (0...ns.numel : Std.Rco Nat) :=
   Fold.RangeEquiv.ofSubtypeEquivAll (zeroRangeEquivFin ns)
 
+open Classical in
+theorem sum_zeroRange_eq_fin {p : HTuple.Profile} {M : Type u} [AddCommMonoid M]
+    (ns : HTuple Nat p)
+    (f : {idx : HTuple Nat p // idx ∈ ((0 : HTuple Nat p)...ns)} → M) :
+    (∑ idx ∈ (NumLean.entries ((0 : HTuple Nat p)...ns)).toFinset, f idx) =
+      ∑ i : Fin ns.numel,
+        let idx := (equivFin ns).symm i
+        f ⟨idx, val_mem_zero_shape idx⟩ := by
+  classical
+  let r : Std.Rco (HTuple Nat p) := (0 : HTuple Nat p)...ns
+  let e := zeroRangeEquivFlatFin ns
+  let s : Finset {idx : HTuple Nat p // idx ∈ r} := (NumLean.entries r).toFinset
+  change (∑ idx ∈ s, f idx) =
+    ∑ i ∈ (Finset.univ : Finset (Fin ns.numel)),
+      let idx := (equivFin ns).symm i
+      f ⟨idx, val_mem_zero_shape idx⟩
+  refine Finset.sum_bij'
+    (fun idx _ => e idx)
+    (fun i _ => e.symm i)
+    ?_ ?_ ?_ ?_ ?_
+  · intro idx hidx
+    simp
+  · intro i _
+    simpa [s] using
+      ((inferInstance : LawfulFold.{0, 0, 0} (Std.Rco (HTuple Nat p)) (HTuple Nat p)
+        HTuple.Range.instMembershipRcoHTuple).mem_entries (xs := r) (e.symm i).2)
+  · intro idx hidx
+    simp [e]
+  · intro i _
+    simp [e]
+  · intro idx hidx
+    cases idx with
+    | mk idx hmem =>
+        have hfin : (equivFin ns).symm (e ⟨idx, hmem⟩) = equivZeroRange ns ⟨idx, hmem⟩ := by
+          simp [e, zeroRangeEquivFlatFin]
+        simp [hfin, equivZeroRange]
+
 
 end FinHTuple
 
 namespace Fold
+
+/-- Entry-indexed finite view of a zero-origin HTuple range.
+
+This gives an immediate ordered bridge from `Fold.fold (0...shape)` to `Fin.foldl`.  The view is
+entry-indexed; a later refinement should expose the closed-form row-major map
+`(FinHTuple.equivFin shape).symm`. -/
+def finViewZeroHTuple {p : HTuple.Profile} (shape : HTuple Nat p)
+    [DecidableEq {idx : HTuple Nat p // idx ∈ ((0 : HTuple Nat p)...shape)}] :
+    Fold.FinRangeView ((0 : HTuple Nat p)...shape) :=
+  Fold.FinRangeView.ofEntries
+
+theorem fold_zeroHTuple_eq_fin_foldl {p : HTuple.Profile} (shape : HTuple Nat p)
+    [DecidableEq {idx : HTuple Nat p // idx ∈ ((0 : HTuple Nat p)...shape)}]
+    {β : Type u} (init : β)
+    (f : (idx : HTuple Nat p) → idx ∈ ((0 : HTuple Nat p)...shape) → β → β) :
+    Fold.fold ((0 : HTuple Nat p)...shape) init f =
+      Fin.foldl (finViewZeroHTuple shape).size
+        (fun acc i => f ((finViewZeroHTuple shape).fromFin i)
+          ((finViewZeroHTuple shape).mem_fromFin i) acc)
+        init :=
+  (finViewZeroHTuple shape).fold_eq_fin_foldl init f
 
 open Classical Function in
 theorem fold_layout_ext {r : HTuple.Profile} {shape : HTuple Nat r}

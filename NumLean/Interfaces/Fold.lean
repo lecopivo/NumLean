@@ -7,6 +7,6 @@ public import NumLean.Interfaces.Fold.Embedding
 public import NumLean.Interfaces.Fold.Filter
 public import NumLean.Interfaces.Fold.Lemmas
 public import NumLean.Interfaces.Fold.RcoNative
+public import NumLean.Interfaces.Fold.Fin
 public import NumLean.Data.Prod.Fold
 @[expose] public section
-

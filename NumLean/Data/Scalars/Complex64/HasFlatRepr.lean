@@ -9,7 +9,8 @@ public import NumLean.Interfaces.HasFlatRepr.Basic
 
 namespace NumLean
 
-instance : HasDefaultFlatRepr Complex64 Complex64Vector 1 where
+
+instance : HasDefaultFlatRepr Complex64 Complex64Vector where
 
 -- instance instHasFlatReprFloatComplex64Vector : HasFlatRepr Float Complex64Vector 2
 -- instance instHasFlatReprComplex64FloatVector : HasFlatRepr Complex64 FloatVector 2

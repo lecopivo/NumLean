@@ -15,7 +15,7 @@ normed hierarchy, the instance priorities/hierarchy should be fixed rather than 
 namespace NumLean.TypeclassPerformance
 
 variable {K X I : Type} {Ks : Nat → Type} {nX nI : Nat}
-variable [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI]
+variable [VectorType Ks K] [HasDefaultFlatRepr X Ks] [HasFlatRepr X Ks nX] [IndexType I nI]
 
 section RingProjections
 

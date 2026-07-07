@@ -1,7 +1,7 @@
 module
 
 public import NumLean.Data.Vector.Basic
-public import NumLean.Data.Tensor
+public import NumLean.Data.Tensor.Layout
 public import NumLean.Interfaces.Fold.Lemmas
 public import NumLean.Meta.ForAll
 

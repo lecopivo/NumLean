@@ -68,6 +68,8 @@ unsafe def tensorAxpyImpl {r} {m n : Nat} {shape : Shape r} (a : Float)
   let data := tensorAxpyImplRec 0 shape a xs.data xOff xStrides ys.data yOff yStrides
   ⟨data, lcProof⟩
 
+-- todo: this is not good implementation we can't use tensorAxpyImplRec but have to implement
+--       brand new tensorAxpySelfImplRec
 unsafe def tensorAxpySelfImpl {r} {n : Nat} {shape : Shape r} (a : Float)
     (data : Float64Vector n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
     (_hdst : dstMap.Injective) (_h : Disjoint srcMap.range dstMap.range) : Float64Vector n :=

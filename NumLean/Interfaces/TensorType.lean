@@ -1,6 +1,6 @@
 module
 
-public import NumLean.Data.Tensor
+public import NumLean.Data.Tensor.Layout
 public import NumLean.Data.Vector.TensorType
 public import NumLean.Interfaces.VectorType.Basic
 
@@ -78,7 +78,7 @@ namespace TensorType
 
 open Classical Tensor VectorType
 
-variable {Ks : Nat → Type} {K : Type} [VectorType Ks K] [TensorType Ks (K:=K)]
+variable {Ks : Nat → Type} {K : Type} [v : VectorType Ks K] [TensorType Ks (K:=K)]
 variable {r : Rank}
 
 @[simp]
@@ -97,30 +97,62 @@ theorem get_copySlice {m n : Nat} {shape : Shape r}
     (Vector.getElem_copySlice (src := toVector src) (srcMap := srcMap)
       (dst := toVector dst) (dstMap := dstMap) (h := hdst) idx hidx)
 
-set_option linter.unusedSectionVars false in
-proof_wanted get_copySliceSelf {n : Nat} {shape : Shape r}
+@[simp]
+theorem get_copySliceSelf {n : Nat} {shape : Shape r}
     (data : Ks n) (srcMap : Layout shape h(n)) (dstMap : Layout shape h(n))
     (hdst : dstMap.Injective) (h : Disjoint srcMap.range dstMap.range)
     (idx : Nat) (hidx : idx < n) :
-    VectorType.get (TensorType.copySliceSelf (Ks:=Ks) (K:=K) data srcMap dstMap hdst h) idx hidx
+    VectorType.get (self:=v)
+      (TensorType.copySliceSelf (Ks:=Ks) (K:=K) data srcMap dstMap hdst h) idx hidx
     =
     if hi : idx ∈ dstMap.rangeNat then
-      VectorType.get data (srcMap (dstMap.rangeNatInv idx hi)) (by get_elem_tactic)
+      VectorType.get (self:=v) data (srcMap (dstMap.rangeNatInv idx hi)) (by get_elem_tactic)
     else
-      VectorType.get data idx hidx
+      VectorType.get (self:=v) data idx hidx := by
+  conv_lhs =>
+    rw [@VectorType.get_spec Ks K v n
+      (TensorType.copySliceSelf (Ks:=Ks) (K:=K) data srcMap dstMap hdst h) idx hidx]
+  rw [TensorType.toVector_copySliceSelf]
+  convert (Vector.getElem_copySliceSelf (α := K) (m := n) (n := n) (r := r) (shape := shape)
+    (data := toVector data) (srcMap := srcMap)
+    (dstMap := dstMap) (hdst := hdst) (h := h) idx hidx) using 1
+  · by_cases hi : idx ∈ dstMap.rangeNat
+    · rw [dif_pos hi, dif_pos hi]
+      exact VectorType.get_spec data (srcMap (dstMap.rangeNatInv idx hi)) _
+    · rw [dif_neg hi, dif_neg hi]
+      exact VectorType.get_spec data idx hidx
+  · get_elem_tactic
 
-set_option linter.unusedSectionVars false in
-proof_wanted get_swapSliceSelf {n : Nat} {shape : Shape r}
+@[simp]
+theorem get_swapSliceSelf {n : Nat} {shape : Shape r}
     (data : Ks n) (map : Layout shape h(n)) (map' : Layout shape h(n))
     (hmap : map.Injective) (hmap' : map'.Injective) (h : Disjoint map.range map'.range)
     (idx : Nat) (hidx : idx < n) :
-    VectorType.get (TensorType.swapSliceSelf (Ks:=Ks) (K:=K) data map map' hmap hmap' h) idx hidx
+    VectorType.get (self:=v)
+      (TensorType.swapSliceSelf (Ks:=Ks) (K:=K) data map map' hmap hmap' h) idx hidx
     =
     if hk : idx ∈ map.rangeNat then
-      VectorType.get data (map' (map.rangeNatInv idx hk)) (by get_elem_tactic)
+      VectorType.get (self:=v) data (map' (map.rangeNatInv idx hk)) (by get_elem_tactic)
     else if hk : idx ∈ map'.rangeNat then
-      VectorType.get data (map (map'.rangeNatInv idx hk)) (by get_elem_tactic)
+      VectorType.get (self:=v) data (map (map'.rangeNatInv idx hk)) (by get_elem_tactic)
     else
-      VectorType.get data idx hidx
+      VectorType.get (self:=v) data idx hidx := by
+  conv_lhs =>
+    rw [@VectorType.get_spec Ks K v n
+      (TensorType.swapSliceSelf (Ks:=Ks) (K:=K) data map map' hmap hmap' h) idx hidx]
+  rw [TensorType.toVector_swapSliceSelf]
+  convert (Vector.getElem_swapSliceSelf (α := K) (n := n) (r := r) (shape := shape)
+    (data := toVector data) (map := map) (map' := map')
+    (hmap := hmap) (hmap' := hmap') (h := h) idx hidx) using 1
+  · by_cases hk : idx ∈ map.rangeNat
+    · rw [dif_pos hk, dif_pos hk]
+      exact VectorType.get_spec data (map' (map.rangeNatInv idx hk)) _
+    · rw [dif_neg hk, dif_neg hk]
+      by_cases hk' : idx ∈ map'.rangeNat
+      · rw [dif_pos hk', dif_pos hk']
+        exact VectorType.get_spec data (map (map'.rangeNatInv idx hk')) _
+      · rw [dif_neg hk', dif_neg hk']
+        exact VectorType.get_spec data idx hidx
+  · get_elem_tactic
 
 end TensorType

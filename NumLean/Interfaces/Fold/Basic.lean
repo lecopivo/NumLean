@@ -40,6 +40,24 @@ theorem List.flatten_map_singleton {α : Type u} {β : Type v} (xs : List α) (f
   | nil => rfl
   | cons x xs ih => simp [ih]
 
+theorem List.subtype_ext_of_map_val_eq {α : Type u} {p : α → Prop}
+    {xs ys : List {x : α // p x}}
+    (h : xs.map Subtype.val = ys.map Subtype.val) : xs = ys := by
+  induction xs generalizing ys with
+  | nil =>
+      cases ys with
+      | nil => rfl
+      | cons y ys => simp at h
+  | cons x xs ih =>
+      cases ys with
+      | nil => simp at h
+      | cons y ys =>
+          simp only [List.map_cons] at h
+          injection h with hxy htail
+          have hxy' : x = y := Subtype.ext hxy
+          subst hxy'
+          simp [ih htail]
+
 /-- Laws connecting an executable `Fold` with its concrete reference enumeration.
 
 This class is intentionally proof-only: the computational enumeration lives in `FoldEntries`, while

@@ -454,6 +454,51 @@ theorem mem_rco_iff {p : Profile} [LT α] [LE α]
     {idx : HTuple α p} {lo hi : HTuple α p} :
     idx ∈ (lo...hi) ↔ lo ≤ₑ idx ∧ idx <ₑ hi := Iff.rfl
 
+private theorem zero_elementwiseLE_nat : {p : Profile} → (idx : HTuple Nat p) →
+    (0 : HTuple Nat p) ≤ₑ idx
+  | .leaf, .leaf idx => Nat.zero_le idx
+  | .prod _ _, .prod idx₀ idx₁ =>
+      ⟨zero_elementwiseLE_nat idx₀, zero_elementwiseLE_nat idx₁⟩
+
+@[simp, grind =, grind_htuple_order =]
+theorem mem_zero_iff_lt {p : Profile} {idx shape : HTuple Nat p} :
+    idx ∈ ((0 : HTuple Nat p)...shape) ↔ idx <ₑ shape := by
+  rw [mem_iff_le_lt]
+  exact ⟨fun h => h.2, fun h => ⟨zero_elementwiseLE_nat idx, h⟩⟩
+
+@[simp, grind =, grind_htuple_order =]
+theorem mem_leaf_iff {α : Type u} [LE α] [LT α] {idx lo hi : α} :
+    (HTuple.leaf idx) ∈ ((HTuple.leaf lo)...(HTuple.leaf hi) : Std.Rco (HTuple α .leaf)) ↔
+      idx ∈ (lo...hi : Std.Rco α) := by
+  rw [mem_iff_le_lt, Std.Rco.mem_iff]
+  simp
+
+@[simp, grind =, grind_htuple_order =]
+theorem mem_zero_leaf_iff {idx hi : Nat} :
+    (HTuple.leaf idx) ∈ ((0 : HTuple Nat .leaf)...(HTuple.leaf hi)) ↔ idx < hi := by
+  rw [mem_zero_iff_lt]
+  rfl
+
+@[simp, grind =, grind_htuple_order =]
+theorem mem_prod_iff {α : Type u} [LE α] [LT α] {p q : Profile}
+    {idx₀ lo₀ hi₀ : HTuple α p} {idx₁ lo₁ hi₁ : HTuple α q} :
+    (HTuple.prod idx₀ idx₁) ∈
+      ((HTuple.prod lo₀ lo₁)...(HTuple.prod hi₀ hi₁) : Std.Rco (HTuple α (.prod p q))) ↔
+        idx₀ ∈ (lo₀...hi₀ : Std.Rco (HTuple α p)) ∧
+          idx₁ ∈ (lo₁...hi₁ : Std.Rco (HTuple α q)) := by
+  rw [mem_iff_le_lt]
+  simp only [elementwiseLE_prod, elementwiseLT_prod, mem_iff_le_lt]
+  tauto
+
+@[simp, grind =, grind_htuple_order =]
+theorem mem_zero_prod_iff {p q : Profile}
+    {idx₀ hi₀ : HTuple Nat p} {idx₁ hi₁ : HTuple Nat q} :
+    (HTuple.prod idx₀ idx₁) ∈
+      ((0 : HTuple Nat (.prod p q))...(HTuple.prod hi₀ hi₁)) ↔
+        idx₀ ∈ ((0 : HTuple Nat p)...hi₀) ∧
+          idx₁ ∈ ((0 : HTuple Nat q)...hi₁) := by
+  simp
+
 @[grind =, grind_htuple_order =]
 theorem mem_rci_iff {p : Profile} [LE α]
     {idx : HTuple α p} {lo : HTuple α p} :

@@ -220,7 +220,7 @@ instance {α : Type u} [LE α] [LT α] [DecidableLT α]
     exact foldHTuple_eq_foldl xs init f
 
 /-- Ordered range isomorphism between product ranges of HTuples and HTuple product ranges. -/
-noncomputable def htupleProdRangeIso {α : Type u} [LE α] [LT α] [DecidableLT α]
+def htupleProdRangeIso {α : Type u} [LE α] [LT α] [DecidableLT α]
     {p q : HTuple.Profile}
     [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
     [LawfulFold (Std.Rco α) α inferInstance]
@@ -290,5 +290,25 @@ noncomputable def htupleProdRangeIso {α : Type u} [LE α] [LT α] [DecidableLT 
     intro b _
     apply Subtype.ext
     rfl
+
+/-- Fold over an HTuple product range by folding over the corresponding pair range.
+
+This is the direct user-facing wrapper around `htupleProdRangeIso`: the range
+`(lo₀.prod lo₁)...(hi₀.prod hi₁)` has the same row-major fold order as
+`(lo₀, lo₁)...(hi₀, hi₁)`. -/
+theorem fold_htuple_prod_eq_pair {α : Type u} {γ : Type w}
+    [LE α] [LT α] [DecidableLT α]
+    {p q : HTuple.Profile}
+    [FoldEntries (Std.Rco α) α inferInstance] [Fold (Std.Rco α)]
+    [LawfulFold (Std.Rco α) α inferInstance]
+    (lo₀ hi₀ : HTuple α p) (lo₁ hi₁ : HTuple α q) (init : γ)
+    (f : (idx : HTuple α (.prod p q)) →
+      idx ∈ ((lo₀.prod lo₁)...(hi₀.prod hi₁) : Std.Rco (HTuple α (.prod p q))) →
+      γ → γ) :
+    Fold.fold ((lo₀.prod lo₁)...(hi₀.prod hi₁) : Std.Rco (HTuple α (.prod p q))) init f =
+      Fold.fold ((lo₀, lo₁)...(hi₀, hi₁) : Std.Rco (HTuple α p × HTuple α q)) init
+        fun idx hidx acc =>
+          f (idx.1.prod idx.2) ((htupleProdRangeIso lo₀ hi₀ lo₁ hi₁).toEquiv ⟨idx, hidx⟩).2 acc := by
+  exact (htupleProdRangeIso lo₀ hi₀ lo₁ hi₁).fold_eq init f
 
 end NumLean

@@ -20,13 +20,14 @@ namespace NumLean
 The underlying vector stores scalar components, so its scalar length is `nI * nX`, where `nI`
 is the cardinality of the index type and `nX` is the flat scalar width of each `X`. -/
 structure Tensor (X : Type u) (I : Type v)
-    {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI] where
+    {Ks K nX nI} [HasDefaultFlatRepr X Ks] [VectorType Ks K]
+    [HasFlatRepr X Ks nX] [IndexType I nI] where
   data : Ks (nI * nX)
 
 namespace Tensor
 
 variable {X : Type u} {I : Type v}
-    {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI]
+    {Ks K nX nI} [HasDefaultFlatRepr X Ks] [VectorType Ks K] [HasFlatRepr X Ks nX] [IndexType I nI]
 
 /-! ### Preliminary definitions and theorems -/
 
@@ -247,59 +248,6 @@ open TensorIndexType in
 instance {I nI r shape} [TensorIndexType I nI r shape] [ToString X] :
     ToString (Tensor X I) where
   toString x := FinHTuple.printTensor shape (fun i => x[fromFinHTuple (I:=I) i])
-
-
-
-section Reshape
-
-open Tensor
-
-/-- Converts `shape` into product of `Fin` types.
-
-Examples:
-  - `indexTypeOfShape h(n) = Fin n`
-  - `indexTypeOfShape h(m, n) = Fin m × Fin n`
-  - `indexTypeOfShape h((m, n), (k, l)) = (Fin m × Fin n) × (Fin k × Fin l)`-/
-def indexTypeOfShape {r} (shape : Shape r) : Type :=
-  match shape with
-  | .leaf n => Fin n
-  | .prod s s' => indexTypeOfShape s × indexTypeOfShape s'
-
-/-- This class statically evaluates `indexTypeOfShape shape` and provides its result as
-`I : outParam Type`. -/
-class IndexTypeOfShape {r} (shape : Shape r) (I : outParam Type) where
-  valid : indexTypeOfShape shape = I
-instance : IndexTypeOfShape h(n) (Fin n) where
-  valid := rfl
-instance {I I'} [inst : IndexTypeOfShape s I] [inst' : IndexTypeOfShape s' I'] :
-  IndexTypeOfShape (.prod s s') (I × I') where
-    valid := by rw[indexTypeOfShape, inst.valid, inst'.valid]
-
-/-- Tactic used to prove that reshaping a tensor is valid. -/
-macro "valid_reshape_tactic" : tactic =>
-  `(tactic| (first | simp | decide | ring | (simp; ring) | (cbv; ring)))
-
-/-- Reshape tensor given `shape : Shape r` which is usually given as `h(n₁, ..., nᵣ)` where
-`n₁, ..., nᵣ` are the dimension sizes of the new shape.
-
-Examples:
-  - `x.reshape h(3,5) : Float^[3,5]` for `x : Float^[15]`
-  - `A.reshape h(12) : Float^[12]` for `A : Float^[4,3]`
-  - `A.reshape h(3,2,2) : Float^[3,2,2]` for `A : Float^[4,3]`
-  - `y.reshape h(m + 1, n) : Float^[m + 1, n]` for `y : Float^[m * n + n]`
-
-This function requires a proof `matching_size` that the new shape has the same number of elements
-as the old shape.
--/
-def reshape {r : Rank} (x : Tensor X I) (shape : Shape r)
-    {J} [IndexTypeOfShape shape J] [IndexType J nJ]
-    (matching_size : nI = nJ := by valid_reshape_tactic) :
-    Tensor X J :=
-  { data := matching_size ▸ x.data }
-
--- todo: .reindex, direcly give the new index type `J`
-
-end Reshape
 
 end Tensor
 

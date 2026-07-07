@@ -10,10 +10,12 @@ namespace NumLean
 namespace Tensor
 
 variable {X : Type u} {I : Type v}
-    {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI] [TensorType Ks]
+    {Ks K nX nI} [HasDefaultFlatRepr X Ks] [VectorType Ks K] [HasFlatRepr X Ks nX] [IndexType I nI] [TensorType Ks]
+
+instance : HasDefaultFlatRepr (Tensor X I) Ks where
 
 open TensorType Tensor in
-instance [Inhabited K] : HasDefaultFlatRepr (Tensor X I) Ks (nI * nX) where
+instance [Inhabited K] : HasFlatRepr (Tensor X I) Ks (nI * nX) where
   toVector x := VectorType.toVector x.data
   fromVector x := { data := VectorType.fromVector (As := Ks) x }
   left_inv := by intros _; simp

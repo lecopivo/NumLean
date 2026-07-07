@@ -18,7 +18,7 @@ open Tensor
 
 
 variable {X : Type u} {I : Type v}
-  {Ks K nX nI} [VectorType Ks K] [HasDefaultFlatRepr X Ks nX] [IndexType I nI]
+  {Ks K nX nI} [HasDefaultFlatRepr X Ks] [VectorType Ks K] [HasFlatRepr X Ks nX] [IndexType I nI]
 
 
 @[simp]
@@ -312,5 +312,20 @@ theorem continuous_getElem [CommRing K] [NormedAddCommGroup X] [Module K X]
   intro ys hys
   exact lt_of_le_of_lt (dist_getElem_le_dist (i := i) ys xs) hys
 
+variable {J : Type*} {nJ} [IndexType J nJ]
+
+open IndexType in
+def matrixEquiv [CommRing K] [AddCommGroup X] [Module K X]
+    [TensorRingOps Ks K] [LawfulTensorRingOps Ks K]
+    [HasFlatRepr.LawfulAddGroupOps (nX := nX) X Ks] :
+    Tensor X (I × J) ≃ₗ[K] Matrix (Fin nI) (Fin nJ) X where
+  toFun x := .of (fun i j => x[fromFin (I:=I) i, fromFin (I:=J) j])
+  invFun x :=
+    have : Inhabited X := ⟨0⟩
+    .ofFn (fun (i,j) => x (toFin i) (toFin j))
+  left_inv := by intros x; ext ⟨i,j⟩; simp
+  right_inv := by intros x; ext ⟨i,j⟩; simp
+  map_add' := by intro x y; funext i j; simp
+  map_smul' := by intro s x; funext i j; simp
 
 end NumLean.Tensor
